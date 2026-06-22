@@ -127,8 +127,10 @@ entity needs a `runAt` field. Add a `purge(...)` line per history entity.
 ## Front end / TypeScript
 
 `Resources/js-src/*.ts` compile to `Resources/public/js/*.js` via
-`php bin/console aaxis:devtools:typescript:compile` (also runs on `oro:assets:build`). **Both `.ts`
-sources and emitted `.js` are committed.** `tsconfig.json` extends CommonBundle's
+`php bin/console aaxis:devtools:typescript:compile` (also runs on `oro:assets:build`). **Only the
+`.ts` sources are committed** — the emitted `.js` is generated at build time and git-ignored; edit
+the `.ts`, never the `.js`. The build fails loudly if `tsc` is missing (no committed JS fallback) and
+recompiles even under `vendor/aaxisdigital/oro*`. `tsconfig.json` extends CommonBundle's
 `tsconfig.base.json`. Shared grid/dialog widgets come from `aaxiscommon/js/app/widgets/*`.
 
 ## Verify after changes

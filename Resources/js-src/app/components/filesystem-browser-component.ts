@@ -12,9 +12,51 @@ import 'codemirror/mode/yaml/yaml';
 import 'codemirror/mode/htmlmixed/htmlmixed';
 import 'codemirror/mode/php/php';
 import 'codemirror/mode/twig/twig';
+
+interface FilesystemBrowserOptions {
+    _sourceElement: any;
+    listUrl: string;
+    previewUrl: string;
+    rawUrl: string;
+    downloadUrl: string;
+    basePath: string;
+    restricted: boolean;
+    columns: Record<string, boolean>;
+}
+
+interface FsEntry {
+    name: string;
+    type: string;
+    path: string;
+    size: number;
+    sizeFormatted: string;
+    created: number;
+    modified: number;
+    ownerUser: string;
+    ownerGroup: string;
+    readable: boolean;
+}
+
+interface FsListing {
+    path: string;
+    parent: string;
+    entries: FsEntry[];
+}
+
+interface FsTab {
+    id: string;
+    kind: string;
+    title: string;
+    text?: string;
+    mode?: any;
+    truncated?: boolean;
+    url?: string;
+    path?: string;
+}
+
 const FILES_TAB_ID = 'files';
 const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'avif'];
-const TEXT_MODES = {
+const TEXT_MODES: Record<string, any> = {
     sql: 'text/x-sql',
     json: { name: 'javascript', json: true },
     js: 'text/javascript',
@@ -37,7 +79,25 @@ const TEXT_MODES = {
  * renders images/PDFs inline, and downloads binaries.
  */
 class FilesystemBrowserComponent extends BaseComponent {
-    initialize(options) {
+    private $el!: any;
+    private listUrl!: string;
+    private previewUrl!: string;
+    private rawUrl!: string;
+    private downloadUrl!: string;
+    private basePath!: string;
+    private restricted!: boolean;
+    private columns!: Record<string, boolean>;
+    private lastListing!: FsListing | null;
+    private rows!: FsEntry[];
+    private selectedIndex!: number;
+    private filterText!: string;
+    private sortKey!: string;
+    private sortDir!: string;
+    private tabs!: FsTab[];
+    private activeTabId!: string;
+    private previewSeq!: number;
+
+    initialize(options: FilesystemBrowserOptions): void {
         this.$el = options._sourceElement;
         this.listUrl = options.listUrl;
         this.previewUrl = options.previewUrl;
@@ -59,16 +119,16 @@ class FilesystemBrowserComponent extends BaseComponent {
         this.renderTabs();
         this.navigate(this.basePath);
     }
-    bindEvents() {
+    bindEvents(): void {
         this.$el.on('click.aaxisFs', '[data-role="help"]', this.onHelp.bind(this));
-        this.$el.on('keydown.aaxisFs', '[data-role="path"]', (e) => {
+        this.$el.on('keydown.aaxisFs', '[data-role="path"]', (e: any) => {
             if (e.keyCode === 13) {
                 e.preventDefault();
                 this.onPathEnter(String(e.currentTarget.value || ''));
             }
         });
         this.$el.on('click.aaxisFs', '[data-role="filter-toggle"]', this.onToggleFilter.bind(this));
-        this.$el.on('input.aaxisFs', '[data-role="filter"]', (e) => {
+        this.$el.on('input.aaxisFs', '[data-role="filter"]', (e: any) => {
             this.filterText = String(e.currentTarget.value || '').toLowerCase();
             this.selectedIndex = 0;
             this.renderListing();
@@ -82,15 +142,15 @@ class FilesystemBrowserComponent extends BaseComponent {
         this.$el.on('click.aaxisFs', '[data-role="tab"]', this.onTabClick.bind(this));
         this.$el.on('click.aaxisFs', '[data-role="tab-close"]', this.onTabClose.bind(this));
     }
-    hasDotDot(path) {
+    hasDotDot(path: string): boolean {
         return path.split(/[/\\]+/).indexOf('..') !== -1;
     }
-    ext(name) {
+    ext(name: string): string {
         const dot = name.lastIndexOf('.');
         return dot === -1 ? '' : name.slice(dot + 1).toLowerCase();
     }
     // --- Filter --------------------------------------------------------------
-    onToggleFilter(event) {
+    onToggleFilter(event: any): void {
         event.preventDefault();
         const $filter = this.$el.find('[data-role="filter"]');
         const willShow = $filter.prop('hidden');
@@ -108,7 +168,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         }
     }
     // --- Navigation ----------------------------------------------------------
-    onPathEnter(value) {
+    onPathEnter(value: string): void {
         const path = value.trim();
         if (this.hasDotDot(path)) {
             messenger.notificationFlashMessage('warning', __('aaxis.devtools.filesystem_browser.dotdot_error'));
@@ -116,9 +176,9 @@ class FilesystemBrowserComponent extends BaseComponent {
         }
         this.navigate(path);
     }
-    navigate(path) {
+    navigate(path: string): void {
         $.ajax({ url: this.listUrl, method: 'GET', data: { path } })
-            .done((response) => {
+            .done((response: any) => {
             if (!response.success) {
                 messenger.notificationFlashMessage('error', response.message || __('aaxis.devtools.filesystem_browser.list_error'));
                 return;
@@ -130,14 +190,14 @@ class FilesystemBrowserComponent extends BaseComponent {
             this.renderTabs();
             this.renderActiveContent();
         })
-            .fail((jqXhr) => {
+            .fail((jqXhr: any) => {
             const message = (jqXhr.responseJSON && jqXhr.responseJSON.message)
                 || __('aaxis.devtools.filesystem_browser.list_error');
             messenger.notificationFlashMessage('error', message);
         });
     }
     // --- Sorting -------------------------------------------------------------
-    onSortClick(event) {
+    onSortClick(event: any): void {
         event.preventDefault();
         const key = String($(event.currentTarget).data('sort'));
         if (this.sortKey === key) {
@@ -149,7 +209,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         }
         this.renderListing();
     }
-    buildRows() {
+    buildRows(): FsEntry[] {
         if (!this.lastListing) {
             return [];
         }
@@ -168,7 +228,7 @@ class FilesystemBrowserComponent extends BaseComponent {
                 cmp = a.size - b.size;
             }
             else if (key === 'modified' || key === 'created') {
-                cmp = a[key] - b[key];
+                cmp = (a as any)[key] - (b as any)[key];
             }
             else if (key === 'type') {
                 cmp = (a.type === 'dir' ? 0 : 1) - (b.type === 'dir' ? 0 : 1);
@@ -177,7 +237,7 @@ class FilesystemBrowserComponent extends BaseComponent {
                 }
             }
             else {
-                cmp = String(a[key]).localeCompare(String(b[key]));
+                cmp = String((a as any)[key]).localeCompare(String((b as any)[key]));
             }
             return cmp * dir;
         });
@@ -189,7 +249,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         return [parent, ...entries];
     }
     // --- Listing rendering ---------------------------------------------------
-    renderListing() {
+    renderListing(): void {
         const $content = this.$el.find('[data-role="content"]').empty();
         if (!this.lastListing) {
             return;
@@ -227,7 +287,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         $content.append($table);
         this.applySelection();
     }
-    sortHeader(key, label) {
+    sortHeader(key: string, label: string): any {
         const $th = $('<th/>', { 'data-role': 'sort', 'data-sort': key, 'class': 'aaxis-fs__sortable' });
         const $inner = $('<span/>', { 'class': 'aaxis-fs__sort-inner' });
         $inner.append($('<span/>', { text: label }));
@@ -240,7 +300,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         $th.append($inner);
         return $th;
     }
-    appendRow($body, entry, index) {
+    appendRow($body: any, entry: FsEntry, index: number): void {
         const $tr = $('<tr/>', {
             'class': 'aaxis-fs__row',
             'data-role': 'row',
@@ -302,7 +362,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         $tr.append($actions);
         $body.append($tr);
     }
-    applySelection() {
+    applySelection(): void {
         const $rows = this.$el.find('[data-role="row"]');
         $rows.removeClass('is-selected');
         const $selected = $rows.filter('[data-index="' + this.selectedIndex + '"]');
@@ -312,7 +372,7 @@ class FilesystemBrowserComponent extends BaseComponent {
             el.scrollIntoView({ block: 'nearest' });
         }
     }
-    onRowClick(event) {
+    onRowClick(event: any): void {
         if ($(event.target).closest('[data-role="preview-btn"], [data-role="download-btn"]').length) {
             return;
         }
@@ -320,13 +380,13 @@ class FilesystemBrowserComponent extends BaseComponent {
         this.applySelection();
         this.$el.find('[data-role="content"]').trigger('focus');
     }
-    onRowDblClick(event) {
+    onRowDblClick(event: any): void {
         if ($(event.target).closest('[data-role="preview-btn"], [data-role="download-btn"]').length) {
             return;
         }
         this.openEntry(this.rows[Number($(event.currentTarget).data('index'))]);
     }
-    onContentKeydown(event) {
+    onContentKeydown(event: any): void {
         if (this.activeTabId !== FILES_TAB_ID || this.rows.length === 0) {
             return;
         }
@@ -345,11 +405,11 @@ class FilesystemBrowserComponent extends BaseComponent {
             this.openEntry(this.rows[this.selectedIndex]);
         }
     }
-    formatDate(timestamp) {
+    formatDate(timestamp: number): string {
         return timestamp ? new Date(timestamp * 1000).toLocaleString() : '';
     }
     // --- Open / preview ------------------------------------------------------
-    openEntry(entry) {
+    openEntry(entry: FsEntry): void {
         if (!entry) {
             return;
         }
@@ -367,17 +427,17 @@ class FilesystemBrowserComponent extends BaseComponent {
         }
         this.openFile(entry.path, entry.name);
     }
-    onPreviewBtnClick(event) {
+    onPreviewBtnClick(event: any): void {
         event.preventDefault();
         event.stopPropagation();
         this.openFile(String($(event.currentTarget).data('path')), String($(event.currentTarget).data('name')));
     }
-    onDownloadClick(event) {
+    onDownloadClick(event: any): void {
         event.preventDefault();
         event.stopPropagation();
         this.triggerDownload(String($(event.currentTarget).data('path')));
     }
-    openFile(path, name) {
+    openFile(path: string, name: string): void {
         const ext = this.ext(name);
         if (IMAGE_EXTS.indexOf(ext) !== -1) {
             this.openMediaTab(name, path, 'image');
@@ -388,7 +448,7 @@ class FilesystemBrowserComponent extends BaseComponent {
             return;
         }
         $.ajax({ url: this.previewUrl, method: 'GET', data: { path } })
-            .done((response) => {
+            .done((response: any) => {
             if (!response.success) {
                 messenger.notificationFlashMessage('error', response.message || __('aaxis.devtools.filesystem_browser.preview_error'));
                 return;
@@ -401,20 +461,20 @@ class FilesystemBrowserComponent extends BaseComponent {
             }
             this.openCodeTab(name, String(response.content || ''), ext, !!response.truncated);
         })
-            .fail((jqXhr) => {
+            .fail((jqXhr: any) => {
             const message = (jqXhr.responseJSON && jqXhr.responseJSON.message)
                 || __('aaxis.devtools.filesystem_browser.preview_error');
             messenger.notificationFlashMessage('error', message);
         });
     }
-    triggerDownload(path) {
+    triggerDownload(path: string): void {
         const link = document.createElement('a');
         link.href = this.downloadUrl + '?path=' + encodeURIComponent(path);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     }
-    openCodeTab(name, content, ext, truncated) {
+    openCodeTab(name: string, content: string, ext: string, truncated: boolean): void {
         let text = content;
         let mode = TEXT_MODES[ext];
         if (ext === 'json') {
@@ -432,7 +492,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         this.renderTabs();
         this.renderActiveContent();
     }
-    openMediaTab(name, path, kind) {
+    openMediaTab(name: string, path: string, kind: string): void {
         this.previewSeq += 1;
         const id = 'tab-' + this.previewSeq;
         const url = this.rawUrl + '?path=' + encodeURIComponent(path);
@@ -442,7 +502,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         this.renderActiveContent();
     }
     // --- Tabs ----------------------------------------------------------------
-    renderTabs() {
+    renderTabs(): void {
         const $tabs = this.$el.find('[data-role="tabs"]').empty();
         this.tabs.forEach(tab => {
             const $tab = $('<span/>', {
@@ -468,7 +528,7 @@ class FilesystemBrowserComponent extends BaseComponent {
             $tabs.append($tab);
         });
     }
-    onTabClick(event) {
+    onTabClick(event: any): void {
         if ($(event.target).closest('[data-role="tab-close"]').length) {
             return;
         }
@@ -476,7 +536,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         this.renderTabs();
         this.renderActiveContent();
     }
-    onTabClose(event) {
+    onTabClose(event: any): void {
         event.preventDefault();
         event.stopPropagation();
         const id = String($(event.currentTarget).data('id'));
@@ -491,7 +551,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         this.renderTabs();
         this.renderActiveContent();
     }
-    renderActiveContent() {
+    renderActiveContent(): void {
         const tab = this.tabs.find(t => t.id === this.activeTabId);
         if (!tab) {
             return;
@@ -506,7 +566,7 @@ class FilesystemBrowserComponent extends BaseComponent {
             this.renderMedia(tab);
         }
     }
-    renderCode(tab) {
+    renderCode(tab: FsTab): void {
         const $content = this.$el.find('[data-role="content"]').empty();
         if (tab.truncated) {
             $content.append($('<div/>', {
@@ -529,7 +589,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         }
         $content.append(pre);
     }
-    renderMedia(tab) {
+    renderMedia(tab: FsTab): void {
         const $content = this.$el.find('[data-role="content"]').empty();
         const $meta = $('<div/>', { 'class': 'aaxis-fs__preview-meta' }).append($('<span/>', { text: tab.path || '' }));
         $content.append($meta);
@@ -545,7 +605,7 @@ class FilesystemBrowserComponent extends BaseComponent {
             }));
         }
     }
-    onHelp(event) {
+    onHelp(event: any): void {
         event.preventDefault();
         const html = this.$el.find('[data-role="help-content"]').html();
         const modal = new Modal({
@@ -556,7 +616,7 @@ class FilesystemBrowserComponent extends BaseComponent {
         });
         modal.open();
     }
-    dispose() {
+    dispose(): void {
         if (this.disposed) {
             return;
         }

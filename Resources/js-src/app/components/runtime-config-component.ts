@@ -3,13 +3,21 @@ import __ from 'orotranslation/js/translator';
 import Modal from 'oroui/js/modal';
 import BaseComponent from 'oroui/js/app/components/base/component';
 
+interface RuntimeConfigOptions {
+    _sourceElement: any;
+}
+
 /**
  * Runtime Config view: tabbed sections (Environment / Application Parameters / PHP Runtime) with
  * live client-side filtering. Each tab shows the count of items it currently contains, updated as
  * the filter narrows results; the active tab's panel shows a "no results" note when empty.
  */
 class RuntimeConfigComponent extends BaseComponent {
-    initialize(options) {
+    private $el!: any;
+    private $tabs!: any;
+    private $panels!: any;
+
+    initialize(options: RuntimeConfigOptions): void {
         this.$el = options._sourceElement;
         this.$tabs = this.$el.find('[data-role="tab"]');
         this.$panels = this.$el.find('[data-role="panel"]');
@@ -21,7 +29,7 @@ class RuntimeConfigComponent extends BaseComponent {
         this.applyFilter('');
     }
 
-    onHelp(event) {
+    onHelp(event: any): void {
         event.preventDefault();
         const modal = new Modal({
             title: __('aaxis.devtools.runtime_config.help'),
@@ -32,30 +40,30 @@ class RuntimeConfigComponent extends BaseComponent {
         modal.open();
     }
 
-    onTab(event) {
+    onTab(event: any): void {
         event.preventDefault();
         const target = $(event.currentTarget).data('target');
 
-        this.$tabs.each((i, tab) => {
+        this.$tabs.each((i: any, tab: any) => {
             const active = $(tab).data('target') === target;
             $(tab).toggleClass('is-active', active).attr('aria-selected', active ? 'true' : 'false');
         });
-        this.$panels.each((i, panel) => {
+        this.$panels.each((i: any, panel: any) => {
             panel.hidden = $(panel).data('name') !== target;
         });
     }
 
-    onFilter(event) {
+    onFilter(event: any): void {
         this.applyFilter(String($(event.currentTarget).val() || '').trim().toLowerCase());
     }
 
-    applyFilter(term) {
-        this.$panels.each((i, panel) => {
+    applyFilter(term: string): void {
+        this.$panels.each((i: any, panel: any) => {
             const name = $(panel).data('name');
             const $rows = $(panel).find('[data-role="row"]');
             let visible = 0;
 
-            $rows.each((j, row) => {
+            $rows.each((j: any, row: any) => {
                 const match = term === '' || (row.getAttribute('data-search') || '').indexOf(term) !== -1;
                 row.hidden = !match;
                 if (match) {
@@ -69,7 +77,7 @@ class RuntimeConfigComponent extends BaseComponent {
         });
     }
 
-    dispose() {
+    dispose(): void {
         if (this.disposed) {
             return;
         }
