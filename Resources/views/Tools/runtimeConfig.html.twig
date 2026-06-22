@@ -1,0 +1,89 @@
+{% extends '@OroUI/actions/index.html.twig' %}
+
+{% set pageTitle = 'aaxis.devtools.menu.aaxis_devtools_runtime_config.label'|trans %}
+
+{% macro kvTable(rows) %}
+    <table class="grid table-hover table aaxis-rtcfg__table">
+        <thead>
+            <tr>
+                <th class="aaxis-rtcfg__col-key">{{ 'aaxis.devtools.runtime_config.col_key'|trans }}</th>
+                <th>{{ 'aaxis.devtools.runtime_config.col_value'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr class="aaxis-rtcfg__row" data-role="row" data-search="{{ (row.key ~ ' ' ~ row.value)|lower }}">
+                    <td class="aaxis-rtcfg__key">{{ row.key }}</td>
+                    <td class="aaxis-rtcfg__val{{ row.sensitive ? ' is-masked' : '' }}">{{ row.value }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}
+
+{% block content %}
+    {% import _self as rt %}
+    {% set sections = [
+        { name: 'environment', title: 'aaxis.devtools.runtime_config.section_environment'|trans, rows: environment },
+        { name: 'parameters', title: 'aaxis.devtools.runtime_config.section_parameters'|trans, rows: parameters },
+        { name: 'runtime', title: 'aaxis.devtools.runtime_config.section_runtime'|trans, rows: runtime }
+    ] %}
+
+    <div class="layout-content">
+        <div class="content aaxis-rtcfg"
+             data-page-component-module="aaxisdevtools/js/app/components/runtime-config-component">
+            <div class="container-fluid page-title">
+                <h1 class="page-title__entity-title aaxis-rtcfg__title">
+                    {{ 'aaxis.devtools.menu.aaxis_devtools_runtime_config.label'|trans }}
+                    <a href="{{ path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}) }}"
+                       class="aaxis-tool-config-btn" data-role="config"
+                       title="{{ 'aaxis.devtools.config_link'|trans }}"
+                       aria-label="{{ 'aaxis.devtools.config_link'|trans }}">
+                        <span class="fa fa-cog" aria-hidden="true"></span>
+                    </a>
+                    <button type="button" class="aaxis-rtcfg__help-btn" data-role="help"
+                            title="{{ 'aaxis.devtools.runtime_config.help'|trans }}"
+                            aria-label="{{ 'aaxis.devtools.runtime_config.help'|trans }}">
+                        <span class="fa fa-question-circle" aria-hidden="true"></span>
+                    </button>
+                </h1>
+            </div>
+
+            <div class="aaxis-rtcfg__bar">
+                <input type="search" class="form-control aaxis-rtcfg__filter" data-role="filter"
+                       placeholder="{{ 'aaxis.devtools.runtime_config.filter_placeholder'|trans }}"
+                       autocomplete="off">
+            </div>
+
+            <div class="aaxis-rtcfg__tabs" role="tablist">
+                {% for s in sections %}
+                    <button type="button" class="aaxis-rtcfg__tab{{ loop.first ? ' is-active' : '' }}"
+                            data-role="tab" data-target="{{ s.name }}" role="tab"
+                            aria-selected="{{ loop.first ? 'true' : 'false' }}">
+                        <span class="aaxis-rtcfg__tab-label">{{ s.title }}</span>
+                        <span class="aaxis-rtcfg__badge" data-role="tab-count" data-name="{{ s.name }}">{{ s.rows|length }}</span>
+                    </button>
+                {% endfor %}
+            </div>
+
+            {% for s in sections %}
+                <div class="aaxis-rtcfg__panel{{ loop.first ? ' is-active' : '' }}"
+                     data-role="panel" data-name="{{ s.name }}" role="tabpanel"{{ loop.first ? '' : ' hidden' }}>
+                    {{ rt.kvTable(s.rows) }}
+                    <p class="aaxis-rtcfg__empty" data-role="empty" hidden>
+                        {{ 'aaxis.devtools.runtime_config.no_results'|trans }}
+                    </p>
+                </div>
+            {% endfor %}
+
+            <div data-role="help-content" hidden>
+                <p>{{ 'aaxis.devtools.runtime_config.help_intro'|trans }}</p>
+                <ul>
+                    <li>{{ 'aaxis.devtools.runtime_config.help_tabs'|trans }}</li>
+                    <li>{{ 'aaxis.devtools.runtime_config.help_filter'|trans }}</li>
+                    <li>{{ 'aaxis.devtools.runtime_config.help_masking'|trans }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,99 @@
+navigation:
+    menu_config:
+        items:
+            aaxis_devtools_group:
+                label: 'aaxis.devtools.menu.aaxis_devtools_group.label'
+                uri: '#'
+                position: 20
+                extras:
+                    icon: fa-user-secret
+
+            aaxis_devtools_runtime_config:
+                label: 'aaxis.devtools.menu.aaxis_devtools_runtime_config.label'
+                route: 'aaxis_devtools_runtime_config'
+                position: 5
+                extras:
+                    routes: ['aaxis_devtools_runtime_config']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_runtime_config.description'
+
+            aaxis_devtools_filesystem_browser:
+                label: 'aaxis.devtools.menu.aaxis_devtools_filesystem_browser.label'
+                route: 'aaxis_devtools_filesystem_browser'
+                position: 10
+                extras:
+                    routes: ['aaxis_devtools_filesystem_browser']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_filesystem_browser.description'
+
+            aaxis_devtools_bucket_browser:
+                label: 'aaxis.devtools.menu.aaxis_devtools_bucket_browser.label'
+                route: 'aaxis_devtools_bucket_browser'
+                position: 20
+                extras:
+                    routes: ['aaxis_devtools_bucket_browser']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_bucket_browser.description'
+
+            aaxis_devtools_database_viewer:
+                label: 'aaxis.devtools.menu.aaxis_devtools_database_viewer.label'
+                route: 'aaxis_devtools_database_viewer'
+                position: 30
+                extras:
+                    routes: ['aaxis_devtools_database_viewer']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_database_viewer.description'
+
+            aaxis_devtools_elastic_viewer:
+                label: 'aaxis.devtools.menu.aaxis_devtools_elastic_viewer.label'
+                route: 'aaxis_devtools_elastic_viewer'
+                position: 40
+                extras:
+                    routes: ['aaxis_devtools_elastic_viewer']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_elastic_viewer.description'
+
+            aaxis_devtools_redis_viewer:
+                label: 'aaxis.devtools.menu.aaxis_devtools_redis_viewer.label'
+                route: 'aaxis_devtools_redis_viewer'
+                position: 45
+                extras:
+                    routes: ['aaxis_devtools_redis_viewer']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_redis_viewer.description'
+
+            aaxis_devtools_mongodb_viewer:
+                label: 'aaxis.devtools.menu.aaxis_devtools_mongodb_viewer.label'
+                route: 'aaxis_devtools_mongodb_viewer'
+                position: 47
+                extras:
+                    routes: ['aaxis_devtools_mongodb_viewer']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_mongodb_viewer.description'
+
+            aaxis_devtools_network_tools:
+                label: 'aaxis.devtools.menu.aaxis_devtools_network_tools.label'
+                route: 'aaxis_devtools_network_tools'
+                position: 60
+                extras:
+                    routes: ['aaxis_devtools_network_tools']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_network_tools.description'
+
+        tree:
+            application_menu:
+                children:
+                    aaxis_tab:
+                        children:
+                            aaxis_devtools_group:
+                                children:
+                                    aaxis_devtools_runtime_config: ~
+                                    aaxis_devtools_filesystem_browser: ~
+                                    aaxis_devtools_bucket_browser: ~
+                                    aaxis_devtools_database_viewer: ~
+                                    aaxis_devtools_elastic_viewer: ~
+                                    aaxis_devtools_redis_viewer: ~
+                                    aaxis_devtools_mongodb_viewer: ~
+                                    aaxis_devtools_network_tools: ~
+
+    titles:
+        aaxis_devtools_runtime_config: 'aaxis.devtools.menu.aaxis_devtools_runtime_config.label'
+        aaxis_devtools_filesystem_browser: 'aaxis.devtools.menu.aaxis_devtools_filesystem_browser.label'
+        aaxis_devtools_bucket_browser: 'aaxis.devtools.menu.aaxis_devtools_bucket_browser.label'
+        aaxis_devtools_database_viewer: 'aaxis.devtools.menu.aaxis_devtools_database_viewer.label'
+        aaxis_devtools_elastic_viewer: 'aaxis.devtools.menu.aaxis_devtools_elastic_viewer.label'
+        aaxis_devtools_redis_viewer: 'aaxis.devtools.menu.aaxis_devtools_redis_viewer.label'
+        aaxis_devtools_mongodb_viewer: 'aaxis.devtools.menu.aaxis_devtools_mongodb_viewer.label'
+        aaxis_devtools_network_tools: 'aaxis.devtools.menu.aaxis_devtools_network_tools.label'

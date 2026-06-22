@@ -1,0 +1,9 @@
+dynamic-imports:
+    aaxisdevtools:
+        - aaxisdevtools/js/app/components/database-viewer-component
+        - aaxisdevtools/js/app/components/network-tools-component
+        - aaxisdevtools/js/app/components/elastic-viewer-component
+        - aaxisdevtools/js/app/components/redis-viewer-component
+        - aaxisdevtools/js/app/components/mongo-viewer-component
+        - aaxisdevtools/js/app/components/storage-browser-component
+        - aaxisdevtools/js/app/components/runtime-config-component

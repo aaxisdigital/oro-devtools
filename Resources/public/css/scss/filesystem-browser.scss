@@ -1,0 +1,340 @@
+/* @theme: admin.oro; */
+
+// Pull in CodeMirror 5 token styles so runMode-highlighted previews are coloured.
+@use 'codemirror/lib/codemirror';
+
+$aaxis-fs-border: #d9d9d9;
+
+.aaxis-fs {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 230px);
+    min-height: 480px;
+
+    &__titlebar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+    }
+
+    &__title-hint {
+        flex: 0 1 auto;
+        text-align: right;
+        color: #666;
+    }
+
+    &__title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__help-btn {
+        border: 0;
+        background: none;
+        padding: 0;
+        font-size: 18px;
+        line-height: 1;
+        color: #777;
+        cursor: pointer;
+
+        &:hover {
+            color: #2b84ed;
+        }
+    }
+
+    &__pathbar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        margin-bottom: 10px;
+
+        // Keep the inputs and the icon buttons the same height so icons line up centered.
+        .form-control {
+            height: 34px;
+            margin: 0;
+            box-sizing: border-box;
+        }
+    }
+
+    &__path {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
+        font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    &__search-toggle {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 34px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: #5c6b7a;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            color: #2b84ed;
+        }
+    }
+
+    // Image-only path-bar actions (create folder / upload), no button chrome.
+    &__pathbar-btn {
+        position: relative;
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 34px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: #5c6b7a;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            color: #2b84ed;
+        }
+    }
+
+    &__pathbar-badge {
+        position: absolute;
+        right: 0;
+        bottom: 4px;
+        font-size: 8px;
+    }
+
+    &__filter {
+        flex: 0 0 280px;
+        margin: 0;
+    }
+
+    // --- Tabs --------------------------------------------------------------
+    &__tabs {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: stretch;
+        gap: 2px;
+        border-bottom: 1px solid $aaxis-fs-border;
+        overflow-x: auto;
+    }
+
+    &__tab {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 240px;
+        padding: 6px 10px;
+        border: 1px solid $aaxis-fs-border;
+        border-bottom: none;
+        border-radius: 4px 4px 0 0;
+        background: #f3f3f3;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &.is-active {
+            background: #fff;
+            font-weight: font-weight('bold');
+        }
+    }
+
+    &__tab-icon {
+        color: #888;
+    }
+
+    &__tab-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__tab-close {
+        border: 0;
+        background: none;
+        padding: 0 2px;
+        line-height: 1;
+        color: #999;
+        cursor: pointer;
+
+        &:hover {
+            color: #333;
+        }
+    }
+
+    // --- Content -----------------------------------------------------------
+    &__content {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        border: 1px solid $aaxis-fs-border;
+        border-top: none;
+        padding: 0;
+    }
+
+    &__loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 0;
+        color: #5c6b7a;
+        font-size: 26px;
+    }
+
+    &__grid {
+        width: 100%;
+        margin-bottom: 0;
+
+        td,
+        th {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+    }
+
+    &__sortable {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+
+        &:hover {
+            background: rgba(0, 0, 0, .04);
+        }
+    }
+
+    &__sort-inner {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    &__sort-caret {
+        display: inline-block;
+        margin-left: 8px;
+        color: #2b84ed;
+    }
+
+    &__row {
+        cursor: pointer;
+
+        &:hover {
+            background: rgba(43, 132, 237, .08);
+        }
+
+        &.is-selected {
+            background: rgba(43, 132, 237, .18);
+        }
+    }
+
+    &__name-cell {
+        width: 100%;
+    }
+
+    &__entry-icon {
+        width: 16px;
+        margin-right: 8px;
+        text-align: center;
+        color: #5c6b7a;
+    }
+
+    &__num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__col-actions {
+        width: 1%;
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    &__icon-btn {
+        border: 0;
+        background: none;
+        padding: 2px 6px;
+        color: #2b84ed;
+        cursor: pointer;
+
+        &:hover {
+            color: #1f6fd6;
+        }
+    }
+
+    &__icon-btn--danger {
+        color: #c0392b;
+
+        &:hover {
+            color: #a32921;
+        }
+    }
+
+    // --- Preview -----------------------------------------------------------
+    &__preview-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 6px 10px;
+        background: #f7fbff;
+        border-bottom: 1px solid $aaxis-fs-border;
+        color: #5c6b7a;
+        font-size: 12px;
+        word-break: break-all;
+    }
+
+    &__preview-warn {
+        color: #b8860b;
+    }
+
+    &__code {
+        margin: 0;
+        padding: 12px;
+        border: 0;
+        border-radius: 0;
+        background: #fff;
+        font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre;
+        overflow: auto;
+    }
+
+    &__image-wrap {
+        padding: 12px;
+        text-align: center;
+        background: #f3f6f9;
+    }
+
+    &__image {
+        max-width: 100%;
+        height: auto;
+        background:
+            linear-gradient(45deg, #eee 25%, transparent 25%),
+            linear-gradient(-45deg, #eee 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #eee 75%),
+            linear-gradient(-45deg, transparent 75%, #eee 75%);
+        background-size: 16px 16px;
+        background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    }
+
+    &__pdf {
+        width: 100%;
+        height: calc(100vh - 360px);
+        min-height: 360px;
+        border: 0;
+    }
+}

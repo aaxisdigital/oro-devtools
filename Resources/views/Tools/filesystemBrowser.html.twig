@@ -1,0 +1,60 @@
+{% extends '@OroUI/actions/index.html.twig' %}
+
+{% set pageTitle = 'aaxis.devtools.menu.aaxis_devtools_filesystem_browser.label'|trans %}
+
+{% block content %}
+    <div class="layout-content">
+        <div class="content"
+             data-page-component-module="aaxisdevtools/js/app/components/storage-browser-component"
+             data-page-component-options="{{ {
+                 listUrl: path('aaxis_devtools_filesystem_browser_list'),
+                 previewUrl: path('aaxis_devtools_filesystem_browser_preview'),
+                 rawUrl: path('aaxis_devtools_filesystem_browser_raw'),
+                 downloadUrl: path('aaxis_devtools_filesystem_browser_download'),
+                 helpTitle: 'aaxis.devtools.filesystem_browser.help'|trans
+             }|merge(options)|json_encode }}">
+            <div class="container-fluid page-title">
+                <div class="aaxis-fs__titlebar">
+                    <h1 class="page-title__entity-title aaxis-fs__title">
+                        {{ 'aaxis.devtools.menu.aaxis_devtools_filesystem_browser.label'|trans }}
+                        <a href="{{ path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}) }}"
+                           class="aaxis-tool-config-btn" data-role="config"
+                           title="{{ 'aaxis.devtools.config_link'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.config_link'|trans }}">
+                            <span class="fa fa-cog" aria-hidden="true"></span>
+                        </a>
+                        <button type="button" class="aaxis-fs__help-btn" data-role="help"
+                                title="{{ 'aaxis.devtools.filesystem_browser.help'|trans }}"
+                                aria-label="{{ 'aaxis.devtools.filesystem_browser.help'|trans }}">
+                            <span class="fa fa-question-circle" aria-hidden="true"></span>
+                        </button>
+                    </h1>
+                    <span class="aaxis-fs__title-hint">{{ 'aaxis.devtools.filesystem_browser.hint'|trans }}</span>
+                </div>
+            </div>
+
+            <div class="aaxis-fs">
+                <div class="aaxis-fs__pathbar">
+                    <input type="text" class="form-control aaxis-fs__path" data-role="path"
+                           placeholder="{{ 'aaxis.devtools.filesystem_browser.path_placeholder'|trans }}"
+                           autocomplete="off" spellcheck="false">
+                    <button type="button" class="aaxis-fs__search-toggle" data-role="filter-toggle"
+                            title="{{ 'aaxis.devtools.filesystem_browser.search'|trans }}"
+                            aria-label="{{ 'aaxis.devtools.filesystem_browser.search'|trans }}">
+                        <span class="fa fa-search" aria-hidden="true"></span>
+                    </button>
+                    <input type="text" class="form-control aaxis-fs__filter" data-role="filter"
+                           placeholder="{{ 'aaxis.devtools.filesystem_browser.filter_placeholder'|trans }}"
+                           autocomplete="off" spellcheck="false" hidden>
+                </div>
+
+                <div class="aaxis-fs__tabs" data-role="tabs"></div>
+                <div class="aaxis-fs__content" data-role="content" tabindex="0"></div>
+            </div>
+
+            <div data-role="help-content" hidden>
+                {% include '@AaxisDevTools/Tools/_filesystemBrowserHelp.html.twig' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

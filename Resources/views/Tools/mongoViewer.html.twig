@@ -1,0 +1,74 @@
+{% extends '@OroUI/actions/index.html.twig' %}
+
+{% set pageTitle = 'aaxis.devtools.menu.aaxis_devtools_mongodb_viewer.label'|trans %}
+
+{% block content %}
+    <div class="layout-content">
+        <div class="content"
+             data-page-component-module="aaxisdevtools/js/app/components/mongo-viewer-component"
+             data-page-component-options="{{ {
+                 overviewUrl: path('aaxis_devtools_mongodb_viewer_overview'),
+                 collectionsUrl: path('aaxis_devtools_mongodb_viewer_collections'),
+                 documentsUrl: path('aaxis_devtools_mongodb_viewer_documents')
+             }|json_encode }}">
+            <div class="container-fluid page-title">
+                <div class="aaxis-mongo__titlebar">
+                    <h1 class="page-title__entity-title aaxis-mongo__title">
+                        {{ 'aaxis.devtools.menu.aaxis_devtools_mongodb_viewer.label'|trans }}
+                        <a href="{{ path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}) }}"
+                           class="aaxis-tool-config-btn" data-role="config"
+                           title="{{ 'aaxis.devtools.config_link'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.config_link'|trans }}">
+                            <span class="fa fa-cog" aria-hidden="true"></span>
+                        </a>
+                        <button type="button" class="aaxis-mongo__help-btn" data-role="help"
+                                title="{{ 'aaxis.devtools.mongodb_viewer.help'|trans }}"
+                                aria-label="{{ 'aaxis.devtools.mongodb_viewer.help'|trans }}">
+                            <span class="fa fa-question-circle" aria-hidden="true"></span>
+                        </button>
+                    </h1>
+                    <span class="aaxis-mongo__title-hint">{{ 'aaxis.devtools.mongodb_viewer.hint'|trans }}</span>
+                </div>
+            </div>
+
+            <div class="aaxis-mongo" data-role="layout">
+                <aside class="aaxis-mongo__sidebar">
+                    <div class="aaxis-mongo__sidebar-head">
+                        <span>{{ 'aaxis.devtools.mongodb_viewer.databases_title'|trans({}, 'jsmessages') }}</span>
+                        <button type="button" class="aaxis-mongo__icon-btn" data-role="refresh"
+                                title="{{ 'aaxis.devtools.mongodb_viewer.refresh'|trans({}, 'jsmessages') }}"
+                                aria-label="{{ 'aaxis.devtools.mongodb_viewer.refresh'|trans({}, 'jsmessages') }}">
+                            <span class="fa fa-refresh" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                    <ul class="aaxis-mongo__dbs" data-role="databases"></ul>
+                    <div class="aaxis-mongo__server" data-role="server"></div>
+                </aside>
+
+                <div class="aaxis-mongo__main">
+                    <div class="aaxis-mongo__keybar">
+                        <input type="text" class="form-control aaxis-mongo__filter" data-role="filter"
+                               placeholder="{{ 'aaxis.devtools.mongodb_viewer.filter_placeholder'|trans({}, 'jsmessages') }}"
+                               autocomplete="off" spellcheck="false">
+                        <button type="button" class="btn btn-primary" data-role="find">
+                            {{ 'aaxis.devtools.mongodb_viewer.find'|trans({}, 'jsmessages') }}
+                        </button>
+                    </div>
+
+                    <div class="aaxis-mongo__panes">
+                        <div class="aaxis-mongo__docs" data-role="docs">
+                            <div class="aaxis-mongo__empty">{{ 'aaxis.devtools.mongodb_viewer.select_collection'|trans({}, 'jsmessages') }}</div>
+                        </div>
+                        <div class="aaxis-mongo__doc" data-role="doc">
+                            <div class="aaxis-mongo__empty">{{ 'aaxis.devtools.mongodb_viewer.select_doc'|trans({}, 'jsmessages') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div data-role="help-content" hidden>
+                {% include '@AaxisDevTools/Tools/_mongoViewerHelp.html.twig' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

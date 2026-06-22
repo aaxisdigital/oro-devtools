@@ -1,0 +1,20 @@
+{% extends '@OroUI/actions/index.html.twig' %}
+
+{% set pageTitle = titleKey|trans %}
+
+{% block content %}
+    <div class="container-fluid page-title">
+        <h1 class="page-title__entity-title">{{ titleKey|trans }}</h1>
+    </div>
+
+    <div class="layout-content">
+        <div class="content">
+            <div class="aaxis-coming-soon">
+                <span class="fa {{ iconClass|default('fa-clock-o') }} aaxis-coming-soon__icon" aria-hidden="true"></span>
+                <h2 class="aaxis-coming-soon__title">{{ 'aaxis.devtools.coming_soon.title'|trans }}</h2>
+                <p class="aaxis-coming-soon__text">{{ descriptionKey|trans }}</p>
+                <p class="aaxis-coming-soon__note">{{ 'aaxis.devtools.coming_soon.note'|trans }}</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

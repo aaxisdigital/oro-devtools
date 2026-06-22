@@ -1,0 +1,35 @@
+{
+    "name": "aaxisdigital/oro-devtools",
+    "type": "library",
+    "description": "Adds the \"Aaxis Dev Tools\" back-office section to OroCommerce: Runtime Config, Filesystem & S3 bucket browsers, Database / Elasticsearch / Redis / MongoDB viewers and Network Tools.",
+    "keywords": ["oro", "orocommerce", "oroplatform", "aaxis", "bundle", "devtools"],
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "AAXIS Digital",
+            "homepage": "https://www.aaxis.io/"
+        }
+    ],
+    "require": {
+        "php": ">=8.4",
+        "oro/platform-enterprise": "7.0.*",
+        "aaxisdigital/oro-common": "7.0.*",
+        "mongodb/mongodb": "^2.0",
+        "openspout/openspout": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Aaxis\\Bundle\\DevToolsBundle\\": ""
+        },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ]
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "extra": {
+        "branch-alias": {
+            "dev-main": "7.0.x-dev"
+        }
+    }
+}

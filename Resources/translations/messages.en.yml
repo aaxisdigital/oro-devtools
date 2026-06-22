@@ -1,0 +1,349 @@
+aaxis:
+    devtools:
+        menu:
+            aaxis_devtools_group:
+                label: Dev Tools
+            aaxis_devtools_runtime_config:
+                label: Runtime Config
+                description: Inspect environment variables and config resolved for this instance
+            aaxis_devtools_filesystem_browser:
+                label: Filesystem Browser
+                description: Browse the server filesystem and preview files
+            aaxis_devtools_bucket_browser:
+                label: Bucket Browser
+                description: Browse object-storage buckets and files
+            aaxis_devtools_database_viewer:
+                label: Database Viewer
+                description: Inspect database tables and run read-only queries
+            aaxis_devtools_elastic_viewer:
+                label: Elastic Viewer
+                description: Browse Elasticsearch indices and documents
+            aaxis_devtools_redis_viewer:
+                label: Redis Viewer
+                description: Inspect Redis databases, keys and values
+            aaxis_devtools_mongodb_viewer:
+                label: MongoDB Viewer
+                description: Browse MongoDB databases, collections and documents
+            aaxis_devtools_network_tools:
+                label: Network Tools
+                description: Network diagnostics and utilities
+        config_link: 'Aaxis Dev Tools configuration'
+        acl:
+            category:
+                label: 'Aaxis Dev Tools'
+            aaxis_devtools:
+                label: 'Access Aaxis Dev Tools'
+                description: 'Allow access to the Aaxis Dev Tools back-office section (all tools and their pages).'
+            aaxis_devtools_write:
+                label: 'Modify storage buckets (write / delete)'
+                description: 'Allow destructive Bucket Browser operations: create folders, upload files and delete objects. Not granted by default — assign it deliberately.'
+        feature:
+            database_viewer:
+                label: 'Aaxis Dev Tools - Database Viewer'
+            network_tools:
+                label: 'Aaxis Dev Tools - Network Tools'
+            elastic_viewer:
+                label: 'Aaxis Dev Tools - Elastic Viewer'
+            redis_viewer:
+                label: 'Aaxis Dev Tools - Redis Viewer'
+            mongodb_viewer:
+                label: 'Aaxis Dev Tools - MongoDB Viewer'
+            filesystem_browser:
+                label: 'Aaxis Dev Tools - Filesystem Browser'
+            bucket_browser:
+                label: 'Aaxis Dev Tools - Bucket Browser'
+            runtime_config:
+                label: 'Aaxis Dev Tools - Runtime Config'
+        config:
+            group:
+                title: 'Aaxis Dev Tools'
+            test:
+                label: 'Connection'
+            settings_block:
+                title: Settings
+            enabled:
+                label: Enabled
+            history_retention:
+                label: 'Keep history data for (days)'
+                tooltip: 'Records older than this many days are removed by the nightly cleanup job. Use 0 to keep data indefinitely.'
+            allow_export:
+                label: 'Allow data export'
+            database_viewer:
+                title: 'Database Viewer'
+                show_views:
+                    label: 'Show views in entity list'
+                show_functions:
+                    label: 'Show functions in entity list'
+                show_row_numbers:
+                    label: 'Show row number in result set'
+            network_tools:
+                title: 'Network Tools'
+                dns:
+                    label: 'DNS lookup'
+                ping:
+                    label: 'Ping'
+                traceroute:
+                    label: 'TraceRoute'
+                socket:
+                    label: 'Socket'
+                curl:
+                    label: 'Curl'
+                ssl_cert:
+                    label: 'SSL certificate'
+                ciphers:
+                    label: 'Ciphers'
+            elastic_viewer:
+                title: 'Elastic Viewer'
+            redis_viewer:
+                title: 'Redis Viewer'
+                dsn:
+                    label: 'Connection DSN'
+                    tooltip: 'Leave empty to use the application Redis (ORO_REDIS_URL). Example: redis://:password@host:6379'
+            mongodb_viewer:
+                title: 'MongoDB Viewer'
+                dsn:
+                    label: 'Connection DSN'
+                    tooltip: 'Leave empty to use the application MongoDB (ORO_MONGODB_SERVER). Example: mongodb://user:password@host:27017'
+            filesystem_browser:
+                title: 'Filesystem Browser'
+                base_path:
+                    label: 'Default base path'
+                    tooltip: 'Leave empty to use the application start path. Shown/resolved in full (real) path form.'
+                restricted:
+                    label: 'Restrict navigation to the base path'
+                    tooltip: 'When enabled, navigating outside the base path is blocked.'
+                col_type:
+                    label: 'Show type column'
+                col_filename:
+                    label: 'Show filename column'
+                col_filesize:
+                    label: 'Show file size column'
+                col_modified:
+                    label: 'Show modified date column'
+                col_created:
+                    label: 'Show created date column'
+                col_owner_user:
+                    label: 'Show owner user column'
+                col_owner_group:
+                    label: 'Show owner group column'
+                col_preview:
+                    label: 'Show file preview button'
+            bucket_browser:
+                title: 'Bucket Browser'
+                url:
+                    label: 'Endpoint URL'
+                    tooltip: 'S3-compatible endpoint, e.g. http://minio:9000 (as reachable from the application container).'
+                user:
+                    label: 'Access key'
+                pass:
+                    label: 'Secret key'
+                name:
+                    label: 'Bucket name'
+                    tooltip: 'The bucket to browse.'
+                read_only:
+                    label: 'Read only'
+            runtime_config:
+                title: 'Runtime Config'
+        coming_soon:
+            title: Coming soon
+            note: This tool is under construction and will be available in a future release.
+        runtime_config:
+            col_key: Key
+            col_value: Value
+            filter_placeholder: 'Filter by key or value...'
+            section_environment: Environment Variables
+            section_parameters: Application Parameters
+            section_runtime: PHP Runtime
+            no_results: No entries match your filter.
+            help: Runtime Config help
+            help_intro: 'A read-only view of the configuration resolved for this running instance.'
+            help_tabs: 'Browse environment variables, application (container) parameters and PHP runtime settings in separate tabs; each tab shows how many entries it holds.'
+            help_filter: 'Use the filter box to search by key or value across all tabs at once.'
+            help_masking: 'By default sensitive values are masked; this can be toggled in the tool''s system configuration.'
+        mongodb_viewer:
+            hint: 'Read-only browsing of MongoDB databases, collections and documents.'
+            help: 'MongoDB Viewer help'
+            help_dialog:
+                intro: 'Inspect the configured MongoDB server (read-only). Pick a database on the left to see its collections, choose one, and browse its documents. An optional JSON filter narrows the result.'
+                databases:
+                    title: 'Databases & collections'
+                    item1: 'The sidebar lists databases with their collection counts; expand a database to see its collections and pick one.'
+                    item2: 'The server panel shows the MongoDB version.'
+                documents:
+                    title: 'Documents'
+                    item1: 'Enter an optional JSON filter (e.g. {"status":"active"}) and press Find; use "Load more" to page through results.'
+                    item2: 'Click a document to see it pretty-printed. Each page returns up to 100 documents.'
+        redis_viewer:
+            hint: 'Read-only inspection of Redis databases, keys and values. Uses SCAN (non-blocking).'
+            help: 'Redis Viewer help'
+            databases_title: 'Databases'
+            refresh: 'Refresh'
+            pattern_placeholder: 'Match pattern, e.g. oro*'
+            scan: 'Scan'
+            select_db: 'Select a database to browse its keys.'
+            select_key: 'Select a key to view its value.'
+            help_dialog:
+                intro: 'Inspect the configured Redis server (read-only). Pick a logical database on the left, scan its keys, and click a key to see its value. Key listing uses SCAN so it never blocks the server.'
+                databases:
+                    title: 'Databases'
+                    item1: 'The sidebar lists the logical databases (0-15 by default) with their key counts; click one to browse it.'
+                    item2: 'The server panel shows version, memory use and the eviction policy.'
+                keys:
+                    title: 'Keys & values'
+                    item1: 'Enter a match pattern (e.g. "oro*") and scan; use "Load more" to page through with the SCAN cursor.'
+                    item2: 'Each key shows its type and TTL. Click a key to see its value, shaped by type (string, list, set, sorted set, hash).'
+                    item3: 'Large values are truncated (first 500 elements / 64 KB); JSON string values are pretty-printed.'
+        elastic_viewer:
+            hint: 'ES|QL runs read-only and the result is limited to the first 1000 rows.'
+            indices: Indices
+            filter_placeholder: 'Filter indices...'
+            filter_clear: 'Clear filter'
+            refresh: 'Refresh index list'
+            help: 'Elastic Viewer help'
+            esql: 'ES|QL'
+            run: Run
+            export: Export
+            help_dialog:
+                intro: 'Browse Elasticsearch indices and run ES|QL queries against them. ES|QL is read-only and results are capped at the first 1000 rows.'
+                indices:
+                    title: 'Index explorer'
+                    item1: 'The left sidebar lists the available indices (internal indices starting with a dot are hidden), with their document counts.'
+                    item2: 'Type in the filter box to narrow the list by name. The clear button empties it and the refresh button reloads the list.'
+                    item3: 'Click an index to scaffold a query for it, such as FROM index | LIMIT 100.'
+                editor:
+                    title: 'ES|QL editor'
+                    item1: 'Write an ES|QL query in the editor and press Run, or Ctrl/Cmd+Enter, to execute it.'
+                    item2: 'ES|QL is pipe-based: start with a source command like FROM, then chain operations such as WHERE, STATS, SORT and LIMIT.'
+                    item3: 'Drag the dividers to resize the sidebar and the editor against the results grid.'
+                grid:
+                    title: 'Results grid'
+                    item1: 'Each column header shows the field name and its ES|QL type. Row numbers are on the left and null values are greyed.'
+                    item2: 'Click a column header to select a column, or a row to select a row. Hold Ctrl/Cmd or Shift to select several.'
+                    item3: 'Right-click a selection to copy it as JSON or CSV, or to hide the selected columns or rows.'
+                    item4: 'Export the current result as CSV, JSON or XLSX.'
+        bucket_browser:
+            hint: 'Read-only browser of an S3-compatible bucket. Configure the endpoint and bucket in System Configuration.'
+            hint_rw: 'Browse an S3-compatible bucket — upload, create folders and delete objects. Configure the endpoint and bucket in System Configuration.'
+            help: 'Bucket Browser help'
+            path_placeholder: 'Type a prefix and press Enter...'
+            search: 'Filter names'
+            filter_placeholder: 'Filter by name...'
+            create_folder: 'Create folder'
+            upload_file: 'Upload file'
+            help_dialog:
+                intro: 'Browse the configured S3-compatible bucket (read-only) and preview object contents. Folders are object key prefixes (split on "/").'
+                navigation:
+                    title: 'Navigating'
+                    item1: 'The path box shows the current prefix; type a prefix and press Enter to jump to it.'
+                    item2: 'The ".." entry goes up one prefix level; you cannot navigate above the bucket root.'
+                    item3: 'Configure the endpoint URL, credentials and bucket name in System Configuration, and use "Test it" to verify connectivity.'
+                listing:
+                    title: 'Listing and preview'
+                    item1: 'Folders (prefixes) and objects use distinct icons; sort by clicking a column header.'
+                    item2: 'Use the preview button to open a text/image/PDF object in a new tab, or the download button to fetch it. Binary files are downloaded rather than previewed.'
+        filesystem_browser:
+            hint: 'Read-only browser of the server filesystem. Navigation may be restricted to a base path.'
+            help: 'Filesystem Browser help'
+            path_placeholder: 'Type a path and press Enter...'
+            search: 'Filter file names'
+            filter_placeholder: 'Filter by name...'
+            help_dialog:
+                intro: 'Browse the server filesystem (read-only) and preview file contents. Navigation and previews are subject to the base path and restriction configured in System Configuration.'
+                navigation:
+                    title: 'Navigating'
+                    item1: 'The path box shows the current directory; type a path and press Enter to jump to it.'
+                    item2: 'The ".." entry goes up one level; relative ".." segments typed into the path box are rejected.'
+                    item3: 'When navigation is restricted, paths outside the configured base path are blocked.'
+                listing:
+                    title: 'Listing and preview'
+                    item1: 'Folders and files use distinct icons; the visible columns are controlled in configuration.'
+                    item2: 'Click a folder (or "..") to navigate into it.'
+                    item3: 'Use the preview button on a file to open its contents in a new, closable tab.'
+        database_viewer:
+            hint: 'Queries run inside a read-only transaction, are limited to 60 seconds, and return at most 1000 rows.'
+            tables: Tables
+            views: Views
+            functions: Functions
+            filter_placeholder: 'Filter by name...'
+            filter_clear: 'Clear filter'
+            refresh: 'Refresh object list'
+            help: 'Database Viewer help'
+            add_tab: 'New query tab'
+            run: Run
+            export: Export
+            queries: Queries
+            update: Update
+            beautify: Beautify
+            help_dialog:
+                intro: 'Inspect the database and run read-only queries. Queries execute inside a read-only transaction, are limited to 60 seconds, and return at most 1000 rows.'
+                explorer:
+                    title: 'Object explorer'
+                    item1: 'The left sidebar lists database tables, views and functions. Use the type toggles above the list to show or hide each kind.'
+                    item2: 'Type in the filter box to narrow the list by name. The clear button empties it and the refresh button reloads the list from the database.'
+                    item3: 'Click an item to scaffold a query for it, such as a SELECT statement with a row limit.'
+                    item4: 'Drag the vertical divider to resize the sidebar.'
+                editor:
+                    title: 'SQL editor and tabs'
+                    item1: 'Write PostgreSQL in the editor and press Run, or Ctrl/Cmd+Enter, to execute it.'
+                    item2: 'Use multiple tabs to keep several queries open. The plus button adds a new tab.'
+                    item3: 'Drag the horizontal divider to resize the editor against the results grid.'
+                limits:
+                    title: 'Read-only and limits'
+                    item1: 'Every query runs inside a read-only transaction, so writes and schema changes are rejected by the database.'
+                    item2: 'Execution is capped at 60 seconds and the result is limited to the first 1000 rows.'
+                    item3: 'Each execution is recorded (user, query, time, result and row count) for auditing.'
+                grid:
+                    title: 'Results grid'
+                    item1: 'Row numbers are shown on the left, and null values are greyed for clarity.'
+                    item2: 'Click a column header to select a column, or a row to select a row. Hold Ctrl/Cmd or Shift to select several.'
+                    item3: 'Right-click a selection to copy it as JSON or CSV, or to hide the selected columns or rows until the next run.'
+                    item4: 'Export the current result as CSV, JSON or XLSX.'
+                saved:
+                    title: 'Saved queries (favorites)'
+                    item1: 'Click the star on a tab to save the query as private or public and give it a name.'
+                    item2: 'A saved tab shows a filled star: red for private and yellow for public. Click it again to rename or change visibility (owner only).'
+                    item3: 'The Queries menu lists your recent private queries and recent public queries, and a view all option opens the full list.'
+                    item4: 'When a saved query is open, the Update button saves edits to its text.'
+        network_tools:
+            intro: Network Tools page.
+            hint: 'Pick a tool, set a host (and port/path where applicable) and hit Run.'
+            run: Run
+            clear: Clean Console
+            running: 'Running...'
+            help: 'Network Tools help'
+            host_placeholder: 'Host or IP'
+            port_placeholder: 'Port'
+            path_placeholder: 'Path'
+            timeout_placeholder: 'Timeout (s)'
+            dns_mode_a: 'A record'
+            dns_mode_full: 'Full lookup'
+            tool:
+                dns: 'DNS lookup'
+                ping: 'Ping'
+                traceroute: 'TraceRoute'
+                socket: 'Socket'
+                curl: 'Curl'
+                ssl_cert: 'SSL certificate'
+                ciphers: 'Ciphers'
+            help_dialog:
+                intro: 'Run network diagnostics from the server against a host you specify. Pick a tool, fill in the relevant fields, and read the output in the console.'
+                tools:
+                    title: 'Available tools'
+                    dns: 'DNS lookup: resolves the host name and lists its DNS records (A, AAAA, MX, TXT and more).'
+                    ping: 'Ping: probes reachability by opening a TCP connection to the host and port and timing the response.'
+                    traceroute: 'TraceRoute: increases the TTL hop by hop to estimate the number of hops to the host and port.'
+                    socket: 'Socket: opens a TCP socket to the host and port several times and reports the round-trip time for each attempt.'
+                    curl: 'Curl: performs an HTTP/HTTPS request to the host, port and path, and shows the response status and headers.'
+                    ssl_cert: 'SSL certificate: connects over TLS and shows the certificate details, including subject, issuer and validity dates.'
+                    ciphers: 'Ciphers: reports the negotiated cipher and enumerates the cipher suites the endpoint accepts for TLS 1.0 to 1.2.'
+                usage:
+                    title: 'Input fields'
+                    host: 'Host: the host name or IP address to test. Required for every tool.'
+                    port: 'Port: the TCP port to connect to. Used by ping, traceroute, socket, curl, SSL certificate and ciphers.'
+                    path: 'Path: the request path, used only by the curl tool. It is ignored by the other tools.'
+                    timeout: 'Timeout: the per-attempt timeout in seconds, clamped between 1 and 120. Applies to every tool.'
+                limitations:
+                    title: 'Notes and limitations'
+                    item1: 'Ping and traceroute use TCP probes because ICMP is not available to the web user, so results approximate true ICMP behaviour.'
+                    item2: 'Traceroute reports hop counts but cannot reveal the IP address of each intermediate hop.'
+                    item3: 'This tool makes outbound requests from the server. Use it only for trusted diagnostics, as it can reach internal hosts.'

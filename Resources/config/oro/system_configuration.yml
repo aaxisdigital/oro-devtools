@@ -1,0 +1,410 @@
+system_configuration:
+    groups:
+        aaxis_devtools:
+            title: aaxis.devtools.config.group.title
+            icon: fa-user-secret
+        aaxis_devtools_database_viewer:
+            title: aaxis.devtools.config.database_viewer.title
+        aaxis_devtools_network_tools:
+            title: aaxis.devtools.config.network_tools.title
+        aaxis_devtools_elastic_viewer:
+            title: aaxis.devtools.config.elastic_viewer.title
+        aaxis_devtools_redis_viewer:
+            title: aaxis.devtools.config.redis_viewer.title
+        aaxis_devtools_mongodb_viewer:
+            title: aaxis.devtools.config.mongodb_viewer.title
+        aaxis_devtools_filesystem_browser:
+            title: aaxis.devtools.config.filesystem_browser.title
+        aaxis_devtools_bucket_browser:
+            title: aaxis.devtools.config.bucket_browser.title
+        aaxis_devtools_runtime_config:
+            title: aaxis.devtools.config.runtime_config.title
+
+    fields:
+        # --- Database Viewer ---
+        aaxis_devtools.database_viewer_enabled:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.enabled.label
+                required: false
+        aaxis_devtools.database_viewer_test:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.test.label
+                required: false
+                resettable: false
+                attr:
+                    data-page-component-module: 'aaxiscommon/js/app/components/connection-test-component'
+                    data-page-component-options: '{"tool":"database_viewer"}'
+        aaxis_devtools.database_viewer_show_views:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.database_viewer.show_views.label
+                required: false
+        aaxis_devtools.database_viewer_show_functions:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.database_viewer.show_functions.label
+                required: false
+        aaxis_devtools.database_viewer_show_row_numbers:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.database_viewer.show_row_numbers.label
+                required: false
+        aaxis_devtools.database_viewer_allow_export:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.allow_export.label
+                required: false
+        aaxis_devtools.database_viewer_history_retention_days:
+            data_type: integer
+            type: Symfony\Component\Form\Extension\Core\Type\IntegerType
+            options:
+                label: aaxis.devtools.config.history_retention.label
+                tooltip: aaxis.devtools.config.history_retention.tooltip
+                required: false
+
+        # --- Network Tools ---
+        aaxis_devtools.network_tools_enabled:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.enabled.label
+                required: false
+        aaxis_devtools.network_tools_dns:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.network_tools.dns.label
+                required: false
+        aaxis_devtools.network_tools_ping:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.network_tools.ping.label
+                required: false
+        aaxis_devtools.network_tools_traceroute:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.network_tools.traceroute.label
+                required: false
+        aaxis_devtools.network_tools_socket:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.network_tools.socket.label
+                required: false
+        aaxis_devtools.network_tools_curl:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.network_tools.curl.label
+                required: false
+        aaxis_devtools.network_tools_ssl_cert:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.network_tools.ssl_cert.label
+                required: false
+        aaxis_devtools.network_tools_ciphers:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.network_tools.ciphers.label
+                required: false
+        aaxis_devtools.network_tools_history_retention_days:
+            data_type: integer
+            type: Symfony\Component\Form\Extension\Core\Type\IntegerType
+            options:
+                label: aaxis.devtools.config.history_retention.label
+                tooltip: aaxis.devtools.config.history_retention.tooltip
+                required: false
+
+        # --- Elastic Viewer ---
+        aaxis_devtools.elastic_viewer_enabled:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.enabled.label
+                required: false
+        aaxis_devtools.elastic_viewer_test:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.test.label
+                required: false
+                resettable: false
+                attr:
+                    data-page-component-module: 'aaxiscommon/js/app/components/connection-test-component'
+                    data-page-component-options: '{"tool":"elastic_viewer"}'
+        aaxis_devtools.elastic_viewer_allow_export:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.allow_export.label
+                required: false
+
+        # --- Redis Viewer ---
+        aaxis_devtools.redis_viewer_enabled:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.enabled.label
+                required: false
+        aaxis_devtools.redis_viewer_test:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.test.label
+                required: false
+                resettable: false
+                attr:
+                    data-page-component-module: 'aaxiscommon/js/app/components/connection-test-component'
+                    data-page-component-options: '{"tool":"redis_viewer"}'
+        aaxis_devtools.redis_viewer_dsn:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.redis_viewer.dsn.label
+                tooltip: aaxis.devtools.config.redis_viewer.dsn.tooltip
+                required: false
+
+        # --- MongoDB Viewer ---
+        aaxis_devtools.mongodb_viewer_enabled:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.enabled.label
+                required: false
+        aaxis_devtools.mongodb_viewer_test:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.test.label
+                required: false
+                resettable: false
+                attr:
+                    data-page-component-module: 'aaxiscommon/js/app/components/connection-test-component'
+                    data-page-component-options: '{"tool":"mongodb_viewer"}'
+        aaxis_devtools.mongodb_viewer_dsn:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.mongodb_viewer.dsn.label
+                tooltip: aaxis.devtools.config.mongodb_viewer.dsn.tooltip
+                required: false
+
+        # --- Filesystem Browser ---
+        aaxis_devtools.filesystem_browser_enabled:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.enabled.label
+                required: false
+        aaxis_devtools.filesystem_browser_base_path:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.filesystem_browser.base_path.label
+                tooltip: aaxis.devtools.config.filesystem_browser.base_path.tooltip
+                required: false
+        aaxis_devtools.filesystem_browser_restricted:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.filesystem_browser.restricted.label
+                tooltip: aaxis.devtools.config.filesystem_browser.restricted.tooltip
+                required: false
+        aaxis_devtools.filesystem_browser_col_type:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.filesystem_browser.col_type.label
+                required: false
+        aaxis_devtools.filesystem_browser_col_filename:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.filesystem_browser.col_filename.label
+                required: false
+        aaxis_devtools.filesystem_browser_col_filesize:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.filesystem_browser.col_filesize.label
+                required: false
+        aaxis_devtools.filesystem_browser_col_modified:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.filesystem_browser.col_modified.label
+                required: false
+        aaxis_devtools.filesystem_browser_col_created:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.filesystem_browser.col_created.label
+                required: false
+        aaxis_devtools.filesystem_browser_col_owner_user:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.filesystem_browser.col_owner_user.label
+                required: false
+        aaxis_devtools.filesystem_browser_col_owner_group:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.filesystem_browser.col_owner_group.label
+                required: false
+        aaxis_devtools.filesystem_browser_col_preview:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.filesystem_browser.col_preview.label
+                required: false
+
+        # --- Bucket Browser ---
+        aaxis_devtools.bucket_browser_enabled:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.enabled.label
+                required: false
+        aaxis_devtools.bucket_browser_test:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.test.label
+                required: false
+                resettable: false
+                attr:
+                    data-page-component-module: 'aaxiscommon/js/app/components/connection-test-component'
+                    data-page-component-options: '{"tool":"bucket_browser"}'
+        aaxis_devtools.bucket_browser_url:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.bucket_browser.url.label
+                tooltip: aaxis.devtools.config.bucket_browser.url.tooltip
+                required: false
+        aaxis_devtools.bucket_browser_user:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.bucket_browser.user.label
+                required: false
+        aaxis_devtools.bucket_browser_pass:
+            data_type: string
+            # Encrypted at rest + renders a "*" placeholder when set, so re-saving the section
+            # without retyping keeps the stored secret instead of wiping it.
+            type: Oro\Bundle\FormBundle\Form\Type\OroEncodedPlaceholderPasswordType
+            options:
+                label: aaxis.devtools.config.bucket_browser.pass.label
+                required: false
+        aaxis_devtools.bucket_browser_name:
+            data_type: string
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            options:
+                label: aaxis.devtools.config.bucket_browser.name.label
+                tooltip: aaxis.devtools.config.bucket_browser.name.tooltip
+                required: false
+        aaxis_devtools.bucket_browser_read_only:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.bucket_browser.read_only.label
+                required: false
+
+        # --- Runtime Config ---
+        aaxis_devtools.runtime_config_enabled:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.enabled.label
+                required: false
+
+    tree:
+        system_configuration:
+            platform:
+                children:
+                    general_setup:
+                        children:
+                            aaxis_devtools:
+                                priority: 95
+                                children:
+                                    aaxis_devtools_runtime_config:
+                                        priority: 110
+                                        children:
+                                            - aaxis_devtools.runtime_config_enabled
+                                    aaxis_devtools_filesystem_browser:
+                                        priority: 100
+                                        children:
+                                            - aaxis_devtools.filesystem_browser_enabled
+                                            - aaxis_devtools.filesystem_browser_base_path
+                                            - aaxis_devtools.filesystem_browser_restricted
+                                            - aaxis_devtools.filesystem_browser_col_type
+                                            - aaxis_devtools.filesystem_browser_col_filename
+                                            - aaxis_devtools.filesystem_browser_col_filesize
+                                            - aaxis_devtools.filesystem_browser_col_modified
+                                            - aaxis_devtools.filesystem_browser_col_created
+                                            - aaxis_devtools.filesystem_browser_col_owner_user
+                                            - aaxis_devtools.filesystem_browser_col_owner_group
+                                            - aaxis_devtools.filesystem_browser_col_preview
+                                    aaxis_devtools_bucket_browser:
+                                        priority: 90
+                                        children:
+                                            - aaxis_devtools.bucket_browser_enabled
+                                            - aaxis_devtools.bucket_browser_test
+                                            - aaxis_devtools.bucket_browser_url
+                                            - aaxis_devtools.bucket_browser_user
+                                            - aaxis_devtools.bucket_browser_pass
+                                            - aaxis_devtools.bucket_browser_name
+                                            - aaxis_devtools.bucket_browser_read_only
+                                    aaxis_devtools_database_viewer:
+                                        priority: 80
+                                        children:
+                                            - aaxis_devtools.database_viewer_enabled
+                                            - aaxis_devtools.database_viewer_test
+                                            - aaxis_devtools.database_viewer_show_views
+                                            - aaxis_devtools.database_viewer_show_functions
+                                            - aaxis_devtools.database_viewer_show_row_numbers
+                                            - aaxis_devtools.database_viewer_allow_export
+                                            - aaxis_devtools.database_viewer_history_retention_days
+                                    aaxis_devtools_elastic_viewer:
+                                        priority: 70
+                                        children:
+                                            - aaxis_devtools.elastic_viewer_enabled
+                                            - aaxis_devtools.elastic_viewer_test
+                                            - aaxis_devtools.elastic_viewer_allow_export
+                                    aaxis_devtools_redis_viewer:
+                                        priority: 65
+                                        children:
+                                            - aaxis_devtools.redis_viewer_enabled
+                                            - aaxis_devtools.redis_viewer_test
+                                            - aaxis_devtools.redis_viewer_dsn
+                                    aaxis_devtools_mongodb_viewer:
+                                        priority: 63
+                                        children:
+                                            - aaxis_devtools.mongodb_viewer_enabled
+                                            - aaxis_devtools.mongodb_viewer_test
+                                            - aaxis_devtools.mongodb_viewer_dsn
+                                    aaxis_devtools_network_tools:
+                                        priority: 50
+                                        children:
+                                            - aaxis_devtools.network_tools_enabled
+                                            - aaxis_devtools.network_tools_dns
+                                            - aaxis_devtools.network_tools_ping
+                                            - aaxis_devtools.network_tools_traceroute
+                                            - aaxis_devtools.network_tools_socket
+                                            - aaxis_devtools.network_tools_curl
+                                            - aaxis_devtools.network_tools_ssl_cert
+                                            - aaxis_devtools.network_tools_ciphers
+                                            - aaxis_devtools.network_tools_history_retention_days

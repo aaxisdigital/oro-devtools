@@ -1,0 +1,4 @@
+aaxis_devtools:
+    resource: "@AaxisDevToolsBundle/Controller"
+    type: attribute
+    prefix: /aaxis/devtools

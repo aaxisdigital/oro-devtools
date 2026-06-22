@@ -1,0 +1,19 @@
+{% import '@AaxisCommon/Tools/help.html.twig' as toolHelp %}
+
+{{ toolHelp.render('aaxis.devtools.redis_viewer.help_dialog.intro', [
+    {
+        title: 'aaxis.devtools.redis_viewer.help_dialog.databases.title',
+        items: [
+            'aaxis.devtools.redis_viewer.help_dialog.databases.item1',
+            'aaxis.devtools.redis_viewer.help_dialog.databases.item2'
+        ]
+    },
+    {
+        title: 'aaxis.devtools.redis_viewer.help_dialog.keys.title',
+        items: [
+            'aaxis.devtools.redis_viewer.help_dialog.keys.item1',
+            'aaxis.devtools.redis_viewer.help_dialog.keys.item2',
+            'aaxis.devtools.redis_viewer.help_dialog.keys.item3'
+        ]
+    }
+]) }}

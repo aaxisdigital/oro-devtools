@@ -1,0 +1,174 @@
+services:
+    _defaults:
+        autowire: false
+        autoconfigure: false
+        public: false
+
+    Aaxis\Bundle\DevToolsBundle\Database\DatabaseInspector:
+        arguments:
+            - '@doctrine.dbal.default_connection'
+
+    aaxis_devtools.database_inspector:
+        alias: Aaxis\Bundle\DevToolsBundle\Database\DatabaseInspector
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Database\ResultExporter: ~
+
+    aaxis_devtools.result_exporter:
+        alias: Aaxis\Bundle\DevToolsBundle\Database\ResultExporter
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Elastic\ElasticInspector:
+        arguments:
+            - '@oro_elasticsearch.engine.index_agent'
+
+    aaxis_devtools.elastic_inspector:
+        alias: Aaxis\Bundle\DevToolsBundle\Elastic\ElasticInspector
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Redis\RedisInspector:
+        arguments:
+            - '%env(default::ORO_REDIS_URL)%'
+            - '@oro_config.global'
+
+    aaxis_devtools.redis_inspector:
+        alias: Aaxis\Bundle\DevToolsBundle\Redis\RedisInspector
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Mongo\MongoInspector:
+        arguments:
+            - '%env(default::ORO_MONGODB_SERVER)%'
+            - '@oro_config.global'
+
+    aaxis_devtools.mongo_inspector:
+        alias: Aaxis\Bundle\DevToolsBundle\Mongo\MongoInspector
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Filesystem\FilesystemBrowser:
+        arguments:
+            - '%kernel.project_dir%'
+
+    aaxis_devtools.filesystem_browser:
+        alias: Aaxis\Bundle\DevToolsBundle\Filesystem\FilesystemBrowser
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Config\RuntimeConfigInspector:
+        arguments:
+            - '@parameter_bag'
+
+    aaxis_devtools.runtime_config_inspector:
+        alias: Aaxis\Bundle\DevToolsBundle\Config\RuntimeConfigInspector
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Storage\FilesystemStorageBrowser:
+        arguments:
+            - '@Aaxis\Bundle\DevToolsBundle\Filesystem\FilesystemBrowser'
+            - '@oro_config.global'
+
+    aaxis_devtools.filesystem_storage_browser:
+        alias: Aaxis\Bundle\DevToolsBundle\Storage\FilesystemStorageBrowser
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Storage\BucketStorageBrowser:
+        arguments:
+            - '@oro_config.global'
+            - '@oro_security.encoder.default'
+
+    aaxis_devtools.bucket_storage_browser:
+        alias: Aaxis\Bundle\DevToolsBundle\Storage\BucketStorageBrowser
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Network\NetworkToolExecutor: ~
+
+    aaxis_devtools.network_tool_executor:
+        alias: Aaxis\Bundle\DevToolsBundle\Network\NetworkToolExecutor
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Manager\QueryHistoryManager:
+        arguments:
+            - '@doctrine'
+            - '@oro_security.token_accessor'
+
+    aaxis_devtools.query_history_manager:
+        alias: Aaxis\Bundle\DevToolsBundle\Manager\QueryHistoryManager
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Manager\SavedQueryManager:
+        arguments:
+            - '@doctrine'
+            - '@oro_security.token_accessor'
+
+    aaxis_devtools.saved_query_manager:
+        alias: Aaxis\Bundle\DevToolsBundle\Manager\SavedQueryManager
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Manager\NetworkTestHistoryManager:
+        arguments:
+            - '@doctrine'
+            - '@oro_security.token_accessor'
+
+    aaxis_devtools.network_test_history_manager:
+        alias: Aaxis\Bundle\DevToolsBundle\Manager\NetworkTestHistoryManager
+        public: true
+
+    # --- Connection testers (contributed to the shared CommonBundle registry) ---
+    Aaxis\Bundle\DevToolsBundle\Connection\DatabaseConnectionTester:
+        arguments:
+            - '@doctrine.dbal.default_connection'
+        tags:
+            - { name: aaxis_common.connection_tester, tool: database_viewer }
+
+    Aaxis\Bundle\DevToolsBundle\Connection\ElasticConnectionTester:
+        arguments:
+            - '@oro_elasticsearch.engine.index_agent'
+        tags:
+            - { name: aaxis_common.connection_tester, tool: elastic_viewer }
+
+    Aaxis\Bundle\DevToolsBundle\Connection\RedisConnectionTester:
+        arguments:
+            - '@Aaxis\Bundle\DevToolsBundle\Redis\RedisInspector'
+        tags:
+            - { name: aaxis_common.connection_tester, tool: redis_viewer }
+
+    Aaxis\Bundle\DevToolsBundle\Connection\MongoConnectionTester:
+        arguments:
+            - '@Aaxis\Bundle\DevToolsBundle\Mongo\MongoInspector'
+        tags:
+            - { name: aaxis_common.connection_tester, tool: mongodb_viewer }
+
+    Aaxis\Bundle\DevToolsBundle\Connection\BucketConnectionTester:
+        arguments:
+            - '@Aaxis\Bundle\DevToolsBundle\Storage\BucketStorageBrowser'
+        tags:
+            - { name: aaxis_common.connection_tester, tool: bucket_browser }
+
+    # Shared TypeScript build pipeline (classes live in AaxisCommonBundle).
+    aaxis_devtools.typescript_compiler:
+        class: Aaxis\Bundle\CommonBundle\Build\TypeScriptCompiler
+        arguments:
+            - '%kernel.project_dir%'
+            - '@logger'
+            - '%aaxis_devtools.bundle_dir%/Resources/js-src/tsconfig.json'
+            - 'AaxisDevToolsBundle'
+
+    aaxis_devtools.typescript_compile_command:
+        class: Aaxis\Bundle\CommonBundle\Command\CompileTypeScriptCommand
+        arguments:
+            - '@aaxis_devtools.typescript_compiler'
+            - 'aaxis:devtools:typescript:compile'
+        tags:
+            - { name: console.command, command: 'aaxis:devtools:typescript:compile' }
+
+    aaxis_devtools.compile_typescript_on_assets_build_listener:
+        class: Aaxis\Bundle\CommonBundle\EventListener\CompileTypeScriptOnAssetsBuildListener
+        arguments:
+            - '@aaxis_devtools.typescript_compiler'
+        tags:
+            - { name: kernel.event_subscriber }
+
+    Aaxis\Bundle\DevToolsBundle\Command\CleanupHistoryCommand:
+        arguments:
+            - '@aaxis_common.history_retention_purger'
+            - '@oro_config.global'
+        tags:
+            - { name: console.command }

@@ -1,0 +1,33 @@
+{% import '@AaxisCommon/Tools/help.html.twig' as toolHelp %}
+
+{{ toolHelp.render('aaxis.devtools.network_tools.help_dialog.intro', [
+    {
+        title: 'aaxis.devtools.network_tools.help_dialog.tools.title',
+        items: [
+            'aaxis.devtools.network_tools.help_dialog.tools.dns',
+            'aaxis.devtools.network_tools.help_dialog.tools.ping',
+            'aaxis.devtools.network_tools.help_dialog.tools.traceroute',
+            'aaxis.devtools.network_tools.help_dialog.tools.socket',
+            'aaxis.devtools.network_tools.help_dialog.tools.curl',
+            'aaxis.devtools.network_tools.help_dialog.tools.ssl_cert',
+            'aaxis.devtools.network_tools.help_dialog.tools.ciphers'
+        ]
+    },
+    {
+        title: 'aaxis.devtools.network_tools.help_dialog.usage.title',
+        items: [
+            'aaxis.devtools.network_tools.help_dialog.usage.host',
+            'aaxis.devtools.network_tools.help_dialog.usage.port',
+            'aaxis.devtools.network_tools.help_dialog.usage.path',
+            'aaxis.devtools.network_tools.help_dialog.usage.timeout'
+        ]
+    },
+    {
+        title: 'aaxis.devtools.network_tools.help_dialog.limitations.title',
+        items: [
+            'aaxis.devtools.network_tools.help_dialog.limitations.item1',
+            'aaxis.devtools.network_tools.help_dialog.limitations.item2',
+            'aaxis.devtools.network_tools.help_dialog.limitations.item3'
+        ]
+    }
+]) }}

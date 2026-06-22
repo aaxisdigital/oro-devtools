@@ -1,0 +1,72 @@
+{% extends '@OroUI/actions/index.html.twig' %}
+
+{% set pageTitle = 'aaxis.devtools.menu.aaxis_devtools_network_tools.label'|trans %}
+
+{% block content %}
+    <div class="layout-content">
+        <div class="content"
+             data-page-component-module="aaxisdevtools/js/app/components/network-tools-component"
+             data-page-component-options="{{ { runUrl: path('aaxis_devtools_network_tools_run') }|json_encode }}">
+            <div class="container-fluid page-title">
+                <h1 class="page-title__entity-title aaxis-net-tools__title">
+                    {{ 'aaxis.devtools.menu.aaxis_devtools_network_tools.label'|trans }}
+                    <a href="{{ path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}) }}"
+                       class="aaxis-tool-config-btn" data-role="config"
+                       title="{{ 'aaxis.devtools.config_link'|trans }}"
+                       aria-label="{{ 'aaxis.devtools.config_link'|trans }}">
+                        <span class="fa fa-cog" aria-hidden="true"></span>
+                    </a>
+                    <button type="button" class="aaxis-net-tools__help-btn" data-role="help"
+                            title="{{ 'aaxis.devtools.network_tools.help'|trans }}"
+                            aria-label="{{ 'aaxis.devtools.network_tools.help'|trans }}">
+                        <span class="fa fa-question-circle" aria-hidden="true"></span>
+                    </button>
+                </h1>
+            </div>
+
+            <div class="aaxis-net-tools">
+                <div class="aaxis-net-tools__bar">
+                    <select class="form-control aaxis-net-tools__tool" data-role="tool">
+                        {% if enabledTools.dns %}<option value="dns">{{ 'aaxis.devtools.network_tools.tool.dns'|trans }}</option>{% endif %}
+                        {% if enabledTools.ping %}<option value="ping">{{ 'aaxis.devtools.network_tools.tool.ping'|trans }}</option>{% endif %}
+                        {% if enabledTools.traceroute %}<option value="traceroute">{{ 'aaxis.devtools.network_tools.tool.traceroute'|trans }}</option>{% endif %}
+                        {% if enabledTools.socket %}<option value="socket">{{ 'aaxis.devtools.network_tools.tool.socket'|trans }}</option>{% endif %}
+                        {% if enabledTools.curl %}<option value="curl">{{ 'aaxis.devtools.network_tools.tool.curl'|trans }}</option>{% endif %}
+                        {% if enabledTools.ssl_cert %}<option value="ssl-cert">{{ 'aaxis.devtools.network_tools.tool.ssl_cert'|trans }}</option>{% endif %}
+                        {% if enabledTools.ciphers %}<option value="ciphers">{{ 'aaxis.devtools.network_tools.tool.ciphers'|trans }}</option>{% endif %}
+                    </select>
+                    <input type="text" class="form-control aaxis-net-tools__host" data-role="host"
+                           placeholder="{{ 'aaxis.devtools.network_tools.host_placeholder'|trans }}">
+                    <span class="aaxis-net-tools__dnsmode-wrap" data-role="dns-mode-wrap">
+                        <select class="form-control aaxis-net-tools__dnsmode" data-role="dns-mode">
+                            <option value="a">{{ 'aaxis.devtools.network_tools.dns_mode_a'|trans }}</option>
+                            <option value="full">{{ 'aaxis.devtools.network_tools.dns_mode_full'|trans }}</option>
+                        </select>
+                    </span>
+                    <input type="text" class="form-control aaxis-net-tools__port" data-role="port"
+                           placeholder="{{ 'aaxis.devtools.network_tools.port_placeholder'|trans }}">
+                    <input type="text" class="form-control aaxis-net-tools__path" data-role="path"
+                           placeholder="{{ 'aaxis.devtools.network_tools.path_placeholder'|trans }}">
+                    <input type="text" class="form-control aaxis-net-tools__timeout" data-role="timeout"
+                           placeholder="{{ 'aaxis.devtools.network_tools.timeout_placeholder'|trans }}">
+                    <span class="aaxis-net-tools__running" data-role="running" hidden>
+                        <span class="fa fa-spinner fa-spin" aria-hidden="true"></span>
+                        {{ 'aaxis.devtools.network_tools.running'|trans }}
+                    </span>
+                    <button type="button" class="btn" data-role="clear">
+                        {{ 'aaxis.devtools.network_tools.clear'|trans }}
+                    </button>
+                    <button type="button" class="btn btn-primary" data-role="run">
+                        {{ 'aaxis.devtools.network_tools.run'|trans }}
+                    </button>
+                </div>
+                <p class="aaxis-net-tools__hint">{{ 'aaxis.devtools.network_tools.hint'|trans }}</p>
+                <pre class="aaxis-net-tools__console" data-role="console" aria-live="polite"></pre>
+            </div>
+
+            <div data-role="help-content" hidden>
+                {% include '@AaxisDevTools/Tools/_networkToolsHelp.html.twig' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

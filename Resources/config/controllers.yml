@@ -1,0 +1,75 @@
+services:
+    _defaults:
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Controller\DevToolsPageController:
+        calls:
+            - [setContainer, ['@Psr\Container\ContainerInterface']]
+        tags:
+            - { name: container.service_subscriber }
+            - { name: container.service_subscriber, id: oro_config.global, key: Oro\Bundle\ConfigBundle\Config\ConfigManager }
+            - { name: container.service_subscriber, id: aaxis_devtools.filesystem_browser, key: Aaxis\Bundle\DevToolsBundle\Filesystem\FilesystemBrowser }
+
+    Aaxis\Bundle\DevToolsBundle\Controller\FilesystemBrowserController:
+        calls:
+            - [setContainer, ['@Psr\Container\ContainerInterface']]
+        tags:
+            - { name: container.service_subscriber }
+            - { name: container.service_subscriber, id: aaxis_devtools.filesystem_storage_browser, key: Aaxis\Bundle\DevToolsBundle\Storage\FilesystemStorageBrowser }
+
+    Aaxis\Bundle\DevToolsBundle\Controller\BucketBrowserController:
+        calls:
+            - [setContainer, ['@Psr\Container\ContainerInterface']]
+        tags:
+            - { name: container.service_subscriber }
+            - { name: container.service_subscriber, id: aaxis_devtools.bucket_storage_browser, key: Aaxis\Bundle\DevToolsBundle\Storage\BucketStorageBrowser }
+
+    Aaxis\Bundle\DevToolsBundle\Controller\DatabaseViewerController:
+        calls:
+            - [setContainer, ['@Psr\Container\ContainerInterface']]
+        tags:
+            - { name: container.service_subscriber }
+            - { name: container.service_subscriber, id: aaxis_devtools.database_inspector, key: Aaxis\Bundle\DevToolsBundle\Database\DatabaseInspector }
+            - { name: container.service_subscriber, id: aaxis_devtools.result_exporter, key: Aaxis\Bundle\DevToolsBundle\Database\ResultExporter }
+            - { name: container.service_subscriber, id: aaxis_devtools.query_history_manager, key: Aaxis\Bundle\DevToolsBundle\Manager\QueryHistoryManager }
+            - { name: container.service_subscriber, id: aaxis_devtools.saved_query_manager, key: Aaxis\Bundle\DevToolsBundle\Manager\SavedQueryManager }
+            - { name: container.service_subscriber, id: oro_config.global, key: Oro\Bundle\ConfigBundle\Config\ConfigManager }
+
+    Aaxis\Bundle\DevToolsBundle\Controller\NetworkToolsController:
+        calls:
+            - [setContainer, ['@Psr\Container\ContainerInterface']]
+        tags:
+            - { name: container.service_subscriber }
+            - { name: container.service_subscriber, id: aaxis_devtools.network_tool_executor, key: Aaxis\Bundle\DevToolsBundle\Network\NetworkToolExecutor }
+            - { name: container.service_subscriber, id: aaxis_devtools.network_test_history_manager, key: Aaxis\Bundle\DevToolsBundle\Manager\NetworkTestHistoryManager }
+            - { name: container.service_subscriber, id: oro_config.global, key: Oro\Bundle\ConfigBundle\Config\ConfigManager }
+
+    Aaxis\Bundle\DevToolsBundle\Controller\RuntimeConfigController:
+        calls:
+            - [setContainer, ['@Psr\Container\ContainerInterface']]
+        tags:
+            - { name: container.service_subscriber }
+            - { name: container.service_subscriber, id: aaxis_devtools.runtime_config_inspector, key: Aaxis\Bundle\DevToolsBundle\Config\RuntimeConfigInspector }
+
+    Aaxis\Bundle\DevToolsBundle\Controller\ElasticViewerController:
+        calls:
+            - [setContainer, ['@Psr\Container\ContainerInterface']]
+        tags:
+            - { name: container.service_subscriber }
+            - { name: container.service_subscriber, id: aaxis_devtools.elastic_inspector, key: Aaxis\Bundle\DevToolsBundle\Elastic\ElasticInspector }
+            - { name: container.service_subscriber, id: aaxis_devtools.result_exporter, key: Aaxis\Bundle\DevToolsBundle\Database\ResultExporter }
+            - { name: container.service_subscriber, id: oro_config.global, key: Oro\Bundle\ConfigBundle\Config\ConfigManager }
+
+    Aaxis\Bundle\DevToolsBundle\Controller\RedisViewerController:
+        calls:
+            - [setContainer, ['@Psr\Container\ContainerInterface']]
+        tags:
+            - { name: container.service_subscriber }
+            - { name: container.service_subscriber, id: aaxis_devtools.redis_inspector, key: Aaxis\Bundle\DevToolsBundle\Redis\RedisInspector }
+
+    Aaxis\Bundle\DevToolsBundle\Controller\MongoViewerController:
+        calls:
+            - [setContainer, ['@Psr\Container\ContainerInterface']]
+        tags:
+            - { name: container.service_subscriber }
+            - { name: container.service_subscriber, id: aaxis_devtools.mongo_inspector, key: Aaxis\Bundle\DevToolsBundle\Mongo\MongoInspector }

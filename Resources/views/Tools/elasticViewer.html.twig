@@ -1,0 +1,116 @@
+{% extends '@OroUI/actions/index.html.twig' %}
+
+{% set pageTitle = 'aaxis.devtools.menu.aaxis_devtools_elastic_viewer.label'|trans %}
+
+{% block content %}
+    <div class="layout-content">
+        <div class="content"
+             data-page-component-module="aaxisdevtools/js/app/components/elastic-viewer-component"
+             data-page-component-options="{{ {
+                 indicesUrl: path('aaxis_devtools_elastic_viewer_indices'),
+                 queryUrl: path('aaxis_devtools_elastic_viewer_query'),
+                 exportUrl: path('aaxis_devtools_elastic_viewer_export')
+             }|merge(options)|json_encode }}">
+            <div class="container-fluid page-title">
+                <div class="aaxis-es-viewer__titlebar">
+                    <h1 class="page-title__entity-title aaxis-es-viewer__title">
+                        {{ 'aaxis.devtools.menu.aaxis_devtools_elastic_viewer.label'|trans }}
+                        <a href="{{ path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}) }}"
+                           class="aaxis-tool-config-btn" data-role="config"
+                           title="{{ 'aaxis.devtools.config_link'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.config_link'|trans }}">
+                            <span class="fa fa-cog" aria-hidden="true"></span>
+                        </a>
+                        <button type="button" class="aaxis-es-viewer__help-btn" data-role="help"
+                                title="{{ 'aaxis.devtools.elastic_viewer.help'|trans }}"
+                                aria-label="{{ 'aaxis.devtools.elastic_viewer.help'|trans }}">
+                            <span class="fa fa-question-circle" aria-hidden="true"></span>
+                        </button>
+                    </h1>
+                    <span class="aaxis-es-viewer__title-hint">{{ 'aaxis.devtools.elastic_viewer.hint'|trans }}</span>
+                </div>
+            </div>
+
+            <div class="aaxis-es-viewer" data-role="layout">
+                <aside class="aaxis-es-viewer__sidebar" data-role="sidebar">
+                    <div class="aaxis-es-viewer__sidebar-title">
+                        <span class="fa fa-database" aria-hidden="true"></span>
+                        {{ 'aaxis.devtools.elastic_viewer.indices'|trans }}
+                    </div>
+                    <div class="aaxis-es-viewer__filter">
+                        <div class="aaxis-es-viewer__filter-input">
+                            <input type="text" class="form-control" data-role="filter"
+                                   placeholder="{{ 'aaxis.devtools.elastic_viewer.filter_placeholder'|trans }}">
+                            <button type="button" class="aaxis-es-viewer__filter-clear" data-role="filter-clear"
+                                    title="{{ 'aaxis.devtools.elastic_viewer.filter_clear'|trans }}"
+                                    aria-label="{{ 'aaxis.devtools.elastic_viewer.filter_clear'|trans }}"
+                                    hidden>&times;</button>
+                        </div>
+                        <button type="button" class="aaxis-es-viewer__refresh" data-role="refresh"
+                                title="{{ 'aaxis.devtools.elastic_viewer.refresh'|trans }}"
+                                aria-label="{{ 'aaxis.devtools.elastic_viewer.refresh'|trans }}">
+                            <span class="fa fa-refresh" aria-hidden="true"></span>
+                        </button>
+                        <button type="button" class="aaxis-es-viewer__order" data-role="order-key" aria-label="order by">
+                            <span class="fa fa-font" aria-hidden="true"></span>
+                        </button>
+                        <button type="button" class="aaxis-es-viewer__order" data-role="order-dir" aria-label="order direction">
+                            <span class="fa fa-sort-amount-asc" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                    <ul data-role="indices" class="aaxis-es-viewer__indices"></ul>
+                </aside>
+
+                <div class="aaxis-es-viewer__v-splitter" data-role="v-splitter"
+                     role="separator" aria-orientation="vertical"></div>
+
+                <div class="aaxis-es-viewer__main" data-role="main">
+                    <div class="aaxis-es-viewer__editor-pane" data-role="editor-pane">
+                        <div class="aaxis-es-viewer__editor-host">
+                            <textarea data-role="editor">FROM oro_search_*
+| LIMIT 100</textarea>
+                        </div>
+                        <div class="aaxis-es-viewer__toolbar">
+                            <div class="aaxis-es-viewer__toolbar-left">
+                                <span class="aaxis-es-viewer__esql-label">{{ 'aaxis.devtools.elastic_viewer.esql'|trans }}</span>
+                            </div>
+                            <div class="aaxis-es-viewer__toolbar-right">
+                                <span data-role="status" class="aaxis-es-viewer__status" aria-live="polite"></span>
+                                {% if options.allowExport %}
+                                <div class="btn-group">
+                                    <button type="button" class="btn dropdown-toggle" data-role="export"
+                                            data-toggle="dropdown" data-placement="bottom-end"
+                                            data-inherit-parent-width="loosely"
+                                            aria-haspopup="true" aria-expanded="false" disabled>
+                                        {{ 'aaxis.devtools.elastic_viewer.export'|trans }}
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li><a href="#" role="menuitem" data-role="export-format" data-format="csv">CSV</a></li>
+                                        <li><a href="#" role="menuitem" data-role="export-format" data-format="json">JSON</a></li>
+                                        <li><a href="#" role="menuitem" data-role="export-format" data-format="xlsx">XLSX</a></li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                <button type="button" class="btn btn-primary" data-role="run">
+                                    {{ 'aaxis.devtools.elastic_viewer.run'|trans }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aaxis-es-viewer__h-splitter" data-role="h-splitter"
+                         role="separator" aria-orientation="horizontal"></div>
+
+                    <div class="aaxis-es-viewer__result-pane" data-role="result-pane">
+                        <div data-role="result" class="aaxis-es-viewer__result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div data-role="help-content" hidden>
+                {% include '@AaxisDevTools/Tools/_elasticViewerHelp.html.twig' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

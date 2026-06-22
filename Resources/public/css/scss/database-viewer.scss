@@ -1,0 +1,642 @@
+/* @theme: admin.oro; */
+
+// Pull in CodeMirror 5 core styles from node_modules (same approach as Oro CMSBundle).
+@use 'codemirror/lib/codemirror';
+
+$aaxis-db-border: #d9d9d9;
+$aaxis-db-splitter: #e2e2e2;
+$aaxis-db-splitter-hover: #b7b7b7;
+
+.aaxis-db-viewer {
+    display: flex;
+    align-items: stretch;
+    height: calc(100vh - 220px);
+    min-height: 460px;
+    border: 1px solid $aaxis-db-border;
+    border-radius: 4px;
+    overflow: hidden;
+
+    &__titlebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+    }
+
+    &__title-hint {
+        flex: 0 1 auto;
+        text-align: right;
+        color: #666;
+    }
+
+    &__title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__help-btn {
+        border: 0;
+        background: none;
+        padding: 0;
+        font-size: 18px;
+        line-height: 1;
+        color: #777;
+        cursor: pointer;
+
+        &:hover {
+            color: #2b84ed;
+        }
+    }
+
+    // --- Sidebar -----------------------------------------------------------
+    &__sidebar {
+        flex: 0 0 300px;
+        display: flex;
+        flex-direction: column;
+        min-width: 160px;
+        // The sidebar itself never scrolls; only the object list does.
+        overflow: hidden;
+        padding: 8px;
+    }
+
+    &__types {
+        flex: 0 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    // Plain-text toggle: black when enabled, greyed-out ("disabled-like") when off.
+    &__type {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0;
+        padding: 1px 5px;
+        border: 0;
+        border-radius: 3px;
+        background: none;
+        font-weight: normal;
+        color: #b0b0b0;
+        cursor: pointer;
+
+        &.is-active {
+            color: #222;
+        }
+
+        // Hover changes only the background so the enabled/disabled text colour stays visible.
+        &:hover {
+            background: rgba(0, 0, 0, .07);
+        }
+    }
+
+    &__type-icon {
+        width: 14px;
+        text-align: center;
+    }
+
+    &__filter {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 8px;
+    }
+
+    &__filter-input {
+        position: relative;
+        flex: 1 1 auto;
+        min-width: 0;
+
+        input {
+            width: 100%;
+            margin: 0;
+            padding-right: 26px;
+        }
+    }
+
+    &__filter-clear {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: 24px;
+        border: 0;
+        padding: 0;
+        line-height: 1;
+        font-size: 18px;
+        background: none;
+        color: #999;
+        cursor: pointer;
+
+        &:hover {
+            color: #333;
+        }
+    }
+
+    &__refresh {
+        flex: 0 0 auto;
+        align-self: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: #5c6b7a;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            color: #2b84ed;
+        }
+    }
+
+    &__order {
+        flex: 0 0 auto;
+        align-self: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 28px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: #5c6b7a;
+        font-size: 15px;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            color: #2b84ed;
+        }
+
+        &.is-disabled {
+            color: #c4ccd4;
+            cursor: default;
+        }
+    }
+
+    // The "1" glyph for the count state of the order button, sized to read like the fa icons.
+    &__order-num {
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    // Fills all remaining height of the sidebar; scrolls internally.
+    &__objects {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid $aaxis-db-border;
+
+        li {
+            margin: 0;
+        }
+
+        a {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 4px;
+            overflow: hidden;
+            color: inherit;
+            text-decoration: none;
+
+            &:hover {
+                background: rgba(0, 0, 0, .05);
+            }
+        }
+    }
+
+    &__object-icon {
+        flex: 0 0 14px;
+        width: 14px;
+        text-align: center;
+        color: #888;
+    }
+
+    &__object-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__object-count {
+        flex: 0 0 auto;
+        margin-left: auto;
+        padding: 0 6px;
+        border-radius: 9px;
+        background: #eef1f4;
+        color: #5c6b7a;
+        font-size: 11px;
+        line-height: 16px;
+    }
+
+    // Expandable table/view row: caret toggle + the object link.
+    &__object-row {
+        display: flex;
+        align-items: center;
+    }
+
+    &__object-row a {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    &__object-toggle {
+        flex: 0 0 16px;
+        width: 16px;
+        height: 22px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #9aa5b1;
+        font-size: 11px;
+        cursor: pointer;
+
+        &:hover {
+            color: #5c6b7a;
+        }
+
+        &--empty {
+            cursor: default;
+        }
+    }
+
+    // Column structure sub-list (shown when a table/view is expanded).
+    &__columns {
+        margin: 0 0 2px 21px;
+        padding: 0 0 0 10px;
+        list-style: none;
+        border-left: 1px solid #e0e4e8;
+    }
+
+    &__column {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 2px 6px 2px 4px;
+        font-size: 12px;
+    }
+
+    &__column-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #2b3a4a;
+
+        &.is-required {
+            font-weight: font-weight('bold');
+        }
+    }
+
+    &__column-type {
+        flex: 0 0 auto;
+        color: #9aa5b1;
+        font-size: 11px;
+    }
+
+    &__columns-info {
+        padding: 3px 6px;
+        color: #9aa5b1;
+        font-size: 12px;
+    }
+
+    &__empty {
+        padding: 8px 4px;
+        color: #888;
+    }
+
+    // --- Splitters ---------------------------------------------------------
+    &__v-splitter {
+        flex: 0 0 6px;
+        cursor: col-resize;
+        background: $aaxis-db-splitter;
+
+        &:hover {
+            background: $aaxis-db-splitter-hover;
+        }
+    }
+
+    &__h-splitter {
+        flex: 0 0 6px;
+        cursor: row-resize;
+        background: $aaxis-db-splitter;
+
+        &:hover {
+            background: $aaxis-db-splitter-hover;
+        }
+    }
+
+    // --- Right side --------------------------------------------------------
+    &__main {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    &__editor-pane {
+        flex: 0 0 240px;
+        display: flex;
+        flex-direction: column;
+        min-height: 80px;
+        overflow: hidden;
+    }
+
+    &__toolbar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 6px 8px;
+        border-top: 1px solid $aaxis-db-border;
+    }
+
+    &__toolbar-left,
+    &__toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__status {
+        color: #666;
+    }
+
+    // --- Query tabs --------------------------------------------------------
+    &__tabs {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: stretch;
+        gap: 2px;
+        padding: 4px 4px 0;
+        overflow-x: auto;
+        border-bottom: 1px solid $aaxis-db-border;
+    }
+
+    &__tabs-list {
+        display: flex;
+        align-items: stretch;
+        gap: 2px;
+    }
+
+    &__tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        max-width: 200px;
+        border: 1px solid $aaxis-db-border;
+        border-bottom: none;
+        border-radius: 4px 4px 0 0;
+        background: #f3f3f3;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &.is-active {
+            background: #fff;
+            font-weight: font-weight('bold');
+        }
+    }
+
+    &__tab-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__tab-close {
+        border: 0;
+        background: none;
+        padding: 0 2px;
+        line-height: 1;
+        color: #999;
+        cursor: pointer;
+
+        &:hover {
+            color: #333;
+        }
+    }
+
+    &__tab-add {
+        flex: 0 0 auto;
+        border: 1px solid $aaxis-db-border;
+        border-bottom: none;
+        border-radius: 4px 4px 0 0;
+        background: #f3f3f3;
+        padding: 4px 10px;
+        cursor: pointer;
+    }
+
+    &__tab-star {
+        cursor: pointer;
+        color: #b0b0b0;
+
+        &.is-private {
+            color: #d9534f;
+        }
+
+        &.is-public {
+            color: #f0ad4e;
+        }
+    }
+
+    &__menu-icon {
+        width: 14px;
+        margin-right: 4px;
+        text-align: center;
+
+        &.is-private {
+            color: #d9534f;
+        }
+
+        &.is-public {
+            color: #f0ad4e;
+        }
+    }
+
+    &__menu-empty {
+        padding: 6px 16px;
+        color: #888;
+    }
+
+    &__editor-host {
+        flex: 1 1 auto;
+        min-height: 0;
+
+        .CodeMirror {
+            height: 100%;
+        }
+    }
+
+    &__result-pane {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    &__result {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        padding: 8px;
+
+        table {
+            width: auto;
+            min-width: 100%;
+            margin-bottom: 0;
+        }
+
+        td,
+        th {
+            white-space: nowrap;
+        }
+    }
+
+    // --- Result grid: selection + row numbers ------------------------------
+    &__grid {
+        user-select: none;
+
+        th[data-role="col-header"] {
+            cursor: pointer;
+        }
+
+        td[data-role="data-cell"] {
+            cursor: pointer;
+        }
+
+        .is-col-selected,
+        .is-row-selected {
+            background-color: rgba(43, 132, 237, .15) !important;
+        }
+    }
+
+    &__null-cell {
+        color: #999;
+        font-style: italic;
+    }
+
+    &__rownum-cell {
+        width: 1%;
+        text-align: right;
+        color: #999;
+        background: #fafafa;
+        cursor: pointer;
+        user-select: none;
+    }
+}
+
+// Right-click context menu for the result grid (appended to <body>).
+.aaxis-db-viewer__context-menu {
+    position: fixed;
+    z-index: 1100;
+    display: none;
+    min-width: 160px;
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+
+    li {
+        margin: 0;
+    }
+
+    a {
+        display: block;
+        padding: 6px 16px;
+        color: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+
+        &:hover {
+            background: rgba(0, 0, 0, .06);
+        }
+    }
+}
+
+// Applied to <body> while a splitter is being dragged.
+body.aaxis-db-viewer-resizing {
+    user-select: none;
+    cursor: col-resize;
+}
+
+// "All saved queries" modal list.
+.aaxis-db-viewer__all-queries {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 60vh;
+    overflow: auto;
+
+    li {
+        margin: 0;
+    }
+
+    a {
+        display: flex;
+        align-items: center;
+        padding: 6px 8px;
+        color: inherit;
+        text-decoration: none;
+
+        &:hover {
+            background: rgba(0, 0, 0, .06);
+        }
+    }
+}
+
+.aaxis-db-viewer__save-form {
+    .control-group {
+        margin-bottom: 12px;
+    }
+
+    .radio {
+        display: inline-block;
+        margin-right: 16px;
+        font-weight: normal;
+    }
+}
+
+.aaxis-tool-help {
+    max-width: 100%;
+    max-height: 65vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    word-break: break-word;
+
+    p {
+        margin: 0 0 8px;
+    }
+
+    h5 {
+        margin: 14px 0 4px;
+        font-weight: font-weight('bold');
+    }
+
+    h5:first-child {
+        margin-top: 0;
+    }
+
+    ul {
+        margin: 0 0 8px 18px;
+    }
+}

@@ -1,0 +1,161 @@
+{% extends '@OroUI/actions/index.html.twig' %}
+
+{% set pageTitle = 'aaxis.devtools.menu.aaxis_devtools_database_viewer.label'|trans %}
+
+{% block content %}
+    <div class="layout-content">
+        <div class="content"
+             data-page-component-module="aaxisdevtools/js/app/components/database-viewer-component"
+             data-page-component-options="{{ {
+                 objectsUrl: path('aaxis_devtools_database_viewer_objects'),
+                 columnsUrl: path('aaxis_devtools_database_viewer_columns'),
+                 queryUrl: path('aaxis_devtools_database_viewer_query'),
+                 exportUrl: path('aaxis_devtools_database_viewer_export'),
+                 savedQueriesUrl: path('aaxis_devtools_database_viewer_saved_queries')
+             }|merge(options)|json_encode }}">
+            <div class="container-fluid page-title">
+                <div class="aaxis-db-viewer__titlebar">
+                    <h1 class="page-title__entity-title aaxis-db-viewer__title">
+                        {{ 'aaxis.devtools.menu.aaxis_devtools_database_viewer.label'|trans }}
+                        <a href="{{ path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}) }}"
+                           class="aaxis-tool-config-btn" data-role="config"
+                           title="{{ 'aaxis.devtools.config_link'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.config_link'|trans }}">
+                            <span class="fa fa-cog" aria-hidden="true"></span>
+                        </a>
+                        <button type="button" class="aaxis-db-viewer__help-btn" data-role="help"
+                                title="{{ 'aaxis.devtools.database_viewer.help'|trans }}"
+                                aria-label="{{ 'aaxis.devtools.database_viewer.help'|trans }}">
+                            <span class="fa fa-question-circle" aria-hidden="true"></span>
+                        </button>
+                    </h1>
+                    <span class="aaxis-db-viewer__title-hint">{{ 'aaxis.devtools.database_viewer.hint'|trans }}</span>
+                </div>
+            </div>
+
+            <div class="aaxis-db-viewer" data-role="layout">
+                <aside class="aaxis-db-viewer__sidebar" data-role="sidebar">
+                    <div class="aaxis-db-viewer__types">
+                        <button type="button" class="aaxis-db-viewer__type is-active"
+                                data-role="type-toggle" data-type="table" aria-pressed="true">
+                            <span class="fa fa-table aaxis-db-viewer__type-icon" aria-hidden="true"></span>
+                            {{ 'aaxis.devtools.database_viewer.tables'|trans }}
+                        </button>
+                        {% if options.showViews %}
+                        <button type="button" class="aaxis-db-viewer__type is-active"
+                                data-role="type-toggle" data-type="view" aria-pressed="true">
+                            <span class="fa fa-eye aaxis-db-viewer__type-icon" aria-hidden="true"></span>
+                            {{ 'aaxis.devtools.database_viewer.views'|trans }}
+                        </button>
+                        {% endif %}
+                        {% if options.showFunctions %}
+                        <button type="button" class="aaxis-db-viewer__type is-active"
+                                data-role="type-toggle" data-type="function" aria-pressed="true">
+                            <span class="fa fa-code aaxis-db-viewer__type-icon" aria-hidden="true"></span>
+                            {{ 'aaxis.devtools.database_viewer.functions'|trans }}
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="aaxis-db-viewer__filter">
+                        <div class="aaxis-db-viewer__filter-input">
+                            <input type="text" class="form-control" data-role="filter"
+                                   placeholder="{{ 'aaxis.devtools.database_viewer.filter_placeholder'|trans }}">
+                            <button type="button" class="aaxis-db-viewer__filter-clear" data-role="filter-clear"
+                                    title="{{ 'aaxis.devtools.database_viewer.filter_clear'|trans }}"
+                                    aria-label="{{ 'aaxis.devtools.database_viewer.filter_clear'|trans }}"
+                                    hidden>&times;</button>
+                        </div>
+                        <button type="button" class="aaxis-db-viewer__refresh" data-role="refresh"
+                                title="{{ 'aaxis.devtools.database_viewer.refresh'|trans }}"
+                                aria-label="{{ 'aaxis.devtools.database_viewer.refresh'|trans }}">
+                            <span class="fa fa-refresh" aria-hidden="true"></span>
+                        </button>
+                        <button type="button" class="aaxis-db-viewer__order" data-role="order-key" aria-label="order by">
+                            <span class="fa fa-font" aria-hidden="true"></span>
+                        </button>
+                        <button type="button" class="aaxis-db-viewer__order" data-role="order-dir" aria-label="order direction">
+                            <span class="fa fa-sort-amount-asc" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                    <ul data-role="objects" class="aaxis-db-viewer__objects"></ul>
+                </aside>
+
+                <div class="aaxis-db-viewer__v-splitter" data-role="v-splitter"
+                     role="separator" aria-orientation="vertical"></div>
+
+                <div class="aaxis-db-viewer__main" data-role="main">
+                    <div class="aaxis-db-viewer__editor-pane" data-role="editor-pane">
+                        <div class="aaxis-db-viewer__tabs" data-role="tabs">
+                            <div class="aaxis-db-viewer__tabs-list" data-role="tabs-list"></div>
+                            <button type="button" class="aaxis-db-viewer__tab-add" data-role="tab-add"
+                                    title="{{ 'aaxis.devtools.database_viewer.add_tab'|trans }}"
+                                    aria-label="{{ 'aaxis.devtools.database_viewer.add_tab'|trans }}">
+                                <span class="fa-plus" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                        <div class="aaxis-db-viewer__editor-host">
+                            <textarea data-role="editor">SELECT *
+FROM oro_user
+LIMIT 10;</textarea>
+                        </div>
+                        <div class="aaxis-db-viewer__toolbar">
+                            <div class="aaxis-db-viewer__toolbar-left">
+                                <button type="button" class="btn" data-role="beautify"
+                                        title="{{ 'aaxis.devtools.database_viewer.beautify'|trans }}">
+                                    <span class="fa fa-magic" aria-hidden="true"></span>
+                                    {{ 'aaxis.devtools.database_viewer.beautify'|trans }}
+                                </button>
+                                <div class="btn-group">
+                                    <button type="button" class="btn dropdown-toggle" data-role="queries"
+                                            data-toggle="dropdown" data-placement="bottom-start"
+                                            data-inherit-parent-width="loosely"
+                                            aria-haspopup="true" aria-expanded="false">
+                                        {{ 'aaxis.devtools.database_viewer.queries'|trans }}
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu" data-role="queries-menu"></ul>
+                                </div>
+                                <button type="button" class="btn" data-role="update" hidden>
+                                    {{ 'aaxis.devtools.database_viewer.update'|trans }}
+                                </button>
+                            </div>
+                            <div class="aaxis-db-viewer__toolbar-right">
+                                <span data-role="status" class="aaxis-db-viewer__status" aria-live="polite"></span>
+                                {% if options.allowExport %}
+                                <div class="btn-group">
+                                    <button type="button" class="btn dropdown-toggle" data-role="export"
+                                            data-toggle="dropdown" data-placement="bottom-end"
+                                            data-inherit-parent-width="loosely"
+                                            aria-haspopup="true" aria-expanded="false" disabled>
+                                        {{ 'aaxis.devtools.database_viewer.export'|trans }}
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li><a href="#" role="menuitem" data-role="export-format" data-format="csv">CSV</a></li>
+                                        <li><a href="#" role="menuitem" data-role="export-format" data-format="json">JSON</a></li>
+                                        <li><a href="#" role="menuitem" data-role="export-format" data-format="xlsx">XLSX</a></li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                <button type="button" class="btn btn-primary" data-role="run">
+                                    {{ 'aaxis.devtools.database_viewer.run'|trans }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aaxis-db-viewer__h-splitter" data-role="h-splitter"
+                         role="separator" aria-orientation="horizontal"></div>
+
+                    <div class="aaxis-db-viewer__result-pane" data-role="result-pane">
+                        <div data-role="result" class="aaxis-db-viewer__result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div data-role="help-content" hidden>
+                {% include '@AaxisDevTools/Tools/_databaseViewerHelp.html.twig' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

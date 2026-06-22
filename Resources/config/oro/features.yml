@@ -1,0 +1,93 @@
+features:
+    aaxis_devtools_runtime_config:
+        label: aaxis.devtools.feature.runtime_config.label
+        toggle: aaxis_devtools.runtime_config_enabled
+        navigation_items:
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_runtime_config
+        routes:
+            - aaxis_devtools_runtime_config
+
+    aaxis_devtools_filesystem_browser:
+        label: aaxis.devtools.feature.filesystem_browser.label
+        toggle: aaxis_devtools.filesystem_browser_enabled
+        navigation_items:
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_filesystem_browser
+        routes:
+            - aaxis_devtools_filesystem_browser
+            - aaxis_devtools_filesystem_browser_list
+            - aaxis_devtools_filesystem_browser_preview
+            - aaxis_devtools_filesystem_browser_raw
+            - aaxis_devtools_filesystem_browser_download
+
+    aaxis_devtools_bucket_browser:
+        label: aaxis.devtools.feature.bucket_browser.label
+        toggle: aaxis_devtools.bucket_browser_enabled
+        navigation_items:
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_bucket_browser
+        routes:
+            - aaxis_devtools_bucket_browser
+            - aaxis_devtools_bucket_browser_list
+            - aaxis_devtools_bucket_browser_preview
+            - aaxis_devtools_bucket_browser_raw
+            - aaxis_devtools_bucket_browser_download
+            - aaxis_devtools_bucket_browser_folder
+            - aaxis_devtools_bucket_browser_upload
+            - aaxis_devtools_bucket_browser_delete
+
+    aaxis_devtools_database_viewer:
+        label: aaxis.devtools.feature.database_viewer.label
+        toggle: aaxis_devtools.database_viewer_enabled
+        navigation_items:
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_database_viewer
+        routes:
+            - aaxis_devtools_database_viewer
+            - aaxis_devtools_database_viewer_objects
+            - aaxis_devtools_database_viewer_query
+            - aaxis_devtools_database_viewer_export
+            - aaxis_devtools_database_viewer_columns
+            - aaxis_devtools_database_viewer_saved_queries
+            - aaxis_devtools_database_viewer_saved_queries_all
+            - aaxis_devtools_database_viewer_saved_query_create
+            - aaxis_devtools_database_viewer_saved_query_update
+
+    aaxis_devtools_elastic_viewer:
+        label: aaxis.devtools.feature.elastic_viewer.label
+        toggle: aaxis_devtools.elastic_viewer_enabled
+        navigation_items:
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_elastic_viewer
+        routes:
+            - aaxis_devtools_elastic_viewer
+            - aaxis_devtools_elastic_viewer_indices
+            - aaxis_devtools_elastic_viewer_query
+            - aaxis_devtools_elastic_viewer_export
+
+    aaxis_devtools_redis_viewer:
+        label: aaxis.devtools.feature.redis_viewer.label
+        toggle: aaxis_devtools.redis_viewer_enabled
+        navigation_items:
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_redis_viewer
+        routes:
+            - aaxis_devtools_redis_viewer
+            - aaxis_devtools_redis_viewer_overview
+            - aaxis_devtools_redis_viewer_keys
+            - aaxis_devtools_redis_viewer_value
+
+    aaxis_devtools_mongodb_viewer:
+        label: aaxis.devtools.feature.mongodb_viewer.label
+        toggle: aaxis_devtools.mongodb_viewer_enabled
+        navigation_items:
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_mongodb_viewer
+        routes:
+            - aaxis_devtools_mongodb_viewer
+            - aaxis_devtools_mongodb_viewer_overview
+            - aaxis_devtools_mongodb_viewer_collections
+            - aaxis_devtools_mongodb_viewer_documents
+
+    aaxis_devtools_network_tools:
+        label: aaxis.devtools.feature.network_tools.label
+        toggle: aaxis_devtools.network_tools_enabled
+        navigation_items:
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_network_tools
+        routes:
+            - aaxis_devtools_network_tools
+            - aaxis_devtools_network_tools_run

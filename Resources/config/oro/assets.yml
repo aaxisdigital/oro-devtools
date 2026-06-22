@@ -1,0 +1,18 @@
+css:
+    inputs:
+        # Database Viewer page styles (also pulls in CodeMirror 5 core CSS).
+        - 'bundles/aaxisdevtools/css/scss/database-viewer.scss'
+        # Network Tools console page styles.
+        - 'bundles/aaxisdevtools/css/scss/network-tools.scss'
+        # Elastic Viewer page styles (also pulls in CodeMirror 5 core CSS).
+        - 'bundles/aaxisdevtools/css/scss/elastic-viewer.scss'
+        # Redis Viewer page styles.
+        - 'bundles/aaxisdevtools/css/scss/redis-viewer.scss'
+        # MongoDB Viewer page styles.
+        - 'bundles/aaxisdevtools/css/scss/mongo-viewer.scss'
+        # Filesystem Browser page styles.
+        - 'bundles/aaxisdevtools/css/scss/filesystem-browser.scss'
+        # Runtime Config view page styles.
+        - 'bundles/aaxisdevtools/css/scss/runtime-config.scss'
+        # Coming-soon placeholder page styles.
+        - 'bundles/aaxisdevtools/css/scss/coming-soon.scss'

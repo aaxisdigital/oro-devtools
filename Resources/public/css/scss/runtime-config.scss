@@ -1,0 +1,136 @@
+/* @theme: admin.oro; */
+
+$aaxis-rtcfg-border: #d9d9d9;
+$aaxis-rtcfg-muted: #6f7681;
+
+.aaxis-rtcfg {
+    padding-bottom: 24px;
+
+    &__title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__help-btn {
+        border: 0;
+        background: none;
+        padding: 0;
+        font-size: 18px;
+        line-height: 1;
+        color: #777;
+        cursor: pointer;
+
+        &:hover {
+            color: #2b84ed;
+        }
+    }
+
+    &__bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        // Breathing room between the page title and the filter row.
+        margin-top: 16px;
+        margin-bottom: 16px;
+    }
+
+    &__filter {
+        max-width: 360px;
+        margin: 0;
+    }
+
+    &__count {
+        color: $aaxis-rtcfg-muted;
+        font-size: 12px;
+    }
+
+    &__tabs {
+        display: flex;
+        gap: 2px;
+        border-bottom: 1px solid $aaxis-rtcfg-border;
+    }
+
+    &__tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid $aaxis-rtcfg-border;
+        border-bottom: none;
+        border-radius: 4px 4px 0 0;
+        background: #f3f3f3;
+        padding: 8px 16px;
+        margin-bottom: -1px;
+        color: #2b3a4a;
+        cursor: pointer;
+        font-size: 13px;
+
+        &:hover {
+            background: #ebeef1;
+        }
+
+        &.is-active {
+            background: #fff;
+            border-bottom: 1px solid #fff;
+            font-weight: 600;
+        }
+    }
+
+    &__tab-label {
+        white-space: nowrap;
+    }
+
+    &__panel {
+        border: 1px solid $aaxis-rtcfg-border;
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+        padding: 12px;
+    }
+
+    &__badge {
+        display: inline-block;
+        min-width: 20px;
+        padding: 1px 7px;
+        border-radius: 10px;
+        background: #eef1f4;
+        color: #5c6b7a;
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    &__table {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    &__col-key {
+        width: 34%;
+    }
+
+    &__key {
+        font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 12px;
+        font-weight: 600;
+        color: #2b3a4a;
+        word-break: break-all;
+    }
+
+    &__val {
+        font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 12px;
+        color: #1a3b5d;
+        word-break: break-all;
+        white-space: pre-wrap;
+    }
+
+    &__val.is-masked {
+        color: #b06a00;
+        letter-spacing: 1px;
+    }
+
+    &__empty {
+        color: $aaxis-rtcfg-muted;
+        padding: 16px 0;
+    }
+}

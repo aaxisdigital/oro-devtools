@@ -1,0 +1,80 @@
+{% extends '@OroUI/actions/index.html.twig' %}
+
+{% set pageTitle = 'aaxis.devtools.menu.aaxis_devtools_bucket_browser.label'|trans %}
+
+{% block content %}
+    <div class="layout-content">
+        <div class="content"
+             data-page-component-module="aaxisdevtools/js/app/components/storage-browser-component"
+             data-page-component-options="{{ {
+                 listUrl: path('aaxis_devtools_bucket_browser_list'),
+                 previewUrl: path('aaxis_devtools_bucket_browser_preview'),
+                 rawUrl: path('aaxis_devtools_bucket_browser_raw'),
+                 downloadUrl: path('aaxis_devtools_bucket_browser_download'),
+                 basePath: '',
+                 helpTitle: 'aaxis.devtools.bucket_browser.help'|trans,
+                 configUrl: path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}),
+                 readOnly: options.readOnly,
+                 createFolderUrl: path('aaxis_devtools_bucket_browser_folder'),
+                 uploadUrl: path('aaxis_devtools_bucket_browser_upload'),
+                 deleteUrl: path('aaxis_devtools_bucket_browser_delete')
+             }|merge(options)|json_encode }}">
+            <div class="container-fluid page-title">
+                <div class="aaxis-fs__titlebar">
+                    <h1 class="page-title__entity-title aaxis-fs__title">
+                        {{ 'aaxis.devtools.menu.aaxis_devtools_bucket_browser.label'|trans }}
+                        <a href="{{ path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}) }}"
+                           class="aaxis-tool-config-btn" data-role="config"
+                           title="{{ 'aaxis.devtools.config_link'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.config_link'|trans }}">
+                            <span class="fa fa-cog" aria-hidden="true"></span>
+                        </a>
+                        <button type="button" class="aaxis-fs__help-btn" data-role="help"
+                                title="{{ 'aaxis.devtools.bucket_browser.help'|trans }}"
+                                aria-label="{{ 'aaxis.devtools.bucket_browser.help'|trans }}">
+                            <span class="fa fa-question-circle" aria-hidden="true"></span>
+                        </button>
+                    </h1>
+                    <span class="aaxis-fs__title-hint">{{ (options.readOnly ? 'aaxis.devtools.bucket_browser.hint' : 'aaxis.devtools.bucket_browser.hint_rw')|trans }}</span>
+                </div>
+            </div>
+
+            <div class="aaxis-fs">
+                <div class="aaxis-fs__pathbar">
+                    <input type="text" class="form-control aaxis-fs__path" data-role="path"
+                           placeholder="{{ 'aaxis.devtools.bucket_browser.path_placeholder'|trans }}"
+                           autocomplete="off" spellcheck="false">
+                    <button type="button" class="aaxis-fs__search-toggle" data-role="filter-toggle"
+                            title="{{ 'aaxis.devtools.bucket_browser.search'|trans }}"
+                            aria-label="{{ 'aaxis.devtools.bucket_browser.search'|trans }}">
+                        <span class="fa fa-search" aria-hidden="true"></span>
+                    </button>
+                    <input type="text" class="form-control aaxis-fs__filter" data-role="filter"
+                           placeholder="{{ 'aaxis.devtools.bucket_browser.filter_placeholder'|trans }}"
+                           autocomplete="off" spellcheck="false" hidden>
+                    {% if not options.readOnly %}
+                        <button type="button" class="aaxis-fs__pathbar-btn" data-role="create-folder"
+                                title="{{ 'aaxis.devtools.bucket_browser.create_folder'|trans }}"
+                                aria-label="{{ 'aaxis.devtools.bucket_browser.create_folder'|trans }}">
+                            <span class="fa fa-folder" aria-hidden="true"></span>
+                            <span class="fa fa-plus aaxis-fs__pathbar-badge" aria-hidden="true"></span>
+                        </button>
+                        <button type="button" class="aaxis-fs__pathbar-btn" data-role="upload"
+                                title="{{ 'aaxis.devtools.bucket_browser.upload_file'|trans }}"
+                                aria-label="{{ 'aaxis.devtools.bucket_browser.upload_file'|trans }}">
+                            <span class="fa fa-upload" aria-hidden="true"></span>
+                        </button>
+                        <input type="file" data-role="upload-input" hidden>
+                    {% endif %}
+                </div>
+
+                <div class="aaxis-fs__tabs" data-role="tabs"></div>
+                <div class="aaxis-fs__content" data-role="content" tabindex="0"></div>
+            </div>
+
+            <div data-role="help-content" hidden>
+                {% include '@AaxisDevTools/Tools/_bucketBrowserHelp.html.twig' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

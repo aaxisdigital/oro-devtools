@@ -1,0 +1,18 @@
+{% import '@AaxisCommon/Tools/help.html.twig' as toolHelp %}
+
+{{ toolHelp.render('aaxis.devtools.mongodb_viewer.help_dialog.intro', [
+    {
+        title: 'aaxis.devtools.mongodb_viewer.help_dialog.databases.title',
+        items: [
+            'aaxis.devtools.mongodb_viewer.help_dialog.databases.item1',
+            'aaxis.devtools.mongodb_viewer.help_dialog.databases.item2'
+        ]
+    },
+    {
+        title: 'aaxis.devtools.mongodb_viewer.help_dialog.documents.title',
+        items: [
+            'aaxis.devtools.mongodb_viewer.help_dialog.documents.item1',
+            'aaxis.devtools.mongodb_viewer.help_dialog.documents.item2'
+        ]
+    }
+]) }}

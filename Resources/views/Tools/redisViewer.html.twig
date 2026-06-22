@@ -1,0 +1,74 @@
+{% extends '@OroUI/actions/index.html.twig' %}
+
+{% set pageTitle = 'aaxis.devtools.menu.aaxis_devtools_redis_viewer.label'|trans %}
+
+{% block content %}
+    <div class="layout-content">
+        <div class="content"
+             data-page-component-module="aaxisdevtools/js/app/components/redis-viewer-component"
+             data-page-component-options="{{ {
+                 overviewUrl: path('aaxis_devtools_redis_viewer_overview'),
+                 keysUrl: path('aaxis_devtools_redis_viewer_keys'),
+                 valueUrl: path('aaxis_devtools_redis_viewer_value')
+             }|json_encode }}">
+            <div class="container-fluid page-title">
+                <div class="aaxis-redis__titlebar">
+                    <h1 class="page-title__entity-title aaxis-redis__title">
+                        {{ 'aaxis.devtools.menu.aaxis_devtools_redis_viewer.label'|trans }}
+                        <a href="{{ path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}) }}"
+                           class="aaxis-tool-config-btn" data-role="config"
+                           title="{{ 'aaxis.devtools.config_link'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.config_link'|trans }}">
+                            <span class="fa fa-cog" aria-hidden="true"></span>
+                        </a>
+                        <button type="button" class="aaxis-redis__help-btn" data-role="help"
+                                title="{{ 'aaxis.devtools.redis_viewer.help'|trans }}"
+                                aria-label="{{ 'aaxis.devtools.redis_viewer.help'|trans }}">
+                            <span class="fa fa-question-circle" aria-hidden="true"></span>
+                        </button>
+                    </h1>
+                    <span class="aaxis-redis__title-hint">{{ 'aaxis.devtools.redis_viewer.hint'|trans }}</span>
+                </div>
+            </div>
+
+            <div class="aaxis-redis" data-role="layout">
+                <aside class="aaxis-redis__sidebar">
+                    <div class="aaxis-redis__sidebar-head">
+                        <span>{{ 'aaxis.devtools.redis_viewer.databases_title'|trans({}, 'jsmessages') }}</span>
+                        <button type="button" class="aaxis-redis__icon-btn" data-role="refresh"
+                                title="{{ 'aaxis.devtools.redis_viewer.refresh'|trans({}, 'jsmessages') }}"
+                                aria-label="{{ 'aaxis.devtools.redis_viewer.refresh'|trans({}, 'jsmessages') }}">
+                            <span class="fa fa-refresh" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                    <ul class="aaxis-redis__dbs" data-role="databases"></ul>
+                    <div class="aaxis-redis__server" data-role="server"></div>
+                </aside>
+
+                <div class="aaxis-redis__main">
+                    <div class="aaxis-redis__keybar">
+                        <input type="text" class="form-control aaxis-redis__pattern" data-role="pattern"
+                               value="*" placeholder="{{ 'aaxis.devtools.redis_viewer.pattern_placeholder'|trans({}, 'jsmessages') }}"
+                               autocomplete="off" spellcheck="false">
+                        <button type="button" class="btn btn-primary" data-role="scan">
+                            {{ 'aaxis.devtools.redis_viewer.scan'|trans({}, 'jsmessages') }}
+                        </button>
+                    </div>
+
+                    <div class="aaxis-redis__panes">
+                        <div class="aaxis-redis__keys" data-role="keys">
+                            <div class="aaxis-redis__empty">{{ 'aaxis.devtools.redis_viewer.select_db'|trans({}, 'jsmessages') }}</div>
+                        </div>
+                        <div class="aaxis-redis__value" data-role="value">
+                            <div class="aaxis-redis__empty">{{ 'aaxis.devtools.redis_viewer.select_key'|trans({}, 'jsmessages') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div data-role="help-content" hidden>
+                {% include '@AaxisDevTools/Tools/_redisViewerHelp.html.twig' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

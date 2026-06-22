@@ -1,0 +1,32 @@
+acls:
+    # Single capability that gates access to the whole "Aaxis Dev Tools" back-office section.
+    # Bound to every Dev Tools controller (class-level binding => all of its actions), so a role
+    # without this capability cannot reach any tool page or its AJAX endpoints, and the menu items
+    # are hidden. The shared connection-test endpoint lives in AaxisCommonBundle and is gated there.
+    aaxis_devtools:
+        label: aaxis.devtools.acl.aaxis_devtools.label
+        description: aaxis.devtools.acl.aaxis_devtools.description
+        type: action
+        group_name: ""
+        category: "aaxis_devtools"
+        bindings:
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\DevToolsPageController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\NetworkToolsController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\RuntimeConfigController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\BucketBrowserController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\DatabaseViewerController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\ElasticViewerController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\FilesystemBrowserController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\MongoViewerController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\RedisViewerController }
+
+    # Separate capability for DESTRUCTIVE Bucket Browser operations (create folder, upload, delete).
+    # It is intentionally NOT granted by default (no data migration grants it), so bucket writes are
+    # disabled until an administrator explicitly assigns this capability to a role. Browsing/reading
+    # the bucket stays under `aaxis_devtools`. Referenced via #[AclAncestor] on the write actions.
+    aaxis_devtools_write:
+        label: aaxis.devtools.acl.aaxis_devtools_write.label
+        description: aaxis.devtools.acl.aaxis_devtools_write.description
+        type: action
+        group_name: ""
+        category: "aaxis_devtools"

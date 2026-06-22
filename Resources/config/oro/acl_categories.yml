@@ -1,0 +1,5 @@
+acl_categories:
+    aaxis_devtools:
+        label: aaxis.devtools.acl.category.label
+        tab: true
+        priority: 249
