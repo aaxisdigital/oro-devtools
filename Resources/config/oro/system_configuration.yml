@@ -19,6 +19,8 @@ system_configuration:
             title: aaxis.devtools.config.bucket_browser.title
         aaxis_devtools_runtime_config:
             title: aaxis.devtools.config.runtime_config.title
+        aaxis_devtools_connection_info:
+            title: aaxis.devtools.config.connection_info.title
 
     fields:
         # --- Database Viewer ---
@@ -331,6 +333,14 @@ system_configuration:
                 label: aaxis.devtools.config.enabled.label
                 required: false
 
+        # --- Connection Info ---
+        aaxis_devtools.connection_info_enabled:
+            data_type: boolean
+            type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
+            options:
+                label: aaxis.devtools.config.enabled.label
+                required: false
+
     tree:
         system_configuration:
             platform:
@@ -344,6 +354,10 @@ system_configuration:
                                         priority: 110
                                         children:
                                             - aaxis_devtools.runtime_config_enabled
+                                    aaxis_devtools_connection_info:
+                                        priority: 108
+                                        children:
+                                            - aaxis_devtools.connection_info_enabled
                                     aaxis_devtools_filesystem_browser:
                                         priority: 100
                                         children:

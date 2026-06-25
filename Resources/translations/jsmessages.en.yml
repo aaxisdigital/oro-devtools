@@ -49,6 +49,14 @@ aaxis:
             port_required: 'Please enter a port for this tool.'
             error: 'The request failed.'
             help: 'Network Tools help'
+        connection_info:
+            help: 'Connection Info help'
+            error: 'Could not resolve the client IP.'
+            trusted_tag: 'trusted'
+            source:
+                remote_addr: 'REMOTE_ADDR (direct connection)'
+                forwarded: 'X-Forwarded-For (via trusted proxy {{ via }})'
+                all_trusted: 'X-Forwarded-For (all hops trusted)'
         runtime_config:
             count: '{{ visible }} of {{ total }} shown'
             help: 'Runtime Config help'

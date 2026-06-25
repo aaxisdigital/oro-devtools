@@ -1,0 +1,27 @@
+{% import '@AaxisCommon/Tools/help.html.twig' as toolHelp %}
+
+{{ toolHelp.render('aaxis.devtools.connection_info.help_dialog.intro', [
+    {
+        title: 'aaxis.devtools.connection_info.help_dialog.resolution.title',
+        items: [
+            'aaxis.devtools.connection_info.help_dialog.resolution.remote_addr',
+            'aaxis.devtools.connection_info.help_dialog.resolution.forwarded',
+            'aaxis.devtools.connection_info.help_dialog.resolution.chain'
+        ]
+    },
+    {
+        title: 'aaxis.devtools.connection_info.help_dialog.trusted.title',
+        items: [
+            'aaxis.devtools.connection_info.help_dialog.trusted.what',
+            'aaxis.devtools.connection_info.help_dialog.trusted.format',
+            'aaxis.devtools.connection_info.help_dialog.trusted.empty'
+        ]
+    },
+    {
+        title: 'aaxis.devtools.connection_info.help_dialog.security.title',
+        items: [
+            'aaxis.devtools.connection_info.help_dialog.security.item1',
+            'aaxis.devtools.connection_info.help_dialog.security.item2'
+        ]
+    }
+]) }}

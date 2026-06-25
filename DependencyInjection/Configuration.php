@@ -80,6 +80,9 @@ class Configuration implements ConfigurationInterface
 
             // Runtime Config
             'runtime_config_enabled' => ['type' => 'boolean', 'value' => true],
+
+            // Connection Info
+            'connection_info_enabled' => ['type' => 'boolean', 'value' => true],
         ]);
 
         return $treeBuilder;

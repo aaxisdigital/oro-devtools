@@ -1,3 +1,4 @@
-bundles:
-    # Auto-registered by the Oro kernel (OroKernel scans for Resources/config/oro/bundles.yml).
-    - { name: Aaxis\Bundle\DevToolsBundle\AaxisDevToolsBundle }
+#Not auto-registering this bundle for safety reasons. 
+#Manually define in AppKernel scenarios when this bundle should be loaded
+#bundles:
+#    - { name: Aaxis\Bundle\DevToolsBundle\AaxisDevToolsBundle }

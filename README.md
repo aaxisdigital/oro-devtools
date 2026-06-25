@@ -5,7 +5,7 @@ under a single **"Dev Tools"** application-menu sub-group. Every tool can be ena
 configured from **System Configuration → General Setup → Aaxis Dev Tools**.
 
 - Namespace: `Aaxis\Bundle\DevToolsBundle`
-- Bundle class: `AaxisDevToolsBundle` (auto-registered)
+- Bundle class: `AaxisDevToolsBundle` (**not** auto-registered — see [Installation](#installation))
 - Back-office route prefix: `/admin/aaxis/devtools`
 - Config alias: `aaxis_devtools`
 
@@ -101,8 +101,8 @@ automatically (the project already has the Oro Enterprise Composer registry, so
 ```jsonc
 // composer.json
 "repositories": {
-    "aaxis-common":   { "type": "vcs", "url": "git@github.com:aaxisdigital/oro-common.git" },
-    "aaxis-devtools": { "type": "vcs", "url": "git@github.com:aaxisdigital/oro-devtools.git" }
+    "aaxis-common":   { "type": "vcs", "url": "https://github.com/aaxisdigital/oro-common.git" },
+    "aaxis-devtools": { "type": "vcs", "url": "https://github.com/aaxisdigital/oro-devtools.git" }
 }
 ```
 
@@ -113,9 +113,26 @@ composer require aaxisdigital/oro-devtools:7.0.*
 > Requires OroCommerce **Enterprise** (the Elasticsearch viewer uses `oro/platform-enterprise`),
 > plus `mongodb/mongodb` and `openspout/openspout` (pulled in automatically).
 
-The bundle is auto-registered via `Resources/config/oro/bundles.yml` (the Oro kernel scans `vendor/`
-and `src/` — no `AppKernel` edit needed). It requires `AaxisCommonBundle`. After install/update run
-(prefix each with your PHP runner, e.g. `docker exec <php-container> ...`, when running in Docker):
+> **⚠️ This bundle does NOT auto-register — by design.** Unlike the other Aaxis bundles, its
+> `Resources/config/oro/bundles.yml` is intentionally left commented out, so the Oro kernel will
+> **not** load it just because it is present in `vendor/`. These tools expose the database,
+> filesystem, object storage, Redis/Mongo/Elastic and network internals of the running instance, so
+> loading them must be a **deliberate, environment-scoped decision** — never an automatic side effect
+> of `composer require`. You decide *when* (and in which environments) it is active by registering it
+> yourself in `AppKernel`, e.g. enable it only for `dev`/`staging` and keep it out of `prod`:
+>
+> ```php
+> // config/bundles.php (or AppKernel::registerBundles())
+> Aaxis\Bundle\DevToolsBundle\AaxisDevToolsBundle::class => ['dev' => true, 'staging' => true],
+> ```
+>
+> Access is still gated by the `aaxis_devtools` ACL and each tool's feature toggle, but registration
+> is the first and most important gate. Its dependency `AaxisCommonBundle` **does** auto-register and
+> is present anyway (it's required by the other Aaxis bundles), so `AaxisDevToolsBundle` is the only
+> one you add by hand — no need to register Common yourself.
+
+After install/update run (prefix each with your PHP runner, e.g. `docker exec <php-container> ...`,
+when running in Docker):
 
 ```bash
 php bin/console cache:clear --no-interaction

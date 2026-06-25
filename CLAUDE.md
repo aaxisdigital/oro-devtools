@@ -14,7 +14,7 @@ Viewer, Elastic Viewer, Redis Viewer, MongoDB Viewer, Network Tools**. It was sp
 | Thing | Value | Where |
 |-------|-------|-------|
 | PHP namespace | `Aaxis\Bundle\DevToolsBundle` | all classes |
-| Bundle class | `AaxisDevToolsBundle` | auto-registered via `Resources/config/oro/bundles.yml` |
+| Bundle class | `AaxisDevToolsBundle` | **NOT** auto-registered — `Resources/config/oro/bundles.yml` is intentionally commented out for security; the app must register it in `AppKernel`/`config/bundles.php`, scoped to chosen environments (these tools expose DB/filesystem/storage/Redis/Mongo/Elastic/network internals) |
 | Config alias | `aaxis_devtools` | `DependencyInjection/Configuration.php` tree + setting keys `aaxis_devtools.*` |
 | Route prefix | `/aaxis/devtools` | `Resources/config/oro/routing.yml` |
 | Route names | `aaxis_devtools_*` | controller `#[Route(name:)]` |

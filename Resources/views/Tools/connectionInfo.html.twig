@@ -1,0 +1,153 @@
+{% extends '@OroUI/actions/index.html.twig' %}
+
+{% set pageTitle = 'aaxis.devtools.menu.aaxis_devtools_connection_info.label'|trans %}
+
+{# Human label for the resolved-IP source; mirrored client-side in connection-info-component.ts. #}
+{% macro sourceLabel(client) %}
+    {%- if client.source == 'forwarded' -%}
+        {{ 'aaxis.devtools.connection_info.source.forwarded'|trans({'{{ via }}': client.via}) }}
+    {%- elseif client.source == 'all_trusted' -%}
+        {{ 'aaxis.devtools.connection_info.source.all_trusted'|trans }}
+    {%- else -%}
+        {{ 'aaxis.devtools.connection_info.source.remote_addr'|trans }}
+    {%- endif -%}
+{% endmacro %}
+
+{% macro chain(hops) %}
+    {% for hop in hops %}
+        <span class="aaxis-cinfo__hop{{ hop.trusted ? ' is-trusted' : '' }}">
+            {{ hop.value }}
+            {%- if hop.trusted %} <span class="aaxis-cinfo__hop-tag">{{ 'aaxis.devtools.connection_info.trusted_tag'|trans }}</span>{% endif -%}
+        </span>
+        {%- if not loop.last %}<span class="aaxis-cinfo__hop-sep" aria-hidden="true">→</span>{% endif -%}
+    {% endfor %}
+{% endmacro %}
+
+{% block content %}
+    {% import _self as cinfo %}
+
+    <div class="layout-content">
+        <div class="content aaxis-cinfo"
+             data-page-component-module="aaxisdevtools/js/app/components/connection-info-component"
+             data-page-component-options="{{ { resolveUrl: path('aaxis_devtools_connection_info_resolve') }|json_encode }}">
+            <div class="container-fluid page-title">
+                <h1 class="page-title__entity-title aaxis-cinfo__title">
+                    {{ 'aaxis.devtools.menu.aaxis_devtools_connection_info.label'|trans }}
+                    <a href="{{ path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}) }}"
+                       class="aaxis-tool-config-btn" data-role="config"
+                       title="{{ 'aaxis.devtools.config_link'|trans }}"
+                       aria-label="{{ 'aaxis.devtools.config_link'|trans }}">
+                        <span class="fa fa-cog" aria-hidden="true"></span>
+                    </a>
+                    <button type="button" class="aaxis-cinfo__help-btn" data-role="help"
+                            title="{{ 'aaxis.devtools.connection_info.help'|trans }}"
+                            aria-label="{{ 'aaxis.devtools.connection_info.help'|trans }}">
+                        <span class="fa fa-question-circle" aria-hidden="true"></span>
+                    </button>
+                </h1>
+            </div>
+
+            <div class="aaxis-cinfo__bar">
+                <label class="aaxis-cinfo__bar-label" for="aaxis-cinfo-trusted">
+                    {{ 'aaxis.devtools.connection_info.trusted_proxies.label'|trans }}
+                </label>
+                <input type="text" class="form-control aaxis-cinfo__trusted" data-role="trusted-proxies"
+                       id="aaxis-cinfo-trusted"
+                       placeholder="{{ 'aaxis.devtools.connection_info.trusted_proxies.placeholder'|trans }}"
+                       autocomplete="off">
+                <span class="aaxis-cinfo__applying" data-role="applying" hidden>
+                    <span class="fa fa-spinner fa-spin" aria-hidden="true"></span>
+                    {{ 'aaxis.devtools.connection_info.applying'|trans }}
+                </span>
+                <button type="button" class="btn btn-primary" data-role="apply">
+                    {{ 'aaxis.devtools.connection_info.trusted_proxies.apply'|trans }}
+                </button>
+            </div>
+            <p class="aaxis-cinfo__hint">{{ 'aaxis.devtools.connection_info.trusted_proxies.hint'|trans }}</p>
+
+            <div class="aaxis-cinfo__cards">
+                <div class="aaxis-cinfo__card">
+                    <div class="aaxis-cinfo__card-label">{{ 'aaxis.devtools.connection_info.card.client'|trans }}</div>
+                    <div class="aaxis-cinfo__card-value aaxis-cinfo__card-value--ok" data-role="resolved-ip">{{ client.ip }}</div>
+                    <div class="aaxis-cinfo__card-meta">
+                        {{ 'aaxis.devtools.connection_info.card.source'|trans }}:
+                        <span data-role="resolved-source">{{ cinfo.sourceLabel(client) }}</span>
+                    </div>
+                </div>
+                <div class="aaxis-cinfo__card">
+                    <div class="aaxis-cinfo__card-label">{{ 'aaxis.devtools.connection_info.card.server'|trans }}</div>
+                    <div class="aaxis-cinfo__card-value">
+                        {{ server.server_addr }}<span class="aaxis-cinfo__muted"> : {{ server.server_port }}</span>
+                    </div>
+                    <div class="aaxis-cinfo__card-meta">{{ 'aaxis.devtools.connection_info.card.server_meta'|trans }}</div>
+                </div>
+            </div>
+
+            <h2 class="aaxis-cinfo__section">{{ 'aaxis.devtools.connection_info.section.server'|trans }}</h2>
+            <table class="grid table-hover table aaxis-cinfo__table">
+                <tbody>
+                    <tr>
+                        <th>SERVER_ADDR <span class="aaxis-cinfo__tag aaxis-cinfo__tag--safe">{{ 'aaxis.devtools.connection_info.tag.reliable'|trans }}</span></th>
+                        <td>{{ server.server_addr }}</td>
+                    </tr>
+                    <tr><th>SERVER_PORT</th><td>{{ server.server_port }}</td></tr>
+                    <tr><th>SERVER_NAME</th><td>{{ server.server_name }}</td></tr>
+                    <tr>
+                        <th>Host <span class="aaxis-cinfo__tag aaxis-cinfo__tag--spoof">{{ 'aaxis.devtools.connection_info.tag.client_set'|trans }}</span></th>
+                        <td>{{ server.host_header }}</td>
+                    </tr>
+                    <tr><th>HTTPS</th><td>{{ server.https }}</td></tr>
+                </tbody>
+            </table>
+
+            <h2 class="aaxis-cinfo__section">{{ 'aaxis.devtools.connection_info.section.client'|trans }}</h2>
+            <table class="grid table-hover table aaxis-cinfo__table">
+                <tbody>
+                    <tr>
+                        <th>REMOTE_ADDR <span class="aaxis-cinfo__tag aaxis-cinfo__tag--safe">{{ 'aaxis.devtools.connection_info.tag.cannot_spoof'|trans }}</span></th>
+                        <td>{{ server.remote_addr }}</td>
+                    </tr>
+                    <tr><th>REMOTE_PORT</th><td>{{ server.remote_port }}</td></tr>
+                    <tr>
+                        <th>{{ 'aaxis.devtools.connection_info.row.resolved'|trans }}</th>
+                        <td><span data-role="resolved-ip-inline">{{ client.ip }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>{{ 'aaxis.devtools.connection_info.row.chain'|trans }}</th>
+                        <td class="aaxis-cinfo__chain" data-role="chain">{{ cinfo.chain(client.chain) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2 class="aaxis-cinfo__section">
+                {{ 'aaxis.devtools.connection_info.section.proxy'|trans }}
+                <span class="aaxis-cinfo__tag aaxis-cinfo__tag--spoof">{{ 'aaxis.devtools.connection_info.tag.untrusted'|trans }}</span>
+            </h2>
+            <table class="grid table-hover table aaxis-cinfo__table">
+                <tbody>
+                    {% for name, value in proxyHeaders %}
+                        <tr><th>{{ name }}</th><td>{{ value is null ? '—' : value }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="aaxis-cinfo__note">{{ 'aaxis.devtools.connection_info.proxy_note'|trans }}</p>
+
+            <h2 class="aaxis-cinfo__section">{{ 'aaxis.devtools.connection_info.section.interfaces'|trans }}</h2>
+            {% if interfaces is not empty %}
+                <table class="grid table-hover table aaxis-cinfo__table">
+                    <tbody>
+                        {% for name, ips in interfaces %}
+                            <tr><th>{{ name }}</th><td>{{ ips is empty ? 'aaxis.devtools.connection_info.no_unicast'|trans : ips|join(', ') }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="aaxis-cinfo__note">{{ 'aaxis.devtools.connection_info.no_interfaces'|trans }}</p>
+            {% endif %}
+
+            <div data-role="help-content" hidden>
+                {% include '@AaxisDevTools/Tools/_connectionInfoHelp.html.twig' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

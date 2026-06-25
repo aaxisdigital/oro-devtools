@@ -14,5 +14,7 @@ css:
         - 'bundles/aaxisdevtools/css/scss/filesystem-browser.scss'
         # Runtime Config view page styles.
         - 'bundles/aaxisdevtools/css/scss/runtime-config.scss'
+        # Connection Info page styles.
+        - 'bundles/aaxisdevtools/css/scss/connection-info.scss'
         # Coming-soon placeholder page styles.
         - 'bundles/aaxisdevtools/css/scss/coming-soon.scss'

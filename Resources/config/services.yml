@@ -84,6 +84,12 @@ services:
         alias: Aaxis\Bundle\DevToolsBundle\Network\NetworkToolExecutor
         public: true
 
+    Aaxis\Bundle\DevToolsBundle\Network\ConnectionInfoInspector: ~
+
+    aaxis_devtools.connection_info_inspector:
+        alias: Aaxis\Bundle\DevToolsBundle\Network\ConnectionInfoInspector
+        public: true
+
     Aaxis\Bundle\DevToolsBundle\Manager\QueryHistoryManager:
         arguments:
             - '@doctrine'

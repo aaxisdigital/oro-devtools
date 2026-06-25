@@ -7,3 +7,4 @@ dynamic-imports:
         - aaxisdevtools/js/app/components/mongo-viewer-component
         - aaxisdevtools/js/app/components/storage-browser-component
         - aaxisdevtools/js/app/components/runtime-config-component
+        - aaxisdevtools/js/app/components/connection-info-component

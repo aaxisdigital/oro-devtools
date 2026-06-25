@@ -12,6 +12,7 @@ acls:
         bindings:
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\DevToolsPageController }
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\NetworkToolsController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\ConnectionInfoController }
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\RuntimeConfigController }
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\BucketBrowserController }
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\DatabaseViewerController }

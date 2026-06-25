@@ -44,6 +44,13 @@ services:
             - { name: container.service_subscriber, id: aaxis_devtools.network_test_history_manager, key: Aaxis\Bundle\DevToolsBundle\Manager\NetworkTestHistoryManager }
             - { name: container.service_subscriber, id: oro_config.global, key: Oro\Bundle\ConfigBundle\Config\ConfigManager }
 
+    Aaxis\Bundle\DevToolsBundle\Controller\ConnectionInfoController:
+        calls:
+            - [setContainer, ['@Psr\Container\ContainerInterface']]
+        tags:
+            - { name: container.service_subscriber }
+            - { name: container.service_subscriber, id: aaxis_devtools.connection_info_inspector, key: Aaxis\Bundle\DevToolsBundle\Network\ConnectionInfoInspector }
+
     Aaxis\Bundle\DevToolsBundle\Controller\RuntimeConfigController:
         calls:
             - [setContainer, ['@Psr\Container\ContainerInterface']]

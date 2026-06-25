@@ -16,6 +16,14 @@ navigation:
                     routes: ['aaxis_devtools_runtime_config']
                     description: 'aaxis.devtools.menu.aaxis_devtools_runtime_config.description'
 
+            aaxis_devtools_connection_info:
+                label: 'aaxis.devtools.menu.aaxis_devtools_connection_info.label'
+                route: 'aaxis_devtools_connection_info'
+                position: 6
+                extras:
+                    routes: ['aaxis_devtools_connection_info']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_connection_info.description'
+
             aaxis_devtools_filesystem_browser:
                 label: 'aaxis.devtools.menu.aaxis_devtools_filesystem_browser.label'
                 route: 'aaxis_devtools_filesystem_browser'
@@ -80,6 +88,7 @@ navigation:
                             aaxis_devtools_group:
                                 children:
                                     aaxis_devtools_runtime_config: ~
+                                    aaxis_devtools_connection_info: ~
                                     aaxis_devtools_filesystem_browser: ~
                                     aaxis_devtools_bucket_browser: ~
                                     aaxis_devtools_database_viewer: ~
@@ -90,6 +99,7 @@ navigation:
 
     titles:
         aaxis_devtools_runtime_config: 'aaxis.devtools.menu.aaxis_devtools_runtime_config.label'
+        aaxis_devtools_connection_info: 'aaxis.devtools.menu.aaxis_devtools_connection_info.label'
         aaxis_devtools_filesystem_browser: 'aaxis.devtools.menu.aaxis_devtools_filesystem_browser.label'
         aaxis_devtools_bucket_browser: 'aaxis.devtools.menu.aaxis_devtools_bucket_browser.label'
         aaxis_devtools_database_viewer: 'aaxis.devtools.menu.aaxis_devtools_database_viewer.label'

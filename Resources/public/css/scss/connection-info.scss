@@ -1,0 +1,194 @@
+/* @theme: admin.oro; */
+
+$aaxis-cinfo-border: #d9d9d9;
+$aaxis-cinfo-muted: #6f7681;
+
+.aaxis-cinfo {
+    padding-bottom: 24px;
+
+    &__title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__help-btn {
+        border: 0;
+        background: none;
+        padding: 0;
+        font-size: 18px;
+        line-height: 1;
+        color: #777;
+        cursor: pointer;
+
+        &:hover {
+            color: #2b84ed;
+        }
+    }
+
+    &__bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    &__bar-label {
+        margin: 0;
+        font-weight: 600;
+        color: #2b3a4a;
+    }
+
+    &__trusted {
+        flex: 1;
+        min-width: 240px;
+        max-width: 480px;
+        margin: 0;
+    }
+
+    &__applying {
+        color: $aaxis-cinfo-muted;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    &__hint {
+        color: $aaxis-cinfo-muted;
+        font-size: 12px;
+        margin-bottom: 20px;
+    }
+
+    &__cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 8px;
+    }
+
+    &__card {
+        flex: 1;
+        min-width: 280px;
+        border: 1px solid $aaxis-cinfo-border;
+        border-radius: 8px;
+        padding: 14px 18px;
+    }
+
+    &__card-label {
+        color: $aaxis-cinfo-muted;
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+
+    &__card-value {
+        font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a3b5d;
+        word-break: break-all;
+
+        &--ok {
+            color: #1a7f37;
+        }
+    }
+
+    &__card-meta {
+        color: $aaxis-cinfo-muted;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    &__muted {
+        color: $aaxis-cinfo-muted;
+        font-weight: 400;
+    }
+
+    &__section {
+        font-size: 15px;
+        font-weight: 600;
+        color: #2b3a4a;
+        margin-top: 28px;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid $aaxis-cinfo-border;
+    }
+
+    &__table {
+        width: 100%;
+        table-layout: fixed;
+
+        th {
+            width: 34%;
+            font-weight: 600;
+            color: #2b3a4a;
+            vertical-align: top;
+        }
+
+        td {
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 12px;
+            color: #1a3b5d;
+            word-break: break-all;
+            vertical-align: top;
+        }
+    }
+
+    &__tag {
+        display: inline-block;
+        font-size: 11px;
+        padding: 1px 6px;
+        margin-left: 6px;
+        border-radius: 4px;
+        border: 1px solid currentColor;
+        vertical-align: middle;
+        font-weight: 600;
+
+        &--safe {
+            color: #1a7f37;
+        }
+
+        &--spoof {
+            color: #b35900;
+        }
+    }
+
+    &__chain {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+    }
+
+    &__hop {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: #eef1f4;
+        color: #2b3a4a;
+
+        &.is-trusted {
+            background: #e6f4ea;
+            color: #1a7f37;
+        }
+    }
+
+    &__hop-tag {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        opacity: 0.8;
+    }
+
+    &__hop-sep {
+        color: $aaxis-cinfo-muted;
+    }
+
+    &__note {
+        color: $aaxis-cinfo-muted;
+        font-size: 12px;
+        margin-top: 8px;
+    }
+}

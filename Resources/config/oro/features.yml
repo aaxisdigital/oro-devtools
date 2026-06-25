@@ -7,6 +7,15 @@ features:
         routes:
             - aaxis_devtools_runtime_config
 
+    aaxis_devtools_connection_info:
+        label: aaxis.devtools.feature.connection_info.label
+        toggle: aaxis_devtools.connection_info_enabled
+        navigation_items:
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_connection_info
+        routes:
+            - aaxis_devtools_connection_info
+            - aaxis_devtools_connection_info_resolve
+
     aaxis_devtools_filesystem_browser:
         label: aaxis.devtools.feature.filesystem_browser.label
         toggle: aaxis_devtools.filesystem_browser_enabled

@@ -62,7 +62,19 @@ class RuntimeConfigInspector
      */
     public function getRuntimeInfo(): array
     {
+        // Symfony's resolved kernel environment/debug (i.e. OroKernel::getEnvironment()), exposed
+        // here as first-class rows rather than buried among the container parameters.
+        $environment = $this->parameters->has('kernel.environment')
+            ? (string) $this->parameters->get('kernel.environment')
+            : 'unknown';
+        $debug = 'unknown';
+        if ($this->parameters->has('kernel.debug')) {
+            $debug = $this->parameters->get('kernel.debug') ? 'on' : 'off';
+        }
+
         $info = [
+            'Symfony environment' => $environment,
+            'Debug mode' => $debug,
             'PHP version' => PHP_VERSION,
             'PHP SAPI' => \PHP_SAPI,
             'Operating system' => PHP_OS,

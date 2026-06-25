@@ -6,6 +6,9 @@ aaxis:
             aaxis_devtools_runtime_config:
                 label: Runtime Config
                 description: Inspect environment variables and config resolved for this instance
+            aaxis_devtools_connection_info:
+                label: Connection Info
+                description: Inspect how the request arrived and resolve the end-user IP (trusted-proxy aware)
             aaxis_devtools_filesystem_browser:
                 label: Filesystem Browser
                 description: Browse the server filesystem and preview files
@@ -54,6 +57,8 @@ aaxis:
                 label: 'Aaxis Dev Tools - Bucket Browser'
             runtime_config:
                 label: 'Aaxis Dev Tools - Runtime Config'
+            connection_info:
+                label: 'Aaxis Dev Tools - Connection Info'
         config:
             group:
                 title: 'Aaxis Dev Tools'
@@ -144,6 +149,8 @@ aaxis:
                     label: 'Read only'
             runtime_config:
                 title: 'Runtime Config'
+            connection_info:
+                title: 'Connection Info'
         coming_soon:
             title: Coming soon
             note: This tool is under construction and will be available in a future release.
@@ -160,6 +167,57 @@ aaxis:
             help_tabs: 'Browse environment variables, application (container) parameters and PHP runtime settings in separate tabs; each tab shows how many entries it holds.'
             help_filter: 'Use the filter box to search by key or value across all tabs at once.'
             help_masking: 'By default sensitive values are masked; this can be toggled in the tool''s system configuration.'
+        connection_info:
+            help: Connection Info help
+            applying: 'Resolving...'
+            error: 'Could not resolve the client IP.'
+            trusted_tag: trusted
+            no_unicast: '(no unicast addresses)'
+            no_interfaces: 'Interface enumeration is not available on this PHP build (requires PHP 8.3+). SERVER_ADDR above still shows the interface this request used.'
+            proxy_note: 'These are raw request headers and must be treated as user input. Do not use them for access control unless the direct peer is a proxy you operate and have listed as a trusted proxy above.'
+            trusted_proxies:
+                label: 'Trusted proxies'
+                placeholder: 'e.g. 10.0.0.5, 127.0.0.1, 172.16.0.0/12'
+                apply: Apply
+                hint: 'Comma-separated IPs or CIDR ranges of reverse proxies / load balancers you operate. Leave empty (the safe default) to ignore forwarded headers and trust only REMOTE_ADDR. Forwarded headers are honoured only when the direct peer is one of these.'
+            card:
+                client: 'End-user IP (resolved safely)'
+                server: 'Connection arrived on local interface / IP'
+                source: source
+                server_meta: 'which of your interfaces the request hit (SERVER_ADDR)'
+            section:
+                server: 'Server side — which interface answered'
+                client: 'Client side — who connected'
+                proxy: 'Proxy / forwarded headers'
+                interfaces: 'Local interfaces on this host'
+            row:
+                resolved: 'Resolved client IP'
+                chain: 'Hop chain (nearest → furthest)'
+            tag:
+                reliable: reliable
+                client_set: client-set
+                cannot_spoof: cannot be spoofed
+                untrusted: 'untrusted unless via a trusted proxy'
+            source:
+                remote_addr: 'REMOTE_ADDR (direct connection)'
+                forwarded: 'X-Forwarded-For (via trusted proxy {{ via }})'
+                all_trusted: 'X-Forwarded-For (all hops trusted)'
+            help_dialog:
+                intro: 'Shows how the current request reached the server: which local interface answered, who connected, and the end-user IP resolved in a trusted-proxy-aware way. The raw server and header tables reflect this request; the resolved IP updates live as you change the trusted-proxy list.'
+                resolution:
+                    title: 'How the client IP is resolved'
+                    remote_addr: 'REMOTE_ADDR comes from the TCP socket and cannot be spoofed; with no trusted proxies it is always the answer.'
+                    forwarded: 'When the direct peer is a trusted proxy, the X-Forwarded-For chain is walked nearest-to-furthest and the first hop that is not a trusted proxy is taken as the client.'
+                    chain: 'The hop chain shows every address considered, with trusted proxies highlighted.'
+                trusted:
+                    title: 'Trusted proxies'
+                    what: 'List the IPs / CIDR ranges of reverse proxies or load balancers you operate.'
+                    format: 'Enter them comma-separated; both plain IPs (10.0.0.5) and CIDR ranges (172.16.0.0/12) are accepted.'
+                    empty: 'Leave the box empty to ignore all forwarded headers — the safe default when clients connect to PHP directly.'
+                security:
+                    title: 'Security notes'
+                    item1: 'X-Forwarded-For, X-Real-IP, CF-Connecting-IP and similar headers are client-set and trivially spoofed; trust them only via a proxy you control.'
+                    item2: 'This page exposes infrastructure details — keep it behind the Dev Tools ACL and the per-tool feature toggle.'
         mongodb_viewer:
             hint: 'Read-only browsing of MongoDB databases, collections and documents.'
             help: 'MongoDB Viewer help'
