@@ -64,6 +64,9 @@ class NetworkToolsComponent extends BaseComponent {
         // The dns-mode <select> is upgraded to an Oro input widget, so toggle its wrapper
         // (which contains the generated widget) rather than the now-hidden native control.
         this.toggleField('dns-mode-wrap', cfg.dnsMode);
+        // setRunning() disables the native <select> directly during a request, so its enabled
+        // state must be restored here too — otherwise it stays disabled after the first run.
+        this.$el.find('[data-role="dns-mode"]').prop('disabled', !cfg.dnsMode);
     }
 
     /** Shows or hides a field (and keeps it out of the submitted data when hidden). */
