@@ -14,7 +14,7 @@ Viewer, Elastic Viewer, Redis Viewer, MongoDB Viewer, Network Tools**. It was sp
 | Thing | Value | Where |
 |-------|-------|-------|
 | PHP namespace | `Aaxis\Bundle\DevToolsBundle` | all classes |
-| Bundle class | `AaxisDevToolsBundle` | **NOT** auto-registered — `Resources/config/oro/bundles.yml` is intentionally commented out for security; the app must register it in `AppKernel`/`config/bundles.php`, scoped to chosen environments (these tools expose DB/filesystem/storage/Redis/Mongo/Elastic/network internals) |
+| Bundle class | `AaxisDevToolsBundle` | Auto-registers via `Resources/config/oro/bundles.yml`, but **disabled by default** — the `aaxis_devtools` master feature is off until the app opts in (see "Master access gate"). Safe to auto-load because nothing is exposed until then. |
 | Config alias | `aaxis_devtools` | `DependencyInjection/Configuration.php` tree + setting keys `aaxis_devtools.*` |
 | Route prefix | `/aaxis/devtools` | `Resources/config/oro/routing.yml` |
 | Route names | `aaxis_devtools_*` | controller `#[Route(name:)]` |
@@ -96,6 +96,29 @@ Still open (product decision, not yet done): a full SSRF egress policy beyond li
 unrestricted-filesystem gating, a low-privilege DB role for the SQL viewer, and a MongoDB `$where`
 block.
 
+## Master access gate (how the bundle is enabled)
+
+The bundle is **registered always** but **off by default** — turning it on is a runtime, per-request
+decision the *consuming application* owns (you can't do this via `registerBundles()`: the bundle set is
+frozen into the compiled container/route cache, while host/IP is a per-request fact).
+
+Mechanics (all in this bundle):
+- `features.yml` defines a master feature **`aaxis_devtools`** with `strategy: affirmative` +
+  `allow_if_all_abstain: false` and **no `toggle`**. With nothing granting it, every voter abstains →
+  the feature is DISABLED. Every tool feature declares `dependencies: [aaxis_devtools]`, so Oro's
+  `DependencyVoter` 404s their routes and hides the menu group when the master is off.
+- `Feature/DevToolsAccessCheckerInterface::isAccessAllowed()` is the single extension point.
+  `Feature/DenyAllDevToolsAccessChecker` (the default `aaxis_devtools.feature.access_checker` service)
+  returns `false`. `Feature/DevToolsFeatureVoter` (tagged `oro_featuretogle.voter` — note Oro's
+  misspelling) votes `FEATURE_ENABLED` only when the checker allows, else **abstains** (never DISABLED,
+  so it stays a pure opt-in).
+
+To enable it, the **application overrides one service** — redefine `aaxis_devtools.feature.access_checker`
+with its own `DevToolsAccessCheckerInterface` (host/IP/env logic). Use `RequestStack::getMainRequest()`
+and return `false` when it's `null` (CLI) unless you want the tools "on" there. Don't add a `toggle` to
+the master feature — keeping it code-only means it can't be flipped on from the System Config UI.
+The per-tool config toggles still refine *which* tools show once the master is open.
+
 ## History cleanup pattern
 
 `CleanupHistoryCommand` reads `aaxis_devtools.<tool>_history_retention_days` and calls the shared
@@ -111,8 +134,10 @@ entity needs a `runAt` field. Add a `purge(...)` line per history entity.
 3. **Config**: add settings to `DependencyInjection/Configuration.php` AND fields/group/tree to
    `system_configuration.yml` (keys `aaxis_devtools.<tool>_*`).
 4. **Menu**: `navigation.yml` item + title under `aaxis_devtools_group`.
-5. **Feature toggle**: `features.yml` entry (`toggle: aaxis_devtools.<tool>_enabled`, list its routes
-   + navigation item). Disabling 404s the routes and hides the menu item.
+5. **Feature toggle**: `features.yml` entry (`toggle: aaxis_devtools.<tool>_enabled`,
+   `dependencies: [aaxis_devtools]`, list its routes + navigation item). The dependency wires the tool
+   into the master access gate (see "Master access gate"); disabling either gate 404s the routes and
+   hides the menu item.
 6. **ACL**: add the controller class to the `aaxis_devtools` binding in `acls.yml`. Gate any
    *destructive/mutating* action with method-level `#[AclAncestor('aaxis_devtools_write')]` (see
    "Security model & hardening" above).

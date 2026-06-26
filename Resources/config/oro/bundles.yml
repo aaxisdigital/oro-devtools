@@ -1,4 +1,9 @@
-#Not auto-registering this bundle for safety reasons. 
-#Manually define in AppKernel scenarios when this bundle should be loaded
-#bundles:
-#    - { name: Aaxis\Bundle\DevToolsBundle\AaxisDevToolsBundle }
+bundles:
+    # Auto-registered by the Oro kernel (OroKernel scans for Resources/config/oro/bundles.yml).
+    #
+    # Safe to auto-load: the whole toolbox is gated behind the "aaxis_devtools" master feature,
+    # which is DISABLED by default (see Resources/config/oro/features.yml). Until the consuming
+    # application opts in — by overriding the "aaxis_devtools.feature.access_checker" service with
+    # its own DevToolsAccessCheckerInterface (host/IP/env logic) — every tool route 404s and the
+    # menu group is hidden. So registration no longer exposes anything by itself.
+    - { name: Aaxis\Bundle\DevToolsBundle\AaxisDevToolsBundle }

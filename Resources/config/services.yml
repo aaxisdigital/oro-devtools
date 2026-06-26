@@ -4,6 +4,23 @@ services:
         autoconfigure: false
         public: false
 
+    # --- Master access gate (feature: aaxis_devtools) ---
+    # Default implementation denies everyone, so the toolbox is OFF out of the box.
+    # The consuming application opts in by redefining 'aaxis_devtools.feature.access_checker'
+    # with its own DevToolsAccessCheckerInterface implementation (e.g. host/IP/env based).
+    aaxis_devtools.feature.access_checker:
+        class: Aaxis\Bundle\DevToolsBundle\Feature\DenyAllDevToolsAccessChecker
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Feature\DevToolsAccessCheckerInterface:
+        alias: aaxis_devtools.feature.access_checker
+
+    Aaxis\Bundle\DevToolsBundle\Feature\DevToolsFeatureVoter:
+        arguments:
+            - '@aaxis_devtools.feature.access_checker'
+        tags:
+            - { name: oro_featuretogle.voter }
+
     Aaxis\Bundle\DevToolsBundle\Database\DatabaseInspector:
         arguments:
             - '@doctrine.dbal.default_connection'

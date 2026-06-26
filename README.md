@@ -5,7 +5,7 @@ under a single **"Dev Tools"** application-menu sub-group. Every tool can be ena
 configured from **System Configuration → General Setup → Aaxis Dev Tools**.
 
 - Namespace: `Aaxis\Bundle\DevToolsBundle`
-- Bundle class: `AaxisDevToolsBundle` (**not** auto-registered — see [Installation](#installation))
+- Bundle class: `AaxisDevToolsBundle` (auto-registers, but **disabled by default** — you opt in at runtime; see [Enabling the toolbox](#enabling-the-toolbox))
 - Back-office route prefix: `/admin/aaxis/devtools`
 - Config alias: `aaxis_devtools`
 
@@ -78,8 +78,16 @@ uses the shared `Aaxis\Bundle\CommonBundle\Command\HistoryRetentionPurger`.
 
 ## Feature toggles & security
 
-Each tool's *Enabled* flag is wired to an Oro **feature toggle** (`Resources/config/oro/features.yml`);
-disabling a tool hides its menu item and 404s its routes.
+The bundle is gated at **two levels**, both via Oro **feature toggles**
+(`Resources/config/oro/features.yml`):
+
+1. **Master gate (`aaxis_devtools`)** — a single feature that the whole toolbox depends on. It has
+   **no config flag** and is **disabled by default**, so out of the box every tool route 404s and the
+   menu group is hidden. The consuming application turns the toolbox on by providing access logic —
+   see [Enabling the toolbox](#enabling-the-toolbox).
+2. **Per-tool flags** — each tool's *Enabled* flag (System Configuration) is its own toggle, so once
+   the master gate is open you can still hide individual tools. Disabling one hides its menu item and
+   404s its routes.
 
 **Access control** uses two action capabilities (`Resources/config/oro/acls.yml`):
 
@@ -123,23 +131,66 @@ composer require aaxisdigital/oro-devtools:7.0.*
 > Requires OroCommerce **Enterprise** (the Elasticsearch viewer uses `oro/platform-enterprise`),
 > plus `mongodb/mongodb` and `openspout/openspout` (pulled in automatically).
 
-> **⚠️ This bundle does NOT auto-register — by design.** Unlike the other Aaxis bundles, its
-> `Resources/config/oro/bundles.yml` is intentionally left commented out, so the Oro kernel will
-> **not** load it just because it is present in `vendor/`. These tools expose the database,
-> filesystem, object storage, Redis/Mongo/Elastic and network internals of the running instance, so
-> loading them must be a **deliberate, environment-scoped decision** — never an automatic side effect
-> of `composer require`. You decide *when* (and in which environments) it is active by registering it
-> yourself in `AppKernel`, e.g. enable it only for `dev`/`staging` and keep it out of `prod`:
+> **This bundle auto-registers but stays disabled until you opt in.** Like the other Aaxis bundles
+> it ships a `Resources/config/oro/bundles.yml`, so the Oro kernel loads it automatically once it is
+> in `vendor/`. That is safe because these tools — which expose the database, filesystem, object
+> storage, Redis/Mongo/Elastic and network internals — are gated behind the `aaxis_devtools`
+> **master feature**, which is **disabled by default**. Until you explicitly enable it (next section),
+> every tool route 404s and the menu group is hidden. Its dependency `AaxisCommonBundle` auto-registers
+> too, so there is nothing to add to `AppKernel` by hand.
+
+### Enabling the toolbox
+
+Enabling is a **runtime, per-request decision the application owns** (it can't be done by
+conditionally registering the bundle — the bundle set is frozen into the compiled container, and CLI
+cache-warmup has no host/IP). You provide one small service implementing the bundle's
+`Aaxis\Bundle\DevToolsBundle\Feature\DevToolsAccessCheckerInterface`; the bundle's feature voter reads
+it to grant the master feature. The default implementation denies everyone, so overriding this one
+service is the whole opt-in.
+
+```php
+// src/App/DevTools/HostBasedDevToolsAccessChecker.php
+namespace App\DevTools;
+
+use Aaxis\Bundle\DevToolsBundle\Feature\DevToolsAccessCheckerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
+
+final class HostBasedDevToolsAccessChecker implements DevToolsAccessCheckerInterface
+{
+    private const RESTRICTED_HOSTS = ['bridge-stage.oro-cloud.com', 'bridge.braskem.com'];
+    private const ALLOWED_IPS = ['38.104.78.213'];
+
+    public function __construct(private readonly RequestStack $requestStack) {}
+
+    public function isAccessAllowed(): bool
+    {
+        $request = $this->requestStack->getMainRequest();
+        if (null === $request) {
+            return false; // CLI: no host context
+        }
+        $restricted = \in_array($request->getHost(), self::RESTRICTED_HOSTS, true);
+        $allowedByIp = \in_array($request->getClientIp(), self::ALLOWED_IPS, true);
+
+        return !$restricted || $allowedByIp;
+    }
+}
+```
+
+```yaml
+# config/services.yml — redefining the bundle's service id overrides the deny-all default
+services:
+    aaxis_devtools.feature.access_checker:
+        class: App\DevTools\HostBasedDevToolsAccessChecker
+        public: true
+        arguments: ['@request_stack']
+```
+
+> A complete, working copy of this opt-in lives in the `oro703` reference app
+> (`src/App/DevTools/HostBasedDevToolsAccessChecker.php` + `config/services.yml`).
 >
-> ```php
-> // config/bundles.php (or AppKernel::registerBundles())
-> Aaxis\Bundle\DevToolsBundle\AaxisDevToolsBundle::class => ['dev' => true, 'staging' => true],
-> ```
->
-> Access is still gated by the `aaxis_devtools` ACL and each tool's feature toggle, but registration
-> is the first and most important gate. Its dependency `AaxisCommonBundle` **does** auto-register and
-> is present anyway (it's required by the other Aaxis bundles), so `AaxisDevToolsBundle` is the only
-> one you add by hand — no need to register Common yourself.
+> **Behind a load balancer**, `Request::getClientIp()` only returns the real client when
+> `framework.trusted_proxies` / `trusted_headers` is configured — otherwise any IP allow-list never
+> matches. Access also remains gated by the `aaxis_devtools` ACL and each tool's per-tool feature flag.
 
 After install/update run (prefix each with your PHP runner, e.g. `docker exec <php-container> ...`,
 when running in Docker):

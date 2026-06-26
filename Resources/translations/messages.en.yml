@@ -41,6 +41,7 @@ aaxis:
                 label: 'Modify storage buckets (write / delete)'
                 description: 'Allow destructive Bucket Browser operations: create folders, upload files and delete objects. Not granted by default — assign it deliberately.'
         feature:
+            label: 'Aaxis Dev Tools'
             database_viewer:
                 label: 'Aaxis Dev Tools - Database Viewer'
             network_tools:

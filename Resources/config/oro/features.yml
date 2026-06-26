@@ -1,7 +1,21 @@
 features:
+    # Master access gate for the whole bundle. It has NO config toggle and uses the
+    # "affirmative" strategy with allow_if_all_abstain=false, so with no voter granting it
+    # the feature is DISABLED by default — which 404s every tool route and hides the menu
+    # (every tool below declares "dependencies: [aaxis_devtools]"). To enable it, the
+    # consuming application overrides the "aaxis_devtools.feature.access_checker" service
+    # with its own host/IP/env logic (see DevToolsAccessCheckerInterface). This is the
+    # single, code-controlled on/off switch for the toolbox.
+    aaxis_devtools:
+        label: aaxis.devtools.feature.label
+        strategy: affirmative
+        allow_if_all_abstain: false
+
     aaxis_devtools_runtime_config:
         label: aaxis.devtools.feature.runtime_config.label
         toggle: aaxis_devtools.runtime_config_enabled
+        dependencies:
+            - aaxis_devtools
         navigation_items:
             - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_runtime_config
         routes:
@@ -10,6 +24,8 @@ features:
     aaxis_devtools_connection_info:
         label: aaxis.devtools.feature.connection_info.label
         toggle: aaxis_devtools.connection_info_enabled
+        dependencies:
+            - aaxis_devtools
         navigation_items:
             - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_connection_info
         routes:
@@ -19,6 +35,8 @@ features:
     aaxis_devtools_filesystem_browser:
         label: aaxis.devtools.feature.filesystem_browser.label
         toggle: aaxis_devtools.filesystem_browser_enabled
+        dependencies:
+            - aaxis_devtools
         navigation_items:
             - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_filesystem_browser
         routes:
@@ -31,6 +49,8 @@ features:
     aaxis_devtools_bucket_browser:
         label: aaxis.devtools.feature.bucket_browser.label
         toggle: aaxis_devtools.bucket_browser_enabled
+        dependencies:
+            - aaxis_devtools
         navigation_items:
             - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_bucket_browser
         routes:
@@ -46,6 +66,8 @@ features:
     aaxis_devtools_database_viewer:
         label: aaxis.devtools.feature.database_viewer.label
         toggle: aaxis_devtools.database_viewer_enabled
+        dependencies:
+            - aaxis_devtools
         navigation_items:
             - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_database_viewer
         routes:
@@ -62,6 +84,8 @@ features:
     aaxis_devtools_elastic_viewer:
         label: aaxis.devtools.feature.elastic_viewer.label
         toggle: aaxis_devtools.elastic_viewer_enabled
+        dependencies:
+            - aaxis_devtools
         navigation_items:
             - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_elastic_viewer
         routes:
@@ -73,6 +97,8 @@ features:
     aaxis_devtools_redis_viewer:
         label: aaxis.devtools.feature.redis_viewer.label
         toggle: aaxis_devtools.redis_viewer_enabled
+        dependencies:
+            - aaxis_devtools
         navigation_items:
             - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_redis_viewer
         routes:
@@ -84,6 +110,8 @@ features:
     aaxis_devtools_mongodb_viewer:
         label: aaxis.devtools.feature.mongodb_viewer.label
         toggle: aaxis_devtools.mongodb_viewer_enabled
+        dependencies:
+            - aaxis_devtools
         navigation_items:
             - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_mongodb_viewer
         routes:
@@ -95,6 +123,8 @@ features:
     aaxis_devtools_network_tools:
         label: aaxis.devtools.feature.network_tools.label
         toggle: aaxis_devtools.network_tools_enabled
+        dependencies:
+            - aaxis_devtools
         navigation_items:
             - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_network_tools
         routes:
