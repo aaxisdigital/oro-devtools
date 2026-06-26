@@ -61,8 +61,8 @@ class NetworkToolsComponent extends BaseComponent {
         const cfg = FIELDS[this.currentTool()] || {port: false, path: false, dnsMode: false};
         this.toggleField('port', cfg.port);
         this.toggleField('path', cfg.path);
-        // The dns-mode <select> is upgraded to an Oro input widget, so toggle its wrapper
-        // (which contains the generated widget) rather than the now-hidden native control.
+        // Toggle the dns-mode wrapper (the <span> around the native <select>) so the whole control
+        // shows/hides as a unit. The select itself is kept native via the `no-uniform` class.
         this.toggleField('dns-mode-wrap', cfg.dnsMode);
         // setRunning() disables the native <select> directly during a request, so its enabled
         // state must be restored here too — otherwise it stays disabled after the first run.

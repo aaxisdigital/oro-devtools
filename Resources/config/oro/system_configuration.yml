@@ -169,7 +169,7 @@ system_configuration:
                 resettable: false
                 attr:
                     data-page-component-module: 'aaxiscommon/js/app/components/connection-test-component'
-                    data-page-component-options: '{"tool":"redis_viewer"}'
+                    data-page-component-options: '{"tool":"redis_viewer","editableConnection":true}'
         aaxis_devtools.redis_viewer_dsn:
             data_type: string
             # The DSN is shown in clear (host/port/db/username) — keep the password OUT of it and put
@@ -205,7 +205,7 @@ system_configuration:
                 resettable: false
                 attr:
                     data-page-component-module: 'aaxiscommon/js/app/components/connection-test-component'
-                    data-page-component-options: '{"tool":"mongodb_viewer"}'
+                    data-page-component-options: '{"tool":"mongodb_viewer","editableConnection":true}'
         aaxis_devtools.mongodb_viewer_public_dsn:
             data_type: string
             # The DSN is shown in clear (host/port/db/username) — keep the password OUT of it and put
@@ -326,7 +326,7 @@ system_configuration:
                 resettable: false
                 attr:
                     data-page-component-module: 'aaxiscommon/js/app/components/connection-test-component'
-                    data-page-component-options: '{"tool":"bucket_browser"}'
+                    data-page-component-options: '{"tool":"bucket_browser","editableConnection":true}'
         aaxis_devtools.bucket_browser_url:
             data_type: string
             type: Symfony\Component\Form\Extension\Core\Type\TextType

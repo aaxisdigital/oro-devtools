@@ -26,7 +26,7 @@
 
             <div class="aaxis-net-tools">
                 <div class="aaxis-net-tools__bar">
-                    <select class="form-control aaxis-net-tools__tool" data-role="tool">
+                    <select class="form-control no-uniform aaxis-net-tools__tool" data-role="tool">
                         {% if enabledTools.dns %}<option value="dns">{{ 'aaxis.devtools.network_tools.tool.dns'|trans }}</option>{% endif %}
                         {% if enabledTools.ping %}<option value="ping">{{ 'aaxis.devtools.network_tools.tool.ping'|trans }}</option>{% endif %}
                         {% if enabledTools.traceroute %}<option value="traceroute">{{ 'aaxis.devtools.network_tools.tool.traceroute'|trans }}</option>{% endif %}
@@ -38,7 +38,7 @@
                     <input type="text" class="form-control aaxis-net-tools__host" data-role="host"
                            placeholder="{{ 'aaxis.devtools.network_tools.host_placeholder'|trans }}">
                     <span class="aaxis-net-tools__dnsmode-wrap" data-role="dns-mode-wrap">
-                        <select class="form-control aaxis-net-tools__dnsmode" data-role="dns-mode">
+                        <select class="form-control no-uniform aaxis-net-tools__dnsmode" data-role="dns-mode">
                             <option value="a">{{ 'aaxis.devtools.network_tools.dns_mode_a'|trans }}</option>
                             <option value="full">{{ 'aaxis.devtools.network_tools.dns_mode_full'|trans }}</option>
                         </select>

@@ -28,8 +28,9 @@
         width: 100%;
         margin-bottom: 6px;
 
-        // Same rule shape that keeps the queue-monitor controls aligned: a shared height
-        // without !important so the native select matches the inputs and buttons.
+        // Keep every control the same height. The selects opt out of Oro's uniform-select widget
+        // (the `no-uniform` class in the twig), so they stay native and share this box with the
+        // inputs and buttons instead of being wrapped in a shorter `.selector` widget.
         .form-control,
         .btn,
         select {
@@ -44,11 +45,11 @@
         // text inputs. Strip the native chrome so the 36px box applies, and draw our own caret.
         select.form-control,
         select {
+            padding-top: 0;
+            padding-bottom: 0;
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
-            padding-top: 0;
-            padding-bottom: 0;
             padding-right: 26px;
             background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%235c6b7a' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
@@ -106,9 +107,6 @@
 
     &__running {
         flex: 0 0 auto;
-    }
-
-    &__running {
         display: inline-flex;
         align-items: center;
         align-self: center;
