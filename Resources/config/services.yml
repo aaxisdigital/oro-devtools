@@ -30,6 +30,7 @@ services:
         arguments:
             - '%env(default::ORO_REDIS_URL)%'
             - '@oro_config.global'
+            - '@oro_security.encoder.default'
 
     aaxis_devtools.redis_inspector:
         alias: Aaxis\Bundle\DevToolsBundle\Redis\RedisInspector

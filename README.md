@@ -46,7 +46,16 @@ configured from **System Configuration → General Setup → Aaxis Dev Tools**.
 The Database / Elastic / Redis / MongoDB viewers and the Bucket Browser expose a **"Test it"** button
 on their System Configuration page. The per-tool checks live in `Connection/*ConnectionTester`
 (implementing `Aaxis\Bundle\CommonBundle\Connection\ConnectionTesterInterface`) and are dispatched by
-CommonBundle's shared registry/endpoint. **Passwords are never returned** in the result.
+CommonBundle's shared registry/endpoint. The test runs against the values **currently entered in the
+form** (even before saving) and **passwords are never returned** in the result.
+
+### Redis / MongoDB credentials
+The DSN and the password are **separate fields**: the DSN is shown in clear (host/port/db, and
+optionally a `username@` for Redis 6 / MongoDB ACL), while the password lives in its own field that is
+**encrypted at rest** and rendered as a `*` placeholder — re-saving the section without retyping keeps
+the stored secret. **Do not put the password in the DSN**; put it in the password field. MongoDB has a
+password field per connection (public / private). Leaving Redis's DSN empty falls back to
+`ORO_REDIS_URL`, and the private MongoDB DSN to `ORO_MONGODB_SERVER`.
 
 ---
 

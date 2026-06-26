@@ -31,7 +31,7 @@ class MongoConnectionTester implements ConnectionTesterInterface
     public function test(array $overrides = []): array
     {
         try {
-            return $this->mongoInspector->testConnection();
+            return $this->mongoInspector->testConnection($overrides);
         } catch (\Throwable $e) {
             return [
                 'success' => false,

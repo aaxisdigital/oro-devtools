@@ -31,7 +31,7 @@ class RedisConnectionTester implements ConnectionTesterInterface
     public function test(array $overrides = []): array
     {
         try {
-            return $this->redisInspector->testConnection();
+            return $this->redisInspector->testConnection($overrides);
         } catch (\Throwable $e) {
             return [
                 'success' => false,

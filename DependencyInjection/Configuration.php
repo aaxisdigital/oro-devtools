@@ -46,16 +46,20 @@ class Configuration implements ConfigurationInterface
             'elastic_viewer_test' => ['type' => 'string', 'value' => ''],
             'elastic_viewer_allow_export' => ['type' => 'boolean', 'value' => true],
 
-            // Redis Viewer
+            // Redis Viewer (DSN is shown in clear; the password lives in its own encrypted field)
             'redis_viewer_enabled' => ['type' => 'boolean', 'value' => true],
             'redis_viewer_test' => ['type' => 'string', 'value' => ''],
             'redis_viewer_dsn' => ['type' => 'string', 'value' => ''],
+            'redis_viewer_password' => ['type' => 'string', 'value' => ''],
 
-            // MongoDB Viewer (two DSNs for the OroCloud public/private network scope)
+            // MongoDB Viewer (two DSNs for the OroCloud public/private network scope; each DSN is
+            // shown in clear and carries its own encrypted password field)
             'mongodb_viewer_enabled' => ['type' => 'boolean', 'value' => true],
             'mongodb_viewer_test' => ['type' => 'string', 'value' => ''],
             'mongodb_viewer_public_dsn' => ['type' => 'string', 'value' => ''],
+            'mongodb_viewer_public_password' => ['type' => 'string', 'value' => ''],
             'mongodb_viewer_private_dsn' => ['type' => 'string', 'value' => ''],
+            'mongodb_viewer_private_password' => ['type' => 'string', 'value' => ''],
 
             // Filesystem Browser
             'filesystem_browser_enabled' => ['type' => 'boolean', 'value' => true],

@@ -172,10 +172,21 @@ system_configuration:
                     data-page-component-options: '{"tool":"redis_viewer"}'
         aaxis_devtools.redis_viewer_dsn:
             data_type: string
+            # The DSN is shown in clear (host/port/db/username) — keep the password OUT of it and put
+            # it in the dedicated encrypted field below, so opening the form never exposes the secret.
             type: Symfony\Component\Form\Extension\Core\Type\TextType
             options:
                 label: aaxis.devtools.config.redis_viewer.dsn.label
                 tooltip: aaxis.devtools.config.redis_viewer.dsn.tooltip
+                required: false
+        aaxis_devtools.redis_viewer_password:
+            data_type: string
+            # Encrypted at rest + rendered as a "*" placeholder when set, so re-saving the section
+            # without retyping keeps the stored secret instead of wiping it.
+            type: Oro\Bundle\FormBundle\Form\Type\OroEncodedPlaceholderPasswordType
+            options:
+                label: aaxis.devtools.config.redis_viewer.password.label
+                tooltip: aaxis.devtools.config.redis_viewer.password.tooltip
                 required: false
 
         # --- MongoDB Viewer ---
@@ -197,20 +208,36 @@ system_configuration:
                     data-page-component-options: '{"tool":"mongodb_viewer"}'
         aaxis_devtools.mongodb_viewer_public_dsn:
             data_type: string
-            # DSNs may embed credentials, so store them like the bucket secret key: encrypted at rest
-            # and rendered as a "*" placeholder, so re-saving without retyping keeps the stored value.
-            type: Oro\Bundle\FormBundle\Form\Type\OroEncodedPlaceholderPasswordType
+            # The DSN is shown in clear (host/port/db/username) — keep the password OUT of it and put
+            # it in the matching encrypted password field below.
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
             options:
                 label: aaxis.devtools.config.mongodb_viewer.public_dsn.label
                 tooltip: aaxis.devtools.config.mongodb_viewer.public_dsn.tooltip
                 required: false
+        aaxis_devtools.mongodb_viewer_public_password:
+            data_type: string
+            # Encrypted at rest + rendered as a "*" placeholder when set (see the bucket secret key).
+            type: Oro\Bundle\FormBundle\Form\Type\OroEncodedPlaceholderPasswordType
+            options:
+                label: aaxis.devtools.config.mongodb_viewer.public_password.label
+                tooltip: aaxis.devtools.config.mongodb_viewer.public_password.tooltip
+                required: false
         aaxis_devtools.mongodb_viewer_private_dsn:
             data_type: string
-            # See the public DSN above — credentials are stored encrypted, never shown back in plain text.
-            type: Oro\Bundle\FormBundle\Form\Type\OroEncodedPlaceholderPasswordType
+            # See the public DSN above — shown in clear, password lives in the encrypted field below.
+            type: Symfony\Component\Form\Extension\Core\Type\TextType
             options:
                 label: aaxis.devtools.config.mongodb_viewer.private_dsn.label
                 tooltip: aaxis.devtools.config.mongodb_viewer.private_dsn.tooltip
+                required: false
+        aaxis_devtools.mongodb_viewer_private_password:
+            data_type: string
+            # Encrypted at rest + rendered as a "*" placeholder when set (see the bucket secret key).
+            type: Oro\Bundle\FormBundle\Form\Type\OroEncodedPlaceholderPasswordType
+            options:
+                label: aaxis.devtools.config.mongodb_viewer.private_password.label
+                tooltip: aaxis.devtools.config.mongodb_viewer.private_password.tooltip
                 required: false
 
         # --- Filesystem Browser ---
@@ -414,13 +441,16 @@ system_configuration:
                                             - aaxis_devtools.redis_viewer_enabled
                                             - aaxis_devtools.redis_viewer_test
                                             - aaxis_devtools.redis_viewer_dsn
+                                            - aaxis_devtools.redis_viewer_password
                                     aaxis_devtools_mongodb_viewer:
                                         priority: 63
                                         children:
                                             - aaxis_devtools.mongodb_viewer_enabled
                                             - aaxis_devtools.mongodb_viewer_test
                                             - aaxis_devtools.mongodb_viewer_public_dsn
+                                            - aaxis_devtools.mongodb_viewer_public_password
                                             - aaxis_devtools.mongodb_viewer_private_dsn
+                                            - aaxis_devtools.mongodb_viewer_private_password
                                     aaxis_devtools_network_tools:
                                         priority: 50
                                         children:

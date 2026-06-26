@@ -16,8 +16,10 @@ use Oro\Bundle\SecurityBundle\Encoder\SymmetricCrypterInterface;
  *    when its DSN is left empty, preserving the out-of-the-box behaviour.
  *  - "public"  — an optional externally-reachable endpoint; only used when its DSN is set.
  *
- * Both DSNs are stored encrypted (OroEncodedPlaceholderPasswordType) because they may embed
- * credentials, so they are decrypted here before a client is built. Only read operations are issued.
+ * Each DSN is stored in clear (host/port/db, and optionally a username); its password is kept in a
+ * separate encrypted config field (OroEncodedPlaceholderPasswordType) and supplied to the driver via
+ * uriOptions when a client is built, so the DSN can be shown without leaking the secret. Only read
+ * operations are issued.
  */
 class MongoInspector
 {
@@ -140,13 +142,16 @@ class MongoInspector
 
     /**
      * Pings every configured connection and reports each one's status; succeeds only when all
-     * reachable connections acknowledge the ping.
+     * reachable connections acknowledge the ping. Honors the values currently entered in the config
+     * form (even before saving) via $overrides; passwords are never returned.
+     *
+     * @param array<string, string> $overrides values entered in the config form (unsaved)
      *
      * @return array{success: bool, message: string, details: array<string, string>}
      */
-    public function testConnection(): array
+    public function testConnection(array $overrides = []): array
     {
-        $connections = $this->availableConnections();
+        $connections = $this->availableConnections($overrides);
         if (!$connections) {
             return [
                 'success' => false,
@@ -159,9 +164,9 @@ class MongoInspector
         $failures = [];
         foreach ($connections as $key) {
             $label = ucfirst($key);
-            $masked = $this->maskDsn($this->effectiveDsn($key));
+            $masked = $this->maskDsn($this->effectiveDsn($key, $overrides));
             try {
-                $client = $this->client($key);
+                $client = $this->client($key, $overrides);
                 $result = $client->getManager()->executeCommand(
                     'admin',
                     new \MongoDB\Driver\Command(['ping' => 1])
@@ -216,26 +221,39 @@ class MongoInspector
         return $decoded;
     }
 
-    private function client(string $connection): Client
+    /**
+     * @param array<string, string> $overrides
+     */
+    private function client(string $connection, array $overrides = []): Client
     {
-        $dsn = $this->effectiveDsn($connection);
+        $dsn = $this->effectiveDsn($connection, $overrides);
         if ($dsn === '') {
             throw new \InvalidArgumentException(sprintf('No MongoDB DSN is configured for the "%s" connection.', $connection));
         }
 
-        return new Client($dsn);
+        // The password lives in its own field, not in the DSN; the driver merges it (and the
+        // username carried in the DSN) without us having to splice credentials into the URI string.
+        $uriOptions = [];
+        $password = $this->effectivePassword($connection, $overrides);
+        if ($password !== '') {
+            $uriOptions['password'] = $password;
+        }
+
+        return new Client($dsn, $uriOptions);
     }
 
     /**
      * Connection keys (in display order) that have a usable DSN.
      *
+     * @param array<string, string> $overrides
+     *
      * @return array<int, string>
      */
-    private function availableConnections(): array
+    private function availableConnections(array $overrides = []): array
     {
         $available = [];
         foreach ([self::CONNECTION_PRIVATE, self::CONNECTION_PUBLIC] as $key) {
-            if ($this->effectiveDsn($key) !== '') {
+            if ($this->effectiveDsn($key, $overrides) !== '') {
                 $available[] = $key;
             }
         }
@@ -244,17 +262,42 @@ class MongoInspector
     }
 
     /**
-     * The resolved DSN for a connection: the configured (decrypted) value, with the private
-     * connection falling back to the application's ORO_MONGODB_SERVER when left empty.
+     * The resolved DSN for a connection: the value entered in the form (unsaved) when present, then
+     * the configured value, with the private connection falling back to the application's
+     * ORO_MONGODB_SERVER when left empty.
+     *
+     * @param array<string, string> $overrides
      */
-    private function effectiveDsn(string $connection): string
+    private function effectiveDsn(string $connection, array $overrides = []): string
     {
-        $configured = $this->decrypt((string) $this->configManager->get('aaxis_devtools.mongodb_viewer_' . $connection . '_dsn'));
+        $entered = $overrides[$connection . '_dsn'] ?? null;
+        if ($entered !== null && trim((string) $entered) !== '') {
+            return trim((string) $entered);
+        }
+
+        $configured = trim((string) $this->configManager->get('aaxis_devtools.mongodb_viewer_' . $connection . '_dsn'));
         if ($configured !== '') {
             return $configured;
         }
 
         return $connection === self::CONNECTION_PRIVATE ? trim($this->defaultDsn) : '';
+    }
+
+    /**
+     * The password for a connection: the value typed into the form (test in edit mode) when present,
+     * otherwise the saved encrypted value, decrypted. The masked placeholder rendered for a stored
+     * secret (a run of "*") counts as "not entered".
+     *
+     * @param array<string, string> $overrides
+     */
+    private function effectivePassword(string $connection, array $overrides): string
+    {
+        $entered = isset($overrides[$connection . '_password']) ? trim((string) $overrides[$connection . '_password']) : '';
+        if ($entered !== '' && trim($entered, '*') !== '') {
+            return $entered;
+        }
+
+        return $this->decrypt((string) $this->configManager->get('aaxis_devtools.mongodb_viewer_' . $connection . '_password'));
     }
 
     /**

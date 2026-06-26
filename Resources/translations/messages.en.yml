@@ -103,15 +103,24 @@ aaxis:
                 title: 'Redis Viewer'
                 dsn:
                     label: 'Connection DSN'
-                    tooltip: 'Leave empty to use the application Redis (ORO_REDIS_URL). Example: redis://:password@host:6379'
+                    tooltip: 'Leave empty to use the application Redis (ORO_REDIS_URL). Put the password in the field below, not here. Example: redis://host:6379 (or redis://username@host:6379 for ACL).'
+                password:
+                    label: 'Password'
+                    tooltip: 'Authentication password (AUTH), stored encrypted. Leave empty if the server requires none.'
             mongodb_viewer:
                 title: 'MongoDB Viewer'
                 public_dsn:
                     label: 'Public Connection DSN'
-                    tooltip: 'Optional externally-reachable MongoDB endpoint (OroCloud public scope). Leave empty to skip it. Stored encrypted. Example: mongodb://user:password@host:27017'
+                    tooltip: 'Optional externally-reachable MongoDB endpoint (OroCloud public scope). Leave empty to skip it. Put the password in the field below, not here. Example: mongodb://host:27017 (or mongodb://username@host:27017).'
+                public_password:
+                    label: 'Public Password'
+                    tooltip: 'Password for the public connection, stored encrypted. Leave empty if none is required.'
                 private_dsn:
                     label: 'Private Connection DSN'
-                    tooltip: 'Internal/private MongoDB endpoint. Leave empty to use the application MongoDB (ORO_MONGODB_SERVER). Stored encrypted. Example: mongodb://user:password@host:27017'
+                    tooltip: 'Internal/private MongoDB endpoint. Leave empty to use the application MongoDB (ORO_MONGODB_SERVER). Put the password in the field below, not here. Example: mongodb://host:27017 (or mongodb://username@host:27017).'
+                private_password:
+                    label: 'Private Password'
+                    tooltip: 'Password for the private connection, stored encrypted. Leave empty if none is required.'
             filesystem_browser:
                 title: 'Filesystem Browser'
                 base_path:
