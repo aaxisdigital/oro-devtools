@@ -148,30 +148,34 @@ cache-warmup has no host/IP). You provide one small service implementing the bun
 it to grant the master feature. The default implementation denies everyone, so overriding this one
 service is the whole opt-in.
 
+> **Behind a load balancer**, `Request::getClientIp()` only returns the real client when
+> `framework.trusted_proxies` / `trusted_headers` is configured — otherwise any IP allow-list never
+> matches. Access also remains gated by the `aaxis_devtools` ACL and each tool's per-tool feature flag.
+
+Implement `DevToolsAccessCheckerInterface` and put your decision logic in `isAccessAllowed()` —
+return `true` to show the toolbox, `false` to keep it hidden. Inject whatever you need to decide
+(`RequestStack` for host/IP, `ConfigManager` for a system setting, env vars, the current user, …):
+
 ```php
-// src/App/DevTools/HostBasedDevToolsAccessChecker.php
+// src/App/DevTools/DevToolsAccessChecker.php
 namespace App\DevTools;
 
 use Aaxis\Bundle\DevToolsBundle\Feature\DevToolsAccessCheckerInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
 
-final class HostBasedDevToolsAccessChecker implements DevToolsAccessCheckerInterface
+final class DevToolsAccessChecker implements DevToolsAccessCheckerInterface
 {
-    private const RESTRICTED_HOSTS = ['bridge-stage.oro-cloud.com', 'bridge.braskem.com'];
-    private const ALLOWED_IPS = ['38.104.78.213'];
-
-    public function __construct(private readonly RequestStack $requestStack) {}
+    // Inject the services your decision needs, e.g. a RequestStack for host/IP,
+    // an Oro ConfigManager for a system-config flag, env vars, the token storage, …
+    // public function __construct(private readonly RequestStack $requestStack) {}
 
     public function isAccessAllowed(): bool
     {
-        $request = $this->requestStack->getMainRequest();
-        if (null === $request) {
-            return false; // CLI: no host context
-        }
-        $restricted = \in_array($request->getHost(), self::RESTRICTED_HOSTS, true);
-        $allowedByIp = \in_array($request->getClientIp(), self::ALLOWED_IPS, true);
+        // Decide here whether the toolbox should be shown for the current context.
+        // Return true to enable it, false to keep everything hidden (the default).
+        // Note: this also runs on CLI (cron, cache:warmup) where there is no request —
+        // guard for that case if your logic reads the request (e.g. getMainRequest() === null).
 
-        return !$restricted || $allowedByIp;
+        return false;
     }
 }
 ```
@@ -180,17 +184,19 @@ final class HostBasedDevToolsAccessChecker implements DevToolsAccessCheckerInter
 # config/services.yml — redefining the bundle's service id overrides the deny-all default
 services:
     aaxis_devtools.feature.access_checker:
-        class: App\DevTools\HostBasedDevToolsAccessChecker
+        class: App\DevTools\DevToolsAccessChecker
         public: true
-        arguments: ['@request_stack']
+        # arguments: ['@request_stack']   # add the services you inject above
 ```
 
-> A complete, working copy of this opt-in lives in the `oro703` reference app
-> (`src/App/DevTools/HostBasedDevToolsAccessChecker.php` + `config/services.yml`).
->
-> **Behind a load balancer**, `Request::getClientIp()` only returns the real client when
-> `framework.trusted_proxies` / `trusted_headers` is configured — otherwise any IP allow-list never
-> matches. Access also remains gated by the `aaxis_devtools` ACL and each tool's per-tool feature flag.
+> If your app doesn't already load `config/services.yml`, import it from `config/config.yml` (a
+> classic Oro app does **not** do this by default):
+
+```yaml
+# config/config.yml
+imports:
+    - { resource: services.yml }
+```
 
 After install/update run (prefix each with your PHP runner, e.g. `docker exec <php-container> ...`,
 when running in Docker):
