@@ -136,9 +136,9 @@ when running in Docker):
 
 ```bash
 php bin/console cache:clear --no-interaction
-php bin/console oro:migration:load --force                 # creates the dbviewer/network tables (+ admin ACL)
-php bin/console aaxis:devtools:typescript:compile          # compile this bundle's TypeScript
-php bin/console oro:assets:build --no-interaction
+php bin/console oro:migration:load --force                 # creates the dbviewer/network tables
+php bin/console oro:migration:data:load --no-interaction   # grants the aaxis_devtools ACL to the Administrator role
+php bin/console oro:assets:build --no-interaction          # also compiles this bundle's TypeScript
 php bin/console oro:translation:load --no-interaction
 php bin/console oro:translation:rebuild-cache --no-interaction
 php bin/console oro:cron:definitions:load                  # registers aaxis:devtools:history:cleanup
@@ -148,7 +148,6 @@ php bin/console oro:cron:definitions:load                  # registers aaxis:dev
 
 ## Front-end / build
 
-TypeScript components live in `Resources/js-src` and are compiled to `Resources/public/js` by
-`php bin/console aaxis:devtools:typescript:compile` (also triggered automatically on
-`oro:assets:build` via `CompileTypeScriptOnAssetsBuildListener`). Re-run the compile, then
-`oro:assets:build`, after changing any `.ts` source.
+TypeScript components live in `Resources/js-src` and are compiled to `Resources/public/js`
+automatically on `oro:assets:build` (via `CompileTypeScriptOnAssetsBuildListener`). Just re-run
+`oro:assets:build` after changing any `.ts` source.

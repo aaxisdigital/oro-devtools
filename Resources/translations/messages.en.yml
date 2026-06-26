@@ -106,9 +106,12 @@ aaxis:
                     tooltip: 'Leave empty to use the application Redis (ORO_REDIS_URL). Example: redis://:password@host:6379'
             mongodb_viewer:
                 title: 'MongoDB Viewer'
-                dsn:
-                    label: 'Connection DSN'
-                    tooltip: 'Leave empty to use the application MongoDB (ORO_MONGODB_SERVER). Example: mongodb://user:password@host:27017'
+                public_dsn:
+                    label: 'Public Connection DSN'
+                    tooltip: 'Optional externally-reachable MongoDB endpoint (OroCloud public scope). Leave empty to skip it. Stored encrypted. Example: mongodb://user:password@host:27017'
+                private_dsn:
+                    label: 'Private Connection DSN'
+                    tooltip: 'Internal/private MongoDB endpoint. Leave empty to use the application MongoDB (ORO_MONGODB_SERVER). Stored encrypted. Example: mongodb://user:password@host:27017'
             filesystem_browser:
                 title: 'Filesystem Browser'
                 base_path:
@@ -225,8 +228,8 @@ aaxis:
                 intro: 'Inspect the configured MongoDB server (read-only). Pick a database on the left to see its collections, choose one, and browse its documents. An optional JSON filter narrows the result.'
                 databases:
                     title: 'Databases & collections'
-                    item1: 'The sidebar lists databases with their collection counts; expand a database to see its collections and pick one.'
-                    item2: 'The server panel shows the MongoDB version.'
+                    item1: 'The sidebar groups databases under each configured connection (Public / Private) with their collection counts; expand a database to see its collections and pick one.'
+                    item2: 'Each connection header shows the reachable MongoDB version; an unreachable connection shows its error without hiding the other.'
                 documents:
                     title: 'Documents'
                     item1: 'Enter an optional JSON filter (e.g. {"status":"active"}) and press Find; use "Load more" to page through results.'

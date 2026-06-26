@@ -51,10 +51,11 @@ class Configuration implements ConfigurationInterface
             'redis_viewer_test' => ['type' => 'string', 'value' => ''],
             'redis_viewer_dsn' => ['type' => 'string', 'value' => ''],
 
-            // MongoDB Viewer
+            // MongoDB Viewer (two DSNs for the OroCloud public/private network scope)
             'mongodb_viewer_enabled' => ['type' => 'boolean', 'value' => true],
             'mongodb_viewer_test' => ['type' => 'string', 'value' => ''],
-            'mongodb_viewer_dsn' => ['type' => 'string', 'value' => ''],
+            'mongodb_viewer_public_dsn' => ['type' => 'string', 'value' => ''],
+            'mongodb_viewer_private_dsn' => ['type' => 'string', 'value' => ''],
 
             // Filesystem Browser
             'filesystem_browser_enabled' => ['type' => 'boolean', 'value' => true],

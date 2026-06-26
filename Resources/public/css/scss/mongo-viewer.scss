@@ -117,19 +117,26 @@ $aaxis-mongo-border: #d9d9d9;
         white-space: nowrap;
     }
 
-    &__server {
-        flex: 0 0 auto;
-        max-height: 30%;
-        overflow: auto;
-        padding: 8px 10px;
-        border-top: 1px solid $aaxis-mongo-border;
+    // Header for each connection group (Public / Private) in the database sidebar.
+    &__conn-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 10px 4px;
         font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
         color: #5c6b7a;
+        background: #f5f7f9;
+        border-top: 1px solid $aaxis-mongo-border;
 
-        dl { margin: 0; }
-        dt { font-weight: font-weight('bold'); color: #2b3a4a; }
-        dd { margin: 0 0 4px; word-break: break-all; }
+        &:first-child { border-top: 0; }
     }
+
+    &__conn-label { font-weight: font-weight('bold'); color: #2b3a4a; }
+    &__conn-version { color: #5c6b7a; }
+    &__conn-error { color: #b94a48; word-break: break-word; }
 
     // --- Main --------------------------------------------------------------
     &__main {

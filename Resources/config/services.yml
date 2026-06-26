@@ -39,6 +39,7 @@ services:
         arguments:
             - '%env(default::ORO_MONGODB_SERVER)%'
             - '@oro_config.global'
+            - '@oro_security.encoder.default'
 
     aaxis_devtools.mongo_inspector:
         alias: Aaxis\Bundle\DevToolsBundle\Mongo\MongoInspector

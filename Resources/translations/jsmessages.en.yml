@@ -91,6 +91,8 @@ aaxis:
             filter_placeholder: 'Filter (JSON), e.g. {"status":"active"}'
             find: 'Find'
             refresh: 'Refresh'
+            connection_public: 'Public'
+            connection_private: 'Private'
             overview_error: 'Unable to load the MongoDB overview.'
             collections_error: 'Unable to list collections.'
             documents_error: 'Unable to load documents.'

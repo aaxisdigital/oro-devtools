@@ -195,12 +195,22 @@ system_configuration:
                 attr:
                     data-page-component-module: 'aaxiscommon/js/app/components/connection-test-component'
                     data-page-component-options: '{"tool":"mongodb_viewer"}'
-        aaxis_devtools.mongodb_viewer_dsn:
+        aaxis_devtools.mongodb_viewer_public_dsn:
             data_type: string
-            type: Symfony\Component\Form\Extension\Core\Type\TextType
+            # DSNs may embed credentials, so store them like the bucket secret key: encrypted at rest
+            # and rendered as a "*" placeholder, so re-saving without retyping keeps the stored value.
+            type: Oro\Bundle\FormBundle\Form\Type\OroEncodedPlaceholderPasswordType
             options:
-                label: aaxis.devtools.config.mongodb_viewer.dsn.label
-                tooltip: aaxis.devtools.config.mongodb_viewer.dsn.tooltip
+                label: aaxis.devtools.config.mongodb_viewer.public_dsn.label
+                tooltip: aaxis.devtools.config.mongodb_viewer.public_dsn.tooltip
+                required: false
+        aaxis_devtools.mongodb_viewer_private_dsn:
+            data_type: string
+            # See the public DSN above — credentials are stored encrypted, never shown back in plain text.
+            type: Oro\Bundle\FormBundle\Form\Type\OroEncodedPlaceholderPasswordType
+            options:
+                label: aaxis.devtools.config.mongodb_viewer.private_dsn.label
+                tooltip: aaxis.devtools.config.mongodb_viewer.private_dsn.tooltip
                 required: false
 
         # --- Filesystem Browser ---
@@ -409,7 +419,8 @@ system_configuration:
                                         children:
                                             - aaxis_devtools.mongodb_viewer_enabled
                                             - aaxis_devtools.mongodb_viewer_test
-                                            - aaxis_devtools.mongodb_viewer_dsn
+                                            - aaxis_devtools.mongodb_viewer_public_dsn
+                                            - aaxis_devtools.mongodb_viewer_private_dsn
                                     aaxis_devtools_network_tools:
                                         priority: 50
                                         children:

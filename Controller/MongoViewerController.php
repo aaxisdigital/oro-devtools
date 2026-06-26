@@ -29,13 +29,14 @@ class MongoViewerController extends AbstractController
     #[Route(path: '/mongodb-viewer/collections', name: 'aaxis_devtools_mongodb_viewer_collections', methods: ['GET'])]
     public function collectionsAction(Request $request): JsonResponse
     {
+        $connection = $this->connection($request);
         $db = (string) $request->query->get('db', '');
         if ($db === '') {
             return new JsonResponse(['success' => false, 'message' => 'A database is required.'], 400);
         }
 
         try {
-            return new JsonResponse(['success' => true, 'collections' => $this->inspector()->listCollections($db)]);
+            return new JsonResponse(['success' => true, 'collections' => $this->inspector()->listCollections($connection, $db)]);
         } catch (\Throwable $e) {
             return new JsonResponse(['success' => false, 'message' => $this->inspector()->redactDsnCredentials($e->getMessage())], 502);
         }
@@ -44,6 +45,7 @@ class MongoViewerController extends AbstractController
     #[Route(path: '/mongodb-viewer/documents', name: 'aaxis_devtools_mongodb_viewer_documents', methods: ['GET'])]
     public function documentsAction(Request $request): JsonResponse
     {
+        $connection = $this->connection($request);
         $db = (string) $request->query->get('db', '');
         $collection = (string) $request->query->get('collection', '');
         if ($db === '' || $collection === '') {
@@ -52,6 +54,7 @@ class MongoViewerController extends AbstractController
 
         try {
             $data = $this->inspector()->findDocuments(
+                $connection,
                 $db,
                 $collection,
                 (string) $request->query->get('filter', ''),
@@ -70,6 +73,19 @@ class MongoViewerController extends AbstractController
     private function inspector(): MongoInspector
     {
         return $this->container->get(MongoInspector::class);
+    }
+
+    /**
+     * Resolves the requested connection key, defaulting to the private connection. Unknown values
+     * fall back to private so a malformed request can never reach an unintended endpoint.
+     */
+    private function connection(Request $request): string
+    {
+        $connection = (string) $request->query->get('connection', MongoInspector::CONNECTION_PRIVATE);
+
+        return $connection === MongoInspector::CONNECTION_PUBLIC
+            ? MongoInspector::CONNECTION_PUBLIC
+            : MongoInspector::CONNECTION_PRIVATE;
     }
 
     #[\Override]

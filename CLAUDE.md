@@ -126,8 +126,8 @@ entity needs a `runAt` field. Add a `purge(...)` line per history entity.
 
 ## Front end / TypeScript
 
-`Resources/js-src/*.ts` compile to `Resources/public/js/*.js` via
-`php bin/console aaxis:devtools:typescript:compile` (also runs on `oro:assets:build`). **Only the
+`Resources/js-src/*.ts` compile to `Resources/public/js/*.js` automatically on `oro:assets:build`
+(via `CompileTypeScriptOnAssetsBuildListener`). **Only the
 `.ts` sources are committed** — the emitted `.js` is generated at build time and git-ignored; edit
 the `.ts`, never the `.js`. The build fails loudly if `tsc` is missing (no committed JS fallback) and
 recompiles even under `vendor/aaxisdigital/oro*`. `tsconfig.json` extends CommonBundle's
@@ -139,7 +139,7 @@ recompiles even under `vendor/aaxisdigital/oro*`. `tsconfig.json` extends Common
 php bin/console cache:clear --no-interaction
 php bin/console debug:router | grep aaxis_devtools
 php bin/console debug:container --tag=aaxis_common.connection_tester   # testers wired?
-php bin/console aaxis:devtools:typescript:compile
+php bin/console oro:assets:build --env=dev                             # compiles TypeScript too
 ```
 `lint:container` currently fails on an unrelated pre-existing Oro alias issue
 (`UserAuthorizationCheckerInterface`); use `cache:clear` as the compile check instead.
