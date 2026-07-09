@@ -15,6 +15,7 @@ declare module 'codemirror/mode/htmlmixed/htmlmixed';
 declare module 'codemirror/mode/php/php';
 declare module 'codemirror/mode/twig/twig';
 declare module 'oroui/js/app/components/base/component';
+declare module 'oroui/js/mediator';
 declare module 'oroui/js/messenger';
 declare module 'oroui/js/modal';
 declare module 'oroform/js/app/views/select2-view';

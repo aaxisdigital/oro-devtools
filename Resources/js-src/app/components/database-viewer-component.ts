@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import __ from 'orotranslation/js/translator';
 import messenger from 'oroui/js/messenger';
+import mediator from 'oroui/js/mediator';
 import Modal from 'oroui/js/modal';
 import BaseComponent from 'oroui/js/app/components/base/component';
 import CodeMirror from 'codemirror';
@@ -178,6 +179,10 @@ class DatabaseViewerComponent extends BaseComponent {
         this.bindEvents();
         this.updateUpdateButton();
         this.updateOrderButtons();
+
+        // Guard saved queries with unsaved edits against being lost on navigation.
+        mediator.on('openLink:before', this.onBeforePageChange, this);
+        $(window).on('beforeunload.aaxisDbViewer', this.onWindowUnload.bind(this));
     }
 
     private bindEvents(): void {
@@ -450,8 +455,21 @@ class DatabaseViewerComponent extends BaseComponent {
             return;
         }
         const id = String($(event.currentTarget).data('id'));
+        const tab = this.tabs.find(t => t.id === id);
+        if (!tab) {
+            return;
+        }
+        this.saveActiveTab();
+        if (this.isTabModified(tab)) {
+            this.confirmDiscardTab(tab);
+            return;
+        }
+        this.closeTab(id);
+    }
+
+    private closeTab(id: string): void {
         const index = this.tabs.findIndex(t => t.id === id);
-        if (index === -1) {
+        if (index === -1 || this.tabs.length <= 1) {
             return;
         }
         this.tabs.splice(index, 1);
@@ -464,6 +482,16 @@ class DatabaseViewerComponent extends BaseComponent {
         }
         this.renderTabs();
         this.updateUpdateButton();
+    }
+
+    private confirmDiscardTab(tab: QueryTab): void {
+        const modal = new Modal({
+            title: __('aaxis.devtools.database_viewer.unsaved_title'),
+            content: __('aaxis.devtools.database_viewer.unsaved_close_confirm', {name: this.escapeHtml(tab.name)}),
+            okText: __('aaxis.devtools.database_viewer.unsaved_discard')
+        });
+        modal.on('ok', () => this.closeTab(tab.id));
+        modal.open();
     }
 
     // --- Favorites / saving --------------------------------------------------
@@ -534,13 +562,15 @@ class DatabaseViewerComponent extends BaseComponent {
                     url: this.savedQueriesUrl + '/' + tab.savedId,
                     method: 'PUT',
                     contentType: 'application/json',
-                    data: JSON.stringify({name, public: isPublic})
+                    data: JSON.stringify({name, public: isPublic}),
+                    errorHandlerMessage: false
                 })
                 : $.ajax({
                     url: this.savedQueriesUrl,
                     method: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({name, text, public: isPublic})
+                    data: JSON.stringify({name, text, public: isPublic}),
+                    errorHandlerMessage: false
                 });
 
             request.done((response: {success: boolean; query?: SavedQueryItem}) => {
@@ -736,7 +766,8 @@ class DatabaseViewerComponent extends BaseComponent {
             url: this.savedQueriesUrl + '/' + tab.savedId,
             method: 'PUT',
             contentType: 'application/json',
-            data: JSON.stringify({text})
+            data: JSON.stringify({text}),
+            errorHandlerMessage: false
         }).done((response: {success: boolean}) => {
             if (response.success) {
                 tab.savedText = text;
@@ -746,6 +777,118 @@ class DatabaseViewerComponent extends BaseComponent {
             }
         }).fail(() => {
             messenger.notificationFlashMessage('error', __('aaxis.devtools.database_viewer.uq_error'));
+        });
+    }
+
+    // --- Unsaved changes guard ------------------------------------------------
+
+    /** Only queries that are already saved count: new never-saved tabs die silently. */
+    private isTabModified(tab: QueryTab): boolean {
+        return tab.savedId !== null && tab.sql !== String(tab.savedText ?? '');
+    }
+
+    private modifiedSavedTabs(): QueryTab[] {
+        this.saveActiveTab();
+        return this.tabs.filter(tab => this.isTabModified(tab));
+    }
+
+    private onWindowUnload(event: any): string | undefined {
+        if (this.modifiedSavedTabs().length === 0) {
+            return undefined;
+        }
+        const message = __('aaxis.devtools.database_viewer.unsaved_leave_intro');
+        event.preventDefault();
+        if (event.originalEvent) {
+            event.originalEvent.returnValue = message;
+        }
+        return message;
+    }
+
+    /**
+     * Oro SPA navigation (menu/link clicks) publishes 'openLink:before' and honours
+     * payload.prevented. When saved queries carry unsaved edits, the navigation is held
+     * back, the user resolves each query (save or discard) in a dialog, and on confirm
+     * the original target URL is re-triggered via redirectTo.
+     */
+    private onBeforePageChange(payload: {prevented: boolean; target: HTMLElement}): void {
+        if (payload.prevented) {
+            return;
+        }
+        const modified = this.modifiedSavedTabs();
+        if (modified.length === 0) {
+            return;
+        }
+        payload.prevented = true;
+        const $target = $(payload.target);
+        const url = String($target.attr('href') || $target.data('href') || '');
+        const options = $target.data('options') || {};
+        this.openLeaveDialog(modified, () => {
+            if (url) {
+                mediator.execute('redirectTo', {url}, options);
+            }
+        });
+    }
+
+    private openLeaveDialog(modified: QueryTab[], proceed: () => void): void {
+        let html = '<div class="aaxis-db-viewer__leave">' +
+            '<p>' + __('aaxis.devtools.database_viewer.unsaved_leave_intro') + '</p>' +
+            '<table class="aaxis-db-viewer__leave-list">';
+        modified.forEach(tab => {
+            html += '<tr>' +
+                '<td class="aaxis-db-viewer__leave-name">' + this.escapeHtml(tab.name) + '</td>' +
+                '<td><label class="radio">' +
+                    '<input type="radio" name="leave-' + tab.id + '" value="discard" checked> ' +
+                    __('aaxis.devtools.database_viewer.unsaved_discard') + '</label></td>' +
+                '<td>' + (tab.savedOwned
+                    ? '<label class="radio"><input type="radio" name="leave-' + tab.id + '" value="save"> ' +
+                        __('aaxis.devtools.database_viewer.unsaved_save') + '</label>'
+                    : '') + '</td>' +
+                '</tr>';
+        });
+        html += '</table>';
+        if (modified.length > 1) {
+            html += '<div class="aaxis-db-viewer__leave-all">' +
+                '<a href="#" data-role="leave-all" data-value="discard">' +
+                    __('aaxis.devtools.database_viewer.unsaved_discard_all') + '</a>' +
+                '<a href="#" data-role="leave-all" data-value="save">' +
+                    __('aaxis.devtools.database_viewer.unsaved_save_all') + '</a>' +
+                '</div>';
+        }
+        html += '</div>';
+
+        const modal = new Modal({
+            title: __('aaxis.devtools.database_viewer.unsaved_title'),
+            content: html,
+            okText: __('aaxis.devtools.database_viewer.unsaved_leave_ok'),
+            okCloses: false
+        });
+
+        modal.on('ok', () => {
+            const toSave = modified.filter(tab => tab.savedOwned && tab.savedId !== null
+                && modal.$el.find('input[name="leave-' + tab.id + '"]:checked').val() === 'save');
+            const requests = toSave.map(tab => $.ajax({
+                url: this.savedQueriesUrl + '/' + tab.savedId,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({text: tab.sql}),
+                errorHandlerMessage: false
+            }));
+            $.when.apply($, requests).done(() => {
+                toSave.forEach(tab => {
+                    tab.savedText = tab.sql;
+                });
+                modal.close();
+                proceed();
+            }).fail(() => {
+                messenger.notificationFlashMessage('error', __('aaxis.devtools.database_viewer.uq_error'));
+            });
+        });
+
+        modal.open();
+        modal.$el.on('click', '[data-role="leave-all"]', (e: any) => {
+            e.preventDefault();
+            const value = String($(e.currentTarget).data('value'));
+            modal.$el.find('input[type="radio"][value="' + value + '"]').prop('checked', true);
         });
     }
 
@@ -842,17 +985,29 @@ class DatabaseViewerComponent extends BaseComponent {
             .replace(/\s+/g, ' ')
             .trim();
 
-        // Break top-level commas (paren depth 0) so list items land on their own line.
-        let depth = 0;
+        // Protect the AND of "BETWEEN x AND y" so the sub-clause pass doesn't split it.
+        s = s.replace(/(\bBETWEEN\b[^()]*?)\bAND\b/gi, '$1\u0002');
+
+        // Each statement starts on its own line.
+        s = s.replace(/;\s*/g, ';\n');
+
+        // Two kinds of paren groups: SELECT-groups (subqueries, CTE bodies) format like
+        // top-level SQL — commas break and the closing paren gets its own line; every other
+        // group (function calls, IN lists, value tuples) stays inline.
+        const selectGroup: boolean[] = [];
         let commaBroken = '';
         for (let i = 0; i < s.length; i++) {
             const ch = s.charAt(i);
             if (ch === '(') {
-                depth++;
+                selectGroup.push(/^\s*select\b/i.test(s.slice(i + 1)));
+                commaBroken += ch;
             } else if (ch === ')') {
-                depth = Math.max(0, depth - 1);
+                commaBroken += selectGroup.pop() === true ? '\n)' : ch;
+            } else if (ch === ',' && (selectGroup.length === 0 || selectGroup[selectGroup.length - 1])) {
+                commaBroken += ',\n';
+            } else {
+                commaBroken += ch;
             }
-            commaBroken += (ch === ',' && depth === 0) ? ',\n' : ch;
         }
         s = commaBroken;
 
@@ -860,27 +1015,54 @@ class DatabaseViewerComponent extends BaseComponent {
         const clauses = [
             'LEFT OUTER JOIN', 'RIGHT OUTER JOIN', 'FULL OUTER JOIN', 'LEFT JOIN', 'RIGHT JOIN',
             'INNER JOIN', 'CROSS JOIN', 'FULL JOIN', 'GROUP BY', 'ORDER BY', 'DELETE FROM',
-            'INSERT INTO', 'UNION ALL', 'SELECT', 'FROM', 'WHERE', 'HAVING', 'LIMIT', 'OFFSET',
-            'UNION', 'VALUES', 'UPDATE', 'SET', 'RETURNING', 'JOIN'
+            'INSERT INTO', 'UNION ALL', 'WITH', 'SELECT', 'FROM', 'WHERE', 'HAVING', 'LIMIT',
+            'OFFSET', 'UNION', 'VALUES', 'UPDATE', 'SET', 'RETURNING', 'JOIN'
         ];
-        clauses.forEach(kw => {
-            const re = new RegExp('\\s*\\b' + kw.replace(/ /g, '\\s+') + '\\b\\s*', 'gi');
-            s = s.replace(re, '\n' + kw + ' ');
-        });
+        // One combined pass (longest alternative first): a per-keyword loop would let a later
+        // single-word keyword re-split a multi-word clause already placed (LEFT JOIN -> LEFT\nJOIN).
+        const alternation = clauses.map(kw => kw.replace(/ /g, '\\s+')).join('|');
+        const clauseRe = new RegExp('\\s*\\b(' + alternation + ')\\b\\s*', 'gi');
+        s = s.replace(clauseRe, (_m: string, kw: string) => '\n' + kw.replace(/\s+/g, ' ').toUpperCase() + ' ');
 
         // Sub-clause keywords get their own indented line.
-        ['AND', 'OR', 'ON'].forEach(kw => {
-            const re = new RegExp('\\s*\\b' + kw + '\\b\\s*', 'gi');
-            s = s.replace(re, '\n' + kw + ' ');
-        });
+        s = s.replace(/\s*\b(AND|OR|ON)\b\s*/gi, (_m: string, kw: string) => '\n' + kw.toUpperCase() + ' ');
 
-        // Lines that don't start a clause (column continuations, AND/OR/ON) are indented.
-        const clauseStart = new RegExp('^(' + clauses.map(kw => kw.replace(/ /g, '\\s+')).join('|') + ')\\b', 'i');
-        s = s.split('\n')
-            .map(line => line.trim())
-            .filter(line => line !== '')
-            .map(line => (clauseStart.test(line) ? line : '  ' + line))
-            .join('\n');
+        // Restore the protected BETWEEN ... AND.
+        s = s.replace(/\u0002/g, 'AND');
+
+        // Secondary keywords are uppercased in place (no line break of their own).
+        s = s.replace(
+            /\b(AS|ASC|DESC|DISTINCT|IN|IS|NOT|NULL|LIKE|ILIKE|EXISTS|BETWEEN|CASE|WHEN|THEN|ELSE|END|INTERVAL|USING|COALESCE|CAST)\b/gi,
+            (m: string) => m.toUpperCase()
+        );
+
+        // Indent one level per open paren (subqueries), plus an extra step for lines that
+        // don't start a clause (column continuations, AND/OR/ON).
+        const clauseStart = new RegExp('^(' + alternation + ')\\b', 'i');
+        let depth = 0;
+        const lines: string[] = [];
+        s.split('\n').forEach(rawLine => {
+            const line = rawLine.trim();
+            if (line === '') {
+                return;
+            }
+            // Closing parens at the start of the line outdent the line itself.
+            let lead = 0;
+            while (lead < line.length && line.charAt(lead) === ')') {
+                lead++;
+            }
+            const lineDepth = Math.max(0, depth - lead);
+            lines.push('    '.repeat(lineDepth) + (clauseStart.test(line) ? '' : '  ') + line);
+            for (let i = 0; i < line.length; i++) {
+                const ch = line.charAt(i);
+                if (ch === '(') {
+                    depth++;
+                } else if (ch === ')') {
+                    depth = Math.max(0, depth - 1);
+                }
+            }
+        });
+        s = lines.join('\n');
 
         return s.replace(/\u0001(\d+)\u0001/g, (_m, i) => store[Number(i)]);
     }
@@ -890,7 +1072,7 @@ class DatabaseViewerComponent extends BaseComponent {
     private loadObjects(): void {
         // The metric (none/quantity/bytes) follows the order-key button so counts/sizes are only
         // computed server-side when the user asks for them.
-        $.ajax({url: this.objectsUrl, method: 'GET', data: {metric: ORDER_METRIC[this.orderMode]}})
+        $.ajax({url: this.objectsUrl, method: 'GET', data: {metric: ORDER_METRIC[this.orderMode]}, errorHandlerMessage: false})
             .done((response: {objects?: DatabaseObject[]}) => {
                 this.objects = response.objects || [];
                 this.renderObjects();
@@ -1013,7 +1195,7 @@ class DatabaseViewerComponent extends BaseComponent {
 
         if (willExpand && !this.columnsByName[name] && !this.loadingColumns[name]) {
             this.loadingColumns[name] = true;
-            $.ajax({url: this.columnsUrl, method: 'GET', data: {name}})
+            $.ajax({url: this.columnsUrl, method: 'GET', data: {name}, errorHandlerMessage: false})
                 .done((response: {columns?: ColumnInfo[]}) => {
                     this.columnsByName[name] = response.columns || [];
                 })
@@ -1082,12 +1264,16 @@ class DatabaseViewerComponent extends BaseComponent {
 
         this.setRunning(true);
         this.setStatus(__('aaxis.devtools.database_viewer.running'));
+        this.$el.find('[data-role="result"]').children('.alert').remove();
 
         $.ajax({
             url: this.queryUrl,
             method: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({query})
+            data: JSON.stringify({query}),
+            // The error is rendered in the result pane; keep Oro's global ajax error
+            // handler from flashing a second, sticky copy at the top of the page.
+            errorHandlerMessage: false
         }).done((response: QueryResponse) => {
             this.onResult(response);
         }).fail((jqXhr: any) => {
@@ -1547,6 +1733,8 @@ class DatabaseViewerComponent extends BaseComponent {
     private setRunning(running: boolean): void {
         this.running = running;
         this.$el.find('[data-role="run"]').prop('disabled', running);
+        // .toggle() (inline display) rather than [hidden]: the fa display rules would win over it.
+        this.$el.find('[data-role="run-spinner"]').toggle(running);
     }
 
     dispose(): void {
@@ -1555,6 +1743,8 @@ class DatabaseViewerComponent extends BaseComponent {
         }
         this.$el.off('.aaxisDbViewer');
         $(document).off('.aaxisDbViewerDrag .aaxisDbViewerCtx');
+        $(window).off('.aaxisDbViewer');
+        mediator.off('openLink:before', this.onBeforePageChange, this);
         $('body').removeClass('aaxis-db-viewer-resizing');
         if (this.$contextMenu) {
             this.$contextMenu.remove();

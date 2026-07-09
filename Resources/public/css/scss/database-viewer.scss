@@ -495,17 +495,46 @@ $aaxis-db-splitter-hover: #b7b7b7;
         flex: 1 1 auto;
         min-height: 0;
         overflow: auto;
-        padding: 8px;
+        // No padding: the sticky header/row-number cells must sit flush with the scrollport edge.
+        padding: 0;
+
+        > .alert,
+        > .aaxis-db-viewer__empty {
+            margin: 8px;
+        }
 
         table {
             width: auto;
             min-width: 100%;
             margin-bottom: 0;
+            // Collapsed borders travel with the scrolled content and would leave the sticky
+            // header/row-number cells borderless; separate borders stay on the cells.
+            border-collapse: separate;
+            border-spacing: 0;
         }
 
         td,
         th {
             white-space: nowrap;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #f5f5f5;
+            box-shadow: inset 0 -1px 0 $aaxis-db-border;
+        }
+
+        td.aaxis-db-viewer__rownum-cell {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+        }
+
+        th.aaxis-db-viewer__rownum-cell {
+            left: 0;
+            z-index: 3;
         }
     }
 
@@ -523,7 +552,9 @@ $aaxis-db-splitter-hover: #b7b7b7;
 
         .is-col-selected,
         .is-row-selected {
-            background-color: rgba(43, 132, 237, .15) !important;
+            // Opaque (not rgba): sticky header/row-number cells must not let scrolled
+            // content show through the highlight.
+            background-color: #dfecfc !important;
         }
     }
 
@@ -601,6 +632,38 @@ body.aaxis-db-viewer-resizing {
         &:hover {
             background: rgba(0, 0, 0, .06);
         }
+    }
+}
+
+// "Leaving with unsaved changes" dialog content.
+.aaxis-db-viewer__leave {
+    p {
+        margin: 0 0 10px;
+    }
+
+    &-list {
+        width: 100%;
+
+        td {
+            padding: 2px 12px 2px 0;
+        }
+
+        .radio {
+            display: inline-block;
+            margin: 0;
+            font-weight: normal;
+        }
+    }
+
+    &-name {
+        font-weight: font-weight('bold');
+        overflow-wrap: anywhere;
+    }
+
+    &-all {
+        display: flex;
+        gap: 16px;
+        margin-top: 10px;
     }
 }
 
