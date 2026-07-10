@@ -13,10 +13,10 @@ system_configuration:
             title: aaxis.devtools.config.redis_viewer.title
         aaxis_devtools_mongodb_viewer:
             title: aaxis.devtools.config.mongodb_viewer.title
-        aaxis_devtools_filesystem_browser:
-            title: aaxis.devtools.config.filesystem_browser.title
-        aaxis_devtools_bucket_browser:
-            title: aaxis.devtools.config.bucket_browser.title
+        aaxis_devtools_filesystem_viewer:
+            title: aaxis.devtools.config.filesystem_viewer.title
+        aaxis_devtools_bucket_viewer:
+            title: aaxis.devtools.config.bucket_viewer.title
         aaxis_devtools_runtime_config:
             title: aaxis.devtools.config.runtime_config.title
         aaxis_devtools_connection_info:
@@ -240,84 +240,84 @@ system_configuration:
                 tooltip: aaxis.devtools.config.mongodb_viewer.private_password.tooltip
                 required: false
 
-        # --- Filesystem Browser ---
-        aaxis_devtools.filesystem_browser_enabled:
+        # --- Filesystem Viewer ---
+        aaxis_devtools.filesystem_viewer_enabled:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
                 label: aaxis.devtools.config.enabled.label
                 required: false
-        aaxis_devtools.filesystem_browser_base_path:
+        aaxis_devtools.filesystem_viewer_base_path:
             data_type: string
             type: Symfony\Component\Form\Extension\Core\Type\TextType
             options:
-                label: aaxis.devtools.config.filesystem_browser.base_path.label
-                tooltip: aaxis.devtools.config.filesystem_browser.base_path.tooltip
+                label: aaxis.devtools.config.filesystem_viewer.base_path.label
+                tooltip: aaxis.devtools.config.filesystem_viewer.base_path.tooltip
                 required: false
-        aaxis_devtools.filesystem_browser_restricted:
+        aaxis_devtools.filesystem_viewer_restricted:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
-                label: aaxis.devtools.config.filesystem_browser.restricted.label
-                tooltip: aaxis.devtools.config.filesystem_browser.restricted.tooltip
+                label: aaxis.devtools.config.filesystem_viewer.restricted.label
+                tooltip: aaxis.devtools.config.filesystem_viewer.restricted.tooltip
                 required: false
-        aaxis_devtools.filesystem_browser_col_type:
+        aaxis_devtools.filesystem_viewer_col_type:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
-                label: aaxis.devtools.config.filesystem_browser.col_type.label
+                label: aaxis.devtools.config.filesystem_viewer.col_type.label
                 required: false
-        aaxis_devtools.filesystem_browser_col_filename:
+        aaxis_devtools.filesystem_viewer_col_filename:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
-                label: aaxis.devtools.config.filesystem_browser.col_filename.label
+                label: aaxis.devtools.config.filesystem_viewer.col_filename.label
                 required: false
-        aaxis_devtools.filesystem_browser_col_filesize:
+        aaxis_devtools.filesystem_viewer_col_filesize:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
-                label: aaxis.devtools.config.filesystem_browser.col_filesize.label
+                label: aaxis.devtools.config.filesystem_viewer.col_filesize.label
                 required: false
-        aaxis_devtools.filesystem_browser_col_modified:
+        aaxis_devtools.filesystem_viewer_col_modified:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
-                label: aaxis.devtools.config.filesystem_browser.col_modified.label
+                label: aaxis.devtools.config.filesystem_viewer.col_modified.label
                 required: false
-        aaxis_devtools.filesystem_browser_col_created:
+        aaxis_devtools.filesystem_viewer_col_created:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
-                label: aaxis.devtools.config.filesystem_browser.col_created.label
+                label: aaxis.devtools.config.filesystem_viewer.col_created.label
                 required: false
-        aaxis_devtools.filesystem_browser_col_owner_user:
+        aaxis_devtools.filesystem_viewer_col_owner_user:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
-                label: aaxis.devtools.config.filesystem_browser.col_owner_user.label
+                label: aaxis.devtools.config.filesystem_viewer.col_owner_user.label
                 required: false
-        aaxis_devtools.filesystem_browser_col_owner_group:
+        aaxis_devtools.filesystem_viewer_col_owner_group:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
-                label: aaxis.devtools.config.filesystem_browser.col_owner_group.label
+                label: aaxis.devtools.config.filesystem_viewer.col_owner_group.label
                 required: false
-        aaxis_devtools.filesystem_browser_col_preview:
+        aaxis_devtools.filesystem_viewer_col_preview:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
-                label: aaxis.devtools.config.filesystem_browser.col_preview.label
+                label: aaxis.devtools.config.filesystem_viewer.col_preview.label
                 required: false
 
-        # --- Bucket Browser ---
-        aaxis_devtools.bucket_browser_enabled:
+        # --- Bucket Viewer ---
+        aaxis_devtools.bucket_viewer_enabled:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
                 label: aaxis.devtools.config.enabled.label
                 required: false
-        aaxis_devtools.bucket_browser_test:
+        aaxis_devtools.bucket_viewer_test:
             data_type: string
             type: Symfony\Component\Form\Extension\Core\Type\TextType
             options:
@@ -326,40 +326,40 @@ system_configuration:
                 resettable: false
                 attr:
                     data-page-component-module: 'aaxiscommon/js/app/components/connection-test-component'
-                    data-page-component-options: '{"tool":"bucket_browser","editableConnection":true}'
-        aaxis_devtools.bucket_browser_url:
+                    data-page-component-options: '{"tool":"bucket_viewer","editableConnection":true}'
+        aaxis_devtools.bucket_viewer_url:
             data_type: string
             type: Symfony\Component\Form\Extension\Core\Type\TextType
             options:
-                label: aaxis.devtools.config.bucket_browser.url.label
-                tooltip: aaxis.devtools.config.bucket_browser.url.tooltip
+                label: aaxis.devtools.config.bucket_viewer.url.label
+                tooltip: aaxis.devtools.config.bucket_viewer.url.tooltip
                 required: false
-        aaxis_devtools.bucket_browser_user:
+        aaxis_devtools.bucket_viewer_user:
             data_type: string
             type: Symfony\Component\Form\Extension\Core\Type\TextType
             options:
-                label: aaxis.devtools.config.bucket_browser.user.label
+                label: aaxis.devtools.config.bucket_viewer.user.label
                 required: false
-        aaxis_devtools.bucket_browser_pass:
+        aaxis_devtools.bucket_viewer_pass:
             data_type: string
             # Encrypted at rest + renders a "*" placeholder when set, so re-saving the section
             # without retyping keeps the stored secret instead of wiping it.
             type: Oro\Bundle\FormBundle\Form\Type\OroEncodedPlaceholderPasswordType
             options:
-                label: aaxis.devtools.config.bucket_browser.pass.label
+                label: aaxis.devtools.config.bucket_viewer.pass.label
                 required: false
-        aaxis_devtools.bucket_browser_name:
+        aaxis_devtools.bucket_viewer_name:
             data_type: string
             type: Symfony\Component\Form\Extension\Core\Type\TextType
             options:
-                label: aaxis.devtools.config.bucket_browser.name.label
-                tooltip: aaxis.devtools.config.bucket_browser.name.tooltip
+                label: aaxis.devtools.config.bucket_viewer.name.label
+                tooltip: aaxis.devtools.config.bucket_viewer.name.tooltip
                 required: false
-        aaxis_devtools.bucket_browser_read_only:
+        aaxis_devtools.bucket_viewer_read_only:
             data_type: boolean
             type: Oro\Bundle\ConfigBundle\Form\Type\ConfigCheckbox
             options:
-                label: aaxis.devtools.config.bucket_browser.read_only.label
+                label: aaxis.devtools.config.bucket_viewer.read_only.label
                 required: false
 
         # --- Runtime Config ---
@@ -395,30 +395,30 @@ system_configuration:
                                         priority: 108
                                         children:
                                             - aaxis_devtools.connection_info_enabled
-                                    aaxis_devtools_filesystem_browser:
+                                    aaxis_devtools_filesystem_viewer:
                                         priority: 100
                                         children:
-                                            - aaxis_devtools.filesystem_browser_enabled
-                                            - aaxis_devtools.filesystem_browser_base_path
-                                            - aaxis_devtools.filesystem_browser_restricted
-                                            - aaxis_devtools.filesystem_browser_col_type
-                                            - aaxis_devtools.filesystem_browser_col_filename
-                                            - aaxis_devtools.filesystem_browser_col_filesize
-                                            - aaxis_devtools.filesystem_browser_col_modified
-                                            - aaxis_devtools.filesystem_browser_col_created
-                                            - aaxis_devtools.filesystem_browser_col_owner_user
-                                            - aaxis_devtools.filesystem_browser_col_owner_group
-                                            - aaxis_devtools.filesystem_browser_col_preview
-                                    aaxis_devtools_bucket_browser:
+                                            - aaxis_devtools.filesystem_viewer_enabled
+                                            - aaxis_devtools.filesystem_viewer_base_path
+                                            - aaxis_devtools.filesystem_viewer_restricted
+                                            - aaxis_devtools.filesystem_viewer_col_type
+                                            - aaxis_devtools.filesystem_viewer_col_filename
+                                            - aaxis_devtools.filesystem_viewer_col_filesize
+                                            - aaxis_devtools.filesystem_viewer_col_modified
+                                            - aaxis_devtools.filesystem_viewer_col_created
+                                            - aaxis_devtools.filesystem_viewer_col_owner_user
+                                            - aaxis_devtools.filesystem_viewer_col_owner_group
+                                            - aaxis_devtools.filesystem_viewer_col_preview
+                                    aaxis_devtools_bucket_viewer:
                                         priority: 90
                                         children:
-                                            - aaxis_devtools.bucket_browser_enabled
-                                            - aaxis_devtools.bucket_browser_test
-                                            - aaxis_devtools.bucket_browser_url
-                                            - aaxis_devtools.bucket_browser_user
-                                            - aaxis_devtools.bucket_browser_pass
-                                            - aaxis_devtools.bucket_browser_name
-                                            - aaxis_devtools.bucket_browser_read_only
+                                            - aaxis_devtools.bucket_viewer_enabled
+                                            - aaxis_devtools.bucket_viewer_test
+                                            - aaxis_devtools.bucket_viewer_url
+                                            - aaxis_devtools.bucket_viewer_user
+                                            - aaxis_devtools.bucket_viewer_pass
+                                            - aaxis_devtools.bucket_viewer_name
+                                            - aaxis_devtools.bucket_viewer_read_only
                                     aaxis_devtools_database_viewer:
                                         priority: 80
                                         children:

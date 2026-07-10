@@ -2,6 +2,7 @@ aaxis:
     devtools:
         database_viewer:
             running: 'Running...'
+            loading: 'Loading...'
             empty_query: Please enter a query to run.
             no_objects: No objects found.
             no_rows: The query returned no rows.
@@ -68,7 +69,7 @@ aaxis:
         runtime_config:
             count: '{{ visible }} of {{ total }} shown'
             help: 'Runtime Config help'
-        filesystem_browser:
+        filesystem_viewer:
             files_tab: 'Files'
             close_tab: 'Close tab'
             preview: 'Preview'
@@ -147,6 +148,7 @@ aaxis:
             copied: 'Copied to clipboard.'
         elastic_viewer:
             running: 'Running...'
+            loading: 'Loading...'
             empty_query: Please enter an ES|QL query to run.
             no_indices: No indices found.
             no_rows: The query returned no rows.
@@ -156,6 +158,34 @@ aaxis:
             result_summary: 'Returned {{ count }} row(s) in {{ duration }} ms.'
             truncated: 'Result truncated to the first 1000 rows.'
             doc_count: 'Document count'
+            tab_name: 'Query {{ number }}'
+            close_tab: 'Close'
+            unsaved_title: 'Unsaved changes'
+            unsaved_close_confirm: 'The query "{{ name }}" has unsaved changes. Discard them?'
+            unsaved_discard: 'Discard'
+            unsaved_save: 'Save changes'
+            unsaved_discard_all: 'Discard all'
+            unsaved_save_all: 'Save all'
+            unsaved_leave_intro: 'Some saved queries have unsaved changes. Choose what to do with each one before leaving.'
+            unsaved_leave_ok: 'Continue'
+            beautify_error: 'The ES|QL could not be formatted.'
+            sq_title: 'Save query'
+            sq_edit_title: 'Edit query'
+            sq_name: 'Query name'
+            sq_visibility: 'Visibility'
+            sq_private: 'Private'
+            sq_public: 'Public'
+            sq_save: 'Save'
+            sq_saved: 'Query saved.'
+            sq_error: 'Unable to save the query.'
+            sq_name_required: 'Please enter a query name.'
+            uq_updated: 'Query updated.'
+            uq_error: 'Unable to update the query.'
+            queries_private: 'My queries'
+            queries_public: 'Public'
+            queries_view_all: 'View all...'
+            queries_empty: 'No saved queries yet.'
+            all_queries_title: 'All saved queries'
             help: 'Elastic Viewer help'
             context_copy_json: 'Copy as JSON'
             context_copy_csv: 'Copy as CSV'

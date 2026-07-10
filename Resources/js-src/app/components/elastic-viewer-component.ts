@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import __ from 'orotranslation/js/translator';
 import messenger from 'oroui/js/messenger';
+import mediator from 'oroui/js/mediator';
 import Modal from 'oroui/js/modal';
 import BaseComponent from 'oroui/js/app/components/base/component';
 import CodeMirror from 'codemirror';
@@ -11,6 +12,7 @@ interface ElasticViewerOptions {
     indicesUrl: string;
     queryUrl: string;
     exportUrl: string;
+    savedQueriesUrl: string;
     allowExport?: boolean;
 }
 
@@ -32,14 +34,63 @@ interface QueryResponse {
     durationMs?: number;
 }
 
+interface SavedQueryItem {
+    id: number;
+    name: string;
+    public: boolean;
+    text: string;
+    owned: boolean;
+}
+
+interface QueryTab {
+    id: string;
+    name: string;
+    sql: string;
+    savedId: number | null;
+    savedPublic: boolean;
+    savedOwned: boolean;
+    savedText: string | null;
+    // Per-tab run state so tabs execute independently (a run keeps going while you view another tab).
+    running: boolean;
+    pending: any;
+}
+
+/**
+ * What we persist per tab so switching tabs restores that tab's own result instead of showing
+ * whatever the last-run tab produced. Either a successful grid payload or an error message.
+ */
+interface StoredResult {
+    columns?: string[];
+    columnTypes?: Record<string, string>;
+    rows?: Array<Record<string, unknown>>;
+    rowCount?: number;
+    durationMs?: number;
+    truncated?: boolean;
+    error?: string;
+}
+
 type SelectionMode = 'none' | 'columns' | 'rows';
 
 // ES|QL is pipe-based but shares many SQL keywords; the SQL mode gives reasonable highlighting.
 const ESQL_MODE = 'text/x-sql';
 
+// sessionStorage key prefix for per-tab results (session-scoped; cleared on load so a reload
+// starts fresh, matching the "results live for the session" behaviour).
+const RESULT_STORAGE_PREFIX = 'aaxis-esv-result:';
+
+// ES|QL source/processing commands that each start their own pipe segment (longest first).
+const ESQL_COMMANDS = [
+    'FROM', 'ROW', 'SHOW', 'WHERE', 'EVAL', 'STATS', 'SORT', 'LIMIT', 'KEEP', 'DROP',
+    'RENAME', 'DISSECT', 'GROK', 'ENRICH', 'MV_EXPAND', 'LOOKUP'
+];
+
+// Secondary keywords uppercased in place while beautifying (no line break of their own).
+const ESQL_SECONDARY = ['BY', 'ASC', 'DESC', 'AND', 'OR', 'NOT', 'NULL', 'IS', 'IN', 'LIKE', 'RLIKE', 'AS', 'WITH'];
+
 /**
- * Elastic Viewer page component: lists Elasticsearch indices, runs ES|QL queries and renders a
- * Kibana-style result grid (column name + type) with selection, copy, hide and export.
+ * Elastic Viewer page component: lists Elasticsearch indices, runs ES|QL queries in independent
+ * tabs (each with its own saved-query state and result) and renders a Kibana-style result grid
+ * (column name + type) with selection, copy, hide and export.
  *
  * NOTE: instance state is initialised inside initialize() (not via class field initializers).
  * BaseComponent calls initialize() from within its constructor, so field initializers would run
@@ -50,11 +101,14 @@ class ElasticViewerComponent extends BaseComponent {
     private indicesUrl!: string;
     private queryUrl!: string;
     private exportUrl!: string;
+    private savedQueriesUrl!: string;
 
     private allowExport!: boolean;
 
     private editor!: any;
-    private running!: boolean;
+
+    // In-memory fallback for results too large for sessionStorage (quota); keyed by tab id.
+    private resultFallback!: Record<string, StoredResult>;
 
     private indices!: EsIndex[];
     private filterText!: string;
@@ -71,6 +125,10 @@ class ElasticViewerComponent extends BaseComponent {
     private lastColIndex!: number;
     private lastRowOrdinal!: number;
 
+    private tabs!: QueryTab[];
+    private activeTabId!: string;
+    private tabSeq!: number;
+
     private $contextMenu!: any;
 
     initialize(options: ElasticViewerOptions): void {
@@ -78,11 +136,13 @@ class ElasticViewerComponent extends BaseComponent {
         this.indicesUrl = options.indicesUrl;
         this.queryUrl = options.queryUrl;
         this.exportUrl = options.exportUrl;
+        this.savedQueriesUrl = options.savedQueriesUrl;
 
         this.allowExport = options.allowExport !== false;
 
         this.editor = null;
-        this.running = false;
+        this.resultFallback = {};
+        this.clearAllResults();
         this.indices = [];
         this.filterText = '';
         this.sortKey = 'name';
@@ -97,17 +157,29 @@ class ElasticViewerComponent extends BaseComponent {
         this.selectedRows = [];
         this.lastColIndex = -1;
         this.lastRowOrdinal = -1;
+
+        this.tabs = [];
+        this.activeTabId = '';
+        this.tabSeq = 0;
         this.$contextMenu = null;
 
         this.initEditor();
+        this.initTabs();
         this.initSplitters();
         this.loadIndices();
+        this.loadQueriesMenu();
         this.bindEvents();
+        this.updateUpdateButton();
         this.updateOrderButtons();
+
+        // Guard saved queries with unsaved edits against being lost on navigation.
+        mediator.on('openLink:before', this.onBeforePageChange, this);
+        $(window).on('beforeunload.aaxisEsViewer', this.onWindowUnload.bind(this));
     }
 
     private bindEvents(): void {
         this.$el.on('click.aaxisEsViewer', '[data-role="run"]', this.onRun.bind(this));
+        this.$el.on('click.aaxisEsViewer', '[data-role="beautify"]', this.onBeautify.bind(this));
         this.$el.on('click.aaxisEsViewer', '[data-role="index-item"]', this.onIndexClick.bind(this));
         this.$el.on('click.aaxisEsViewer', '[data-role="export-format"]', this.onExport.bind(this));
         this.$el.on('input.aaxisEsViewer', '[data-role="filter"]', (e: any) => {
@@ -121,6 +193,18 @@ class ElasticViewerComponent extends BaseComponent {
         this.$el.on('click.aaxisEsViewer', '[data-role="order-dir"]', this.onOrderDir.bind(this));
         this.$el.on('click.aaxisEsViewer', '[data-role="help"]', this.onHelp.bind(this));
 
+        // Tabs
+        this.$el.on('click.aaxisEsViewer', '[data-role="tab-add"]', this.onAddTab.bind(this));
+        this.$el.on('click.aaxisEsViewer', '[data-role="tab"]', this.onTabClick.bind(this));
+        this.$el.on('click.aaxisEsViewer', '[data-role="tab-close"]', this.onCloseTab.bind(this));
+        this.$el.on('click.aaxisEsViewer', '[data-role="tab-star"]', this.onStarClick.bind(this));
+
+        // Saved queries
+        this.$el.on('click.aaxisEsViewer', '[data-role="load-query"]', this.onLoadQuery.bind(this));
+        this.$el.on('click.aaxisEsViewer', '[data-role="view-all-queries"]', this.onViewAllQueries.bind(this));
+        this.$el.on('click.aaxisEsViewer', '[data-role="update"]', this.onUpdateQuery.bind(this));
+
+        // Result selection + context menu
         this.$el.on('click.aaxisEsViewer', '[data-role="col-header"]', this.onColumnHeaderClick.bind(this));
         this.$el.on('click.aaxisEsViewer', '[data-role="data-cell"], [data-role="row-select"]', this.onRowClick.bind(this));
         this.$el.on('contextmenu.aaxisEsViewer', '[data-role="result"]', this.onResultContextMenu.bind(this));
@@ -145,6 +229,584 @@ class ElasticViewerComponent extends BaseComponent {
             }
         });
         this.editor.setSize('100%', '100%');
+        this.editor.on('change', () => this.updateUpdateButton());
+    }
+
+    // --- Query tabs ----------------------------------------------------------
+
+    private initTabs(): void {
+        const initialSql = this.editor ? this.editor.getValue() : '';
+        const tab = this.createTab({sql: initialSql});
+        this.tabs.push(tab);
+        this.activeTabId = tab.id;
+        this.renderTabs();
+        this.renderActiveResult();
+    }
+
+    private createTab(opts: Partial<QueryTab> & {sql: string}): QueryTab {
+        this.tabSeq += 1;
+        return {
+            id: 'tab-' + this.tabSeq,
+            name: opts.name || __('aaxis.devtools.elastic_viewer.tab_name', {number: this.tabSeq}),
+            sql: opts.sql,
+            savedId: opts.savedId ?? null,
+            savedPublic: opts.savedPublic ?? false,
+            savedOwned: opts.savedOwned ?? false,
+            savedText: opts.savedText ?? null,
+            running: false,
+            pending: null
+        };
+    }
+
+    private activeTab(): QueryTab | undefined {
+        return this.tabs.find(t => t.id === this.activeTabId);
+    }
+
+    private renderTabs(): void {
+        const $list = this.$el.find('[data-role="tabs-list"]').empty();
+        const closable = this.tabs.length > 1;
+
+        this.tabs.forEach(tab => {
+            const $tab = $('<span/>', {
+                'class': 'aaxis-es-viewer__tab' + (tab.id === this.activeTabId ? ' is-active' : ''),
+                'data-role': 'tab',
+                'data-id': tab.id
+            });
+
+            let starClass = 'aaxis-es-viewer__tab-star fa ';
+            if (tab.savedId === null) {
+                starClass += 'fa-star-o';
+            } else {
+                starClass += 'fa-star ' + (tab.savedPublic ? 'is-public' : 'is-private');
+            }
+            $tab.append($('<span/>', {
+                'class': starClass,
+                'data-role': 'tab-star',
+                'data-id': tab.id,
+                'aria-hidden': 'true'
+            }));
+
+            $tab.append($('<span/>', {'class': 'aaxis-es-viewer__tab-name', text: tab.name}));
+            if (tab.running) {
+                $tab.append($('<span/>', {
+                    'class': 'aaxis-es-viewer__tab-spinner fa fa-spinner fa-spin',
+                    'aria-hidden': 'true'
+                }));
+            }
+            if (closable) {
+                $tab.append($('<button/>', {
+                    type: 'button',
+                    'class': 'aaxis-es-viewer__tab-close',
+                    'data-role': 'tab-close',
+                    'data-id': tab.id,
+                    'aria-label': __('aaxis.devtools.elastic_viewer.close_tab'),
+                    title: __('aaxis.devtools.elastic_viewer.close_tab'),
+                    html: '&times;'
+                }));
+            }
+            $list.append($tab);
+        });
+    }
+
+    private saveActiveTab(): void {
+        const tab = this.activeTab();
+        if (tab && this.editor) {
+            tab.sql = this.editor.getValue();
+        }
+    }
+
+    private switchTab(id: string): void {
+        if (id === this.activeTabId) {
+            return;
+        }
+        this.saveActiveTab();
+        const tab = this.tabs.find(t => t.id === id);
+        if (!tab) {
+            return;
+        }
+        this.activeTabId = id;
+        if (this.editor) {
+            this.editor.setValue(tab.sql);
+            this.editor.focus();
+        }
+        this.renderTabs();
+        this.updateUpdateButton();
+        this.renderActiveResult();
+    }
+
+    private onTabClick(event: any): void {
+        if ($(event.target).closest('[data-role="tab-close"], [data-role="tab-star"]').length) {
+            return;
+        }
+        this.switchTab(String($(event.currentTarget).data('id')));
+    }
+
+    private onAddTab(event: any): void {
+        event.preventDefault();
+        this.saveActiveTab();
+        const tab = this.createTab({sql: ''});
+        this.tabs.push(tab);
+        this.activeTabId = tab.id;
+        if (this.editor) {
+            this.editor.setValue('');
+            this.editor.focus();
+        }
+        this.renderTabs();
+        this.updateUpdateButton();
+        this.renderActiveResult();
+    }
+
+    private onCloseTab(event: any): void {
+        event.preventDefault();
+        event.stopPropagation();
+        if (this.tabs.length <= 1) {
+            return;
+        }
+        const id = String($(event.currentTarget).data('id'));
+        const tab = this.tabs.find(t => t.id === id);
+        if (!tab) {
+            return;
+        }
+        this.saveActiveTab();
+        if (this.isTabModified(tab)) {
+            this.confirmDiscardTab(tab);
+            return;
+        }
+        this.closeTab(id);
+    }
+
+    private closeTab(id: string): void {
+        const index = this.tabs.findIndex(t => t.id === id);
+        if (index === -1 || this.tabs.length <= 1) {
+            return;
+        }
+        const [removed] = this.tabs.splice(index, 1);
+        if (removed.pending && typeof removed.pending.abort === 'function') {
+            removed.pending.abort();
+        }
+        this.removeResult(removed.id);
+        const wasActive = this.activeTabId === id;
+        if (wasActive) {
+            const next = this.tabs[Math.max(0, index - 1)];
+            this.activeTabId = next.id;
+            if (this.editor) {
+                this.editor.setValue(next.sql);
+            }
+        }
+        this.renderTabs();
+        this.updateUpdateButton();
+        if (wasActive) {
+            this.renderActiveResult();
+        }
+    }
+
+    private confirmDiscardTab(tab: QueryTab): void {
+        const modal = new Modal({
+            title: __('aaxis.devtools.elastic_viewer.unsaved_title'),
+            content: __('aaxis.devtools.elastic_viewer.unsaved_close_confirm', {name: this.escapeHtml(tab.name)}),
+            okText: __('aaxis.devtools.elastic_viewer.unsaved_discard')
+        });
+        modal.on('ok', () => this.closeTab(tab.id));
+        modal.open();
+    }
+
+    // --- Favorites / saving --------------------------------------------------
+
+    private onStarClick(event: any): void {
+        event.preventDefault();
+        event.stopPropagation();
+        const id = String($(event.currentTarget).data('id'));
+        if (id !== this.activeTabId) {
+            this.switchTab(id);
+        }
+        const tab = this.activeTab();
+        if (!tab) {
+            return;
+        }
+        if (tab.savedId === null) {
+            this.openSaveDialog('create');
+        } else if (tab.savedOwned) {
+            this.openSaveDialog('edit');
+        }
+    }
+
+    private openSaveDialog(mode: 'create' | 'edit'): void {
+        const tab = this.activeTab();
+        if (!tab || !this.editor) {
+            return;
+        }
+        const text = String(this.editor.getValue());
+        const currentPublic = mode === 'edit' ? tab.savedPublic : false;
+
+        const content =
+            '<form class="aaxis-es-viewer__save-form">' +
+                '<div class="control-group">' +
+                    '<label class="control-label">' + __('aaxis.devtools.elastic_viewer.sq_name') + '</label>' +
+                    '<input type="text" class="form-control" data-role="sq-name" maxlength="40" value="' +
+                        this.escapeHtml(tab.name) + '">' +
+                '</div>' +
+                '<div class="control-group">' +
+                    '<label class="control-label">' + __('aaxis.devtools.elastic_viewer.sq_visibility') + '</label>' +
+                    '<label class="radio"><input type="radio" name="sq-visibility" value="private"' +
+                        (currentPublic ? '' : ' checked') + '> ' +
+                        __('aaxis.devtools.elastic_viewer.sq_private') + '</label>' +
+                    '<label class="radio"><input type="radio" name="sq-visibility" value="public"' +
+                        (currentPublic ? ' checked' : '') + '> ' +
+                        __('aaxis.devtools.elastic_viewer.sq_public') + '</label>' +
+                '</div>' +
+            '</form>';
+
+        const modal = new Modal({
+            title: mode === 'edit'
+                ? __('aaxis.devtools.elastic_viewer.sq_edit_title')
+                : __('aaxis.devtools.elastic_viewer.sq_title'),
+            content,
+            okText: __('aaxis.devtools.elastic_viewer.sq_save'),
+            okCloses: false
+        });
+
+        modal.on('ok', () => {
+            const name = String(modal.$el.find('[data-role="sq-name"]').val() || '').trim();
+            const isPublic = modal.$el.find('input[name="sq-visibility"]:checked').val() === 'public';
+            if (name === '') {
+                messenger.notificationFlashMessage('warning', __('aaxis.devtools.elastic_viewer.sq_name_required'));
+                return;
+            }
+
+            const request = mode === 'edit' && tab.savedId !== null
+                ? $.ajax({
+                    url: this.savedQueriesUrl + '/' + tab.savedId,
+                    method: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({name, public: isPublic}),
+                    errorHandlerMessage: false
+                })
+                : $.ajax({
+                    url: this.savedQueriesUrl,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({name, text, public: isPublic}),
+                    errorHandlerMessage: false
+                });
+
+            request.done((response: {success: boolean; query?: SavedQueryItem}) => {
+                if (response.success && response.query) {
+                    this.applySavedQuery(tab, response.query);
+                    messenger.notificationFlashMessage('success', __('aaxis.devtools.elastic_viewer.sq_saved'));
+                    this.loadQueriesMenu();
+                }
+                modal.close();
+            }).fail((jqXhr: any) => {
+                const message = (jqXhr.responseJSON && jqXhr.responseJSON.message)
+                    || __('aaxis.devtools.elastic_viewer.sq_error');
+                messenger.notificationFlashMessage('error', message);
+            });
+        });
+
+        modal.open();
+    }
+
+    private applySavedQuery(tab: QueryTab, query: SavedQueryItem): void {
+        tab.savedId = query.id;
+        tab.savedPublic = query.public;
+        tab.savedOwned = query.owned;
+        tab.savedText = query.text;
+        tab.name = query.name;
+        this.renderTabs();
+        this.updateUpdateButton();
+    }
+
+    // --- Queries menu --------------------------------------------------------
+
+    private loadQueriesMenu(): void {
+        $.ajax({url: this.savedQueriesUrl, method: 'GET'})
+            .done((response: {
+                public: SavedQueryItem[];
+                private: SavedQueryItem[];
+                hasMorePublic: boolean;
+                hasMorePrivate: boolean;
+            }) => {
+                this.renderQueriesMenu(response);
+            });
+    }
+
+    private renderQueriesMenu(data: {
+        public: SavedQueryItem[];
+        private: SavedQueryItem[];
+        hasMorePublic: boolean;
+        hasMorePrivate: boolean;
+    }): void {
+        const $menu = this.$el.find('[data-role="queries-menu"]').empty();
+
+        if (data.private.length === 0 && data.public.length === 0) {
+            $menu.append($('<li/>', {'class': 'aaxis-es-viewer__menu-empty'})
+                .text(__('aaxis.devtools.elastic_viewer.queries_empty')));
+            return;
+        }
+
+        this.appendQuerySection($menu, __('aaxis.devtools.elastic_viewer.queries_private'), data.private);
+        if (data.public.length > 0) {
+            $menu.append($('<li/>', {'class': 'divider'}));
+            this.appendQuerySection($menu, __('aaxis.devtools.elastic_viewer.queries_public'), data.public);
+        }
+
+        if (data.hasMorePublic || data.hasMorePrivate) {
+            $menu.append($('<li/>', {'class': 'divider'}));
+            $menu.append($('<li/>').append($('<a/>', {
+                href: '#',
+                role: 'menuitem',
+                'data-role': 'view-all-queries',
+                text: __('aaxis.devtools.elastic_viewer.queries_view_all')
+            })));
+        }
+    }
+
+    private appendQuerySection($menu: any, title: string, items: SavedQueryItem[]): void {
+        if (items.length === 0) {
+            return;
+        }
+        $menu.append($('<li/>', {'class': 'dropdown-header', text: title}));
+        items.forEach(item => $menu.append(this.buildQueryMenuItem(item)));
+    }
+
+    private buildQueryMenuItem(item: SavedQueryItem): any {
+        const iconClass = item.public ? 'fa fa-star is-public' : 'fa fa-star is-private';
+        return $('<li/>').append($('<a/>', {
+            href: '#',
+            role: 'menuitem',
+            'data-role': 'load-query',
+            'data-query': JSON.stringify(item)
+        }).append(
+            $('<span/>', {'class': iconClass + ' aaxis-es-viewer__menu-icon', 'aria-hidden': 'true'}),
+            $('<span/>', {text: item.name})
+        ));
+    }
+
+    private onLoadQuery(event: any): void {
+        event.preventDefault();
+        const item = $(event.currentTarget).data('query') as SavedQueryItem;
+        if (item) {
+            this.loadSavedQuery(item);
+        }
+    }
+
+    private loadSavedQuery(item: SavedQueryItem): void {
+        this.saveActiveTab();
+        const tab = this.createTab({
+            name: item.name,
+            sql: item.text,
+            savedId: item.id,
+            savedPublic: item.public,
+            savedOwned: item.owned,
+            savedText: item.text
+        });
+        this.tabs.push(tab);
+        this.activeTabId = tab.id;
+        if (this.editor) {
+            this.editor.setValue(item.text);
+            this.editor.focus();
+        }
+        this.renderTabs();
+        this.updateUpdateButton();
+        this.renderActiveResult();
+    }
+
+    private onViewAllQueries(event: any): void {
+        event.preventDefault();
+        $.ajax({url: this.savedQueriesUrl + '/all', method: 'GET'})
+            .done((response: {items: SavedQueryItem[]}) => {
+                this.openAllQueriesModal(response.items || []);
+            });
+    }
+
+    private openAllQueriesModal(items: SavedQueryItem[]): void {
+        const $list = $('<ul/>', {'class': 'aaxis-es-viewer__all-queries'});
+        if (items.length === 0) {
+            $list.append($('<li/>').text(__('aaxis.devtools.elastic_viewer.queries_empty')));
+        } else {
+            items.forEach(item => {
+                const iconClass = item.public ? 'fa fa-star is-public' : 'fa fa-star is-private';
+                $list.append($('<li/>').append($('<a/>', {
+                    href: '#',
+                    'data-role': 'all-query-item'
+                }).data('query', item).append(
+                    $('<span/>', {'class': iconClass + ' aaxis-es-viewer__menu-icon', 'aria-hidden': 'true'}),
+                    $('<span/>', {text: item.name})
+                )));
+            });
+        }
+
+        const modal = new Modal({
+            title: __('aaxis.devtools.elastic_viewer.all_queries_title'),
+            content: $list,
+            allowOk: false,
+            cancelText: __('Close')
+        });
+
+        $list.on('click', '[data-role="all-query-item"]', (e: any) => {
+            e.preventDefault();
+            const item = $(e.currentTarget).data('query') as SavedQueryItem;
+            modal.close();
+            if (item) {
+                this.loadSavedQuery(item);
+            }
+        });
+
+        modal.open();
+    }
+
+    // --- Update --------------------------------------------------------------
+
+    private updateUpdateButton(): void {
+        const tab = this.activeTab();
+        const $btn = this.$el.find('[data-role="update"]');
+        const isSavedOwned = !!tab && tab.savedId !== null && tab.savedOwned;
+        $btn.prop('hidden', !isSavedOwned);
+
+        if (!isSavedOwned || !this.editor || !tab) {
+            $btn.prop('disabled', true);
+            return;
+        }
+        const changed = String(this.editor.getValue()) !== String(tab.savedText ?? '');
+        $btn.prop('disabled', !changed);
+    }
+
+    private onUpdateQuery(event: any): void {
+        event.preventDefault();
+        const tab = this.activeTab();
+        if (!tab || tab.savedId === null || !this.editor) {
+            return;
+        }
+        const text = String(this.editor.getValue());
+
+        $.ajax({
+            url: this.savedQueriesUrl + '/' + tab.savedId,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({text}),
+            errorHandlerMessage: false
+        }).done((response: {success: boolean}) => {
+            if (response.success) {
+                tab.savedText = text;
+                this.updateUpdateButton();
+                this.loadQueriesMenu();
+                messenger.notificationFlashMessage('success', __('aaxis.devtools.elastic_viewer.uq_updated'));
+            }
+        }).fail(() => {
+            messenger.notificationFlashMessage('error', __('aaxis.devtools.elastic_viewer.uq_error'));
+        });
+    }
+
+    // --- Unsaved changes guard ------------------------------------------------
+
+    /** Only queries that are already saved count: new never-saved tabs die silently. */
+    private isTabModified(tab: QueryTab): boolean {
+        return tab.savedId !== null && tab.sql !== String(tab.savedText ?? '');
+    }
+
+    private modifiedSavedTabs(): QueryTab[] {
+        this.saveActiveTab();
+        return this.tabs.filter(tab => this.isTabModified(tab));
+    }
+
+    private onWindowUnload(event: any): string | undefined {
+        if (this.modifiedSavedTabs().length === 0) {
+            return undefined;
+        }
+        const message = __('aaxis.devtools.elastic_viewer.unsaved_leave_intro');
+        event.preventDefault();
+        if (event.originalEvent) {
+            event.originalEvent.returnValue = message;
+        }
+        return message;
+    }
+
+    /**
+     * Oro SPA navigation (menu/link clicks) publishes 'openLink:before' and honours
+     * payload.prevented. When saved queries carry unsaved edits, the navigation is held
+     * back, the user resolves each query (save or discard) in a dialog, and on confirm
+     * the original target URL is re-triggered via redirectTo.
+     */
+    private onBeforePageChange(payload: {prevented: boolean; target: HTMLElement}): void {
+        if (payload.prevented) {
+            return;
+        }
+        const modified = this.modifiedSavedTabs();
+        if (modified.length === 0) {
+            return;
+        }
+        payload.prevented = true;
+        const $target = $(payload.target);
+        const url = String($target.attr('href') || $target.data('href') || '');
+        const options = $target.data('options') || {};
+        this.openLeaveDialog(modified, () => {
+            if (url) {
+                mediator.execute('redirectTo', {url}, options);
+            }
+        });
+    }
+
+    private openLeaveDialog(modified: QueryTab[], proceed: () => void): void {
+        let html = '<div class="aaxis-es-viewer__leave">' +
+            '<p>' + __('aaxis.devtools.elastic_viewer.unsaved_leave_intro') + '</p>' +
+            '<table class="aaxis-es-viewer__leave-list">';
+        modified.forEach(tab => {
+            html += '<tr>' +
+                '<td class="aaxis-es-viewer__leave-name">' + this.escapeHtml(tab.name) + '</td>' +
+                '<td><label class="radio">' +
+                    '<input type="radio" name="leave-' + tab.id + '" value="discard" checked> ' +
+                    __('aaxis.devtools.elastic_viewer.unsaved_discard') + '</label></td>' +
+                '<td>' + (tab.savedOwned
+                    ? '<label class="radio"><input type="radio" name="leave-' + tab.id + '" value="save"> ' +
+                        __('aaxis.devtools.elastic_viewer.unsaved_save') + '</label>'
+                    : '') + '</td>' +
+                '</tr>';
+        });
+        html += '</table>';
+        if (modified.length > 1) {
+            html += '<div class="aaxis-es-viewer__leave-all">' +
+                '<a href="#" data-role="leave-all" data-value="discard">' +
+                    __('aaxis.devtools.elastic_viewer.unsaved_discard_all') + '</a>' +
+                '<a href="#" data-role="leave-all" data-value="save">' +
+                    __('aaxis.devtools.elastic_viewer.unsaved_save_all') + '</a>' +
+                '</div>';
+        }
+        html += '</div>';
+
+        const modal = new Modal({
+            title: __('aaxis.devtools.elastic_viewer.unsaved_title'),
+            content: html,
+            okText: __('aaxis.devtools.elastic_viewer.unsaved_leave_ok'),
+            okCloses: false
+        });
+
+        modal.on('ok', () => {
+            const toSave = modified.filter(tab => tab.savedOwned && tab.savedId !== null
+                && modal.$el.find('input[name="leave-' + tab.id + '"]:checked').val() === 'save');
+            const requests = toSave.map(tab => $.ajax({
+                url: this.savedQueriesUrl + '/' + tab.savedId,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({text: tab.sql}),
+                errorHandlerMessage: false
+            }));
+            $.when(...requests).done(() => {
+                toSave.forEach(tab => {
+                    tab.savedText = tab.sql;
+                });
+                modal.close();
+                proceed();
+            }).fail(() => {
+                messenger.notificationFlashMessage('error', __('aaxis.devtools.elastic_viewer.uq_error'));
+            });
+        });
+
+        modal.open();
+        modal.$el.on('click', '[data-role="leave-all"]', (e: any) => {
+            e.preventDefault();
+            const value = String($(e.currentTarget).data('value'));
+            modal.$el.find('input[type="radio"][value="' + value + '"]').prop('checked', true);
+        });
     }
 
     // --- Splitters -----------------------------------------------------------
@@ -203,17 +865,104 @@ class ElasticViewerComponent extends BaseComponent {
         }
     }
 
+    // --- ES|QL beautify ------------------------------------------------------
+
+    private onBeautify(event: any): void {
+        event.preventDefault();
+        if (!this.editor) {
+            return;
+        }
+        const value = String(this.editor.getValue());
+        if (value.trim() === '') {
+            return;
+        }
+        try {
+            this.editor.setValue(this.formatEsql(value));
+        } catch (e) {
+            messenger.notificationFlashMessage('warning', __('aaxis.devtools.elastic_viewer.beautify_error'));
+        }
+    }
+
+    /**
+     * Lightweight ES|QL pretty-printer: each pipe command onto its own line, leading command and a
+     * few secondary keywords uppercased. Strings/comments are protected so they are never altered.
+     */
+    private formatEsql(raw: string): string {
+        const store: string[] = [];
+        const stash = (m: string): string => {
+            store.push(m);
+            return '\u0001' + (store.length - 1) + '\u0001';
+        };
+
+        let s = raw
+            .replace(/\/\/[^\n]*/g, stash)
+            .replace(/"""[\s\S]*?"""/g, stash)
+            .replace(/"(?:[^"\\]|\\.)*"/g, stash)
+            .replace(/`(?:[^`]|``)*`/g, stash)
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        // Split on top-level pipes (depth 0) so each command starts a new line.
+        let depth = 0;
+        const segments: string[] = [];
+        let current = '';
+        for (let i = 0; i < s.length; i++) {
+            const ch = s.charAt(i);
+            if (ch === '(') {
+                depth++;
+            } else if (ch === ')') {
+                depth = Math.max(0, depth - 1);
+            }
+            if (ch === '|' && depth === 0) {
+                segments.push(current.trim());
+                current = '';
+            } else {
+                current += ch;
+            }
+        }
+        if (current.trim() !== '') {
+            segments.push(current.trim());
+        }
+
+        const commandRe = new RegExp('^(' + ESQL_COMMANDS.join('|') + ')\\b', 'i');
+        const secondaryRe = new RegExp('\\b(' + ESQL_SECONDARY.join('|') + ')\\b', 'gi');
+
+        const lines = segments
+            .filter(seg => seg !== '')
+            .map((seg, index) => {
+                let line = seg.replace(commandRe, (m: string) => m.toUpperCase());
+                line = line.replace(secondaryRe, (m: string) => m.toUpperCase());
+                return index === 0 ? line : '| ' + line;
+            });
+
+        s = lines.join('\n');
+
+        return s.replace(/\u0001(\d+)\u0001/g, (_m, i) => store[Number(i)]);
+    }
+
     // --- Index list ----------------------------------------------------------
 
     private loadIndices(): void {
-        $.ajax({url: this.indicesUrl, method: 'GET'})
+        this.renderIndicesLoading();
+        $.ajax({url: this.indicesUrl, method: 'GET', errorHandlerMessage: false})
             .done((response: {indices?: EsIndex[]}) => {
                 this.indices = response.indices || [];
                 this.renderIndices();
             })
             .fail(() => {
+                this.indices = [];
+                this.renderIndices();
                 messenger.notificationFlashMessage('error', __('aaxis.devtools.elastic_viewer.indices_error'));
             });
+    }
+
+    private renderIndicesLoading(): void {
+        this.$el.find('[data-role="indices"]').empty().append(
+            $('<li/>', {'class': 'aaxis-es-viewer__loading'}).append(
+                $('<span/>', {'class': 'fa fa-spinner fa-spin', 'aria-hidden': 'true'}),
+                $('<span/>', {text: __('aaxis.devtools.elastic_viewer.loading')})
+            )
+        );
     }
 
     private renderIndices(): void {
@@ -343,51 +1092,153 @@ class ElasticViewerComponent extends BaseComponent {
     // --- Query execution -----------------------------------------------------
 
     private onRun(): void {
-        if (this.running) {
+        const tab = this.activeTab();
+        if (!tab || tab.running) {
             return;
         }
-        const query = this.editor ? String(this.editor.getValue()).trim() : '';
+        this.saveActiveTab();
+        const query = String(tab.sql).trim();
         if (query === '') {
             messenger.notificationFlashMessage('warning', __('aaxis.devtools.elastic_viewer.empty_query'));
             return;
         }
 
-        this.setRunning(true);
+        tab.running = true;
+        this.renderTabs();
+        this.updateRunButton();
         this.setStatus(__('aaxis.devtools.elastic_viewer.running'));
+        // Clear the previous error only; a prior grid stays visible until the new result lands.
+        this.$el.find('[data-role="result"]').children('.alert').remove();
 
-        $.ajax({
+        // The result is bound to the tab, so switching away lets the query keep running and
+        // populate its own tab. Errors render in the pane; opt out of Oro's global ajax flash.
+        tab.pending = $.ajax({
             url: this.queryUrl,
             method: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({query})
+            data: JSON.stringify({query}),
+            errorHandlerMessage: false
         }).done((response: QueryResponse) => {
-            this.onResult(response);
+            this.storeResult(tab.id, {
+                columns: response.columns || [],
+                columnTypes: response.columnTypes || {},
+                rows: response.rows || [],
+                rowCount: response.rowCount || 0,
+                durationMs: response.durationMs || 0,
+                truncated: !!response.truncated
+            });
         }).fail((jqXhr: any) => {
+            if (jqXhr.statusText === 'abort') {
+                return;
+            }
             const response: QueryResponse = (jqXhr.responseJSON as QueryResponse) || {};
-            this.renderError(response.message || __('aaxis.devtools.elastic_viewer.query_error'));
+            this.storeResult(tab.id, {
+                error: response.message || __('aaxis.devtools.elastic_viewer.query_error')
+            });
         }).always(() => {
-            this.setRunning(false);
+            tab.running = false;
+            tab.pending = null;
+            this.renderTabs();
+            if (tab.id === this.activeTabId) {
+                this.renderActiveResult();
+            }
         });
     }
 
-    private onResult(response: QueryResponse): void {
-        this.lastResult = {
-            columns: response.columns || [],
-            columnTypes: response.columnTypes || {},
-            rows: response.rows || []
-        };
+    /** Renders the active tab's stored result (grid, error or empty) and syncs status/run button. */
+    private renderActiveResult(): void {
+        const tab = this.activeTab();
+        this.clearSelection();
         this.hiddenColumns = [];
         this.hiddenRows = [];
-        this.clearSelection();
-        this.setExportEnabled(this.lastResult.columns.length > 0);
+        this.lastResult = null;
 
-        const summary = __('aaxis.devtools.elastic_viewer.result_summary', {
-            count: response.rowCount || 0,
-            duration: response.durationMs || 0
-        });
-        this.setStatus(summary + (response.truncated ? ' ' + __('aaxis.devtools.elastic_viewer.truncated') : ''));
+        const $result = this.$el.find('[data-role="result"]').empty();
+        const stored = tab ? this.loadResult(tab.id) : null;
 
-        this.renderTable();
+        if (stored && stored.error) {
+            this.setExportEnabled(false);
+            this.setStatus('');
+            $result.append($('<div/>', {'class': 'alert alert-error', role: 'alert'}).text(stored.error));
+        } else if (stored) {
+            this.lastResult = {
+                columns: stored.columns || [],
+                columnTypes: stored.columnTypes || {},
+                rows: stored.rows || []
+            };
+            this.setExportEnabled(this.lastResult.columns.length > 0);
+            this.setStatus(__('aaxis.devtools.elastic_viewer.result_summary', {
+                count: stored.rowCount || 0,
+                duration: stored.durationMs || 0
+            }) + (stored.truncated ? ' ' + __('aaxis.devtools.elastic_viewer.truncated') : ''));
+            this.renderTable();
+        } else {
+            this.setExportEnabled(false);
+            this.setStatus('');
+        }
+
+        if (tab && tab.running) {
+            this.setStatus(__('aaxis.devtools.elastic_viewer.running'));
+        }
+        this.updateRunButton();
+    }
+
+    // --- Per-tab result storage (sessionStorage; in-memory fallback when over quota) ----------
+
+    private resultKey(tabId: string): string {
+        return RESULT_STORAGE_PREFIX + tabId;
+    }
+
+    private storeResult(tabId: string, data: StoredResult): void {
+        try {
+            window.sessionStorage.setItem(this.resultKey(tabId), JSON.stringify(data));
+            delete this.resultFallback[tabId];
+        } catch (e) {
+            // Quota exceeded or serialization failure: keep it in memory for this session instead.
+            try {
+                window.sessionStorage.removeItem(this.resultKey(tabId));
+            } catch (ignore) {
+                // sessionStorage unavailable; the in-memory fallback below still works.
+            }
+            this.resultFallback[tabId] = data;
+        }
+    }
+
+    private loadResult(tabId: string): StoredResult | null {
+        if (Object.prototype.hasOwnProperty.call(this.resultFallback, tabId)) {
+            return this.resultFallback[tabId];
+        }
+        try {
+            const raw = window.sessionStorage.getItem(this.resultKey(tabId));
+            return raw ? JSON.parse(raw) as StoredResult : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    private removeResult(tabId: string): void {
+        delete this.resultFallback[tabId];
+        try {
+            window.sessionStorage.removeItem(this.resultKey(tabId));
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    private clearAllResults(): void {
+        this.resultFallback = {};
+        try {
+            const keys: string[] = [];
+            for (let i = 0; i < window.sessionStorage.length; i++) {
+                const key = window.sessionStorage.key(i);
+                if (key && key.indexOf(RESULT_STORAGE_PREFIX) === 0) {
+                    keys.push(key);
+                }
+            }
+            keys.forEach(key => window.sessionStorage.removeItem(key));
+        } catch (e) {
+            // ignore
+        }
     }
 
     // --- Result grid ---------------------------------------------------------
@@ -563,6 +1414,14 @@ class ElasticViewerComponent extends BaseComponent {
 
     private escapeAttr(value: string): string {
         return value.replace(/"/g, '\\"');
+    }
+
+    private escapeHtml(value: string): string {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
     private hasSelection(): boolean {
@@ -790,23 +1649,17 @@ class ElasticViewerComponent extends BaseComponent {
 
     // --- Helpers -------------------------------------------------------------
 
-    private renderError(message: string): void {
-        this.setStatus('');
-        this.lastResult = null;
-        this.clearSelection();
-        this.setExportEnabled(false);
-        this.$el.find('[data-role="result"]').empty().append(
-            $('<div/>', {'class': 'alert alert-error', role: 'alert'}).text(message)
-        );
-    }
-
     private setStatus(text: string): void {
         this.$el.find('[data-role="status"]').text(text);
     }
 
-    private setRunning(running: boolean): void {
-        this.running = running;
+    /** Run button reflects the ACTIVE tab's run state (each tab runs independently). */
+    private updateRunButton(): void {
+        const tab = this.activeTab();
+        const running = !!(tab && tab.running);
         this.$el.find('[data-role="run"]').prop('disabled', running);
+        // .toggle() (inline display) rather than [hidden]: the fa display rules would win over it.
+        this.$el.find('[data-role="run-spinner"]').toggle(running);
     }
 
     dispose(): void {
@@ -815,7 +1668,15 @@ class ElasticViewerComponent extends BaseComponent {
         }
         this.$el.off('.aaxisEsViewer');
         $(document).off('.aaxisEsViewerDrag .aaxisEsViewerCtx');
+        $(window).off('.aaxisEsViewer');
+        mediator.off('openLink:before', this.onBeforePageChange, this);
         $('body').removeClass('aaxis-es-viewer-resizing');
+        this.tabs.forEach(tab => {
+            if (tab.pending && typeof tab.pending.abort === 'function') {
+                tab.pending.abort();
+            }
+        });
+        this.clearAllResults();
         if (this.$contextMenu) {
             this.$contextMenu.remove();
             this.$contextMenu = null;

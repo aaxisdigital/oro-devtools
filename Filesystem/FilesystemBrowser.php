@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Aaxis\Bundle\DevToolsBundle\Filesystem;
 
 /**
- * Read-only filesystem browsing for the back-office "Filesystem Browser" tool.
+ * Read-only filesystem browsing for the back-office "Filesystem Viewer" tool.
  *
  * Security model:
  *  - paths containing a ".." segment are always rejected;

@@ -12,7 +12,8 @@ use Oro\Bundle\SecurityBundle\Authentication\TokenAccessorInterface;
 use Oro\Bundle\UserBundle\Entity\User;
 
 /**
- * Create, update and list saved queries (favorites) for the Database Viewer.
+ * Create, update and list saved queries (favorites) for the SQL-style viewers. The Database Viewer
+ * and the Elastic Viewer share the storage; every operation is scoped by the `tool` discriminator.
  */
 class SavedQueryManager
 {
@@ -25,17 +26,22 @@ class SavedQueryManager
     ) {
     }
 
-    public function create(string $name, string $queryText, bool $public): SavedQuery
-    {
+    public function create(
+        string $name,
+        string $queryText,
+        bool $public,
+        string $tool = SavedQuery::TOOL_DATABASE
+    ): SavedQuery {
         $name = $this->normalizeName($name);
         $user = $this->tokenAccessor->getUser();
         $userId = $user instanceof User ? $user->getId() : null;
 
-        $this->assertUniqueName($name, $public, $userId, null);
+        $this->assertUniqueName($tool, $name, $public, $userId, null);
 
         $now = new \DateTime('now', new \DateTimeZone('UTC'));
 
         $entity = new SavedQuery();
+        $entity->setTool($tool);
         $entity->setQueryName($name);
         $entity->setQueryText($queryText);
         $entity->setPublic($public);
@@ -61,7 +67,7 @@ class SavedQueryManager
         $finalPublic = $public ?? $entity->isPublic();
         $ownerId = null !== $entity->getUser() ? $entity->getUser()->getId() : null;
 
-        $this->assertUniqueName($finalName, $finalPublic, $ownerId, $entity->getId());
+        $this->assertUniqueName($entity->getTool(), $finalName, $finalPublic, $ownerId, $entity->getId());
 
         $entity->setQueryName($finalName);
         $entity->setPublic($finalPublic);
@@ -78,16 +84,21 @@ class SavedQueryManager
     /**
      * @throws DuplicateQueryNameException when the name collides within its visibility scope
      */
-    private function assertUniqueName(string $name, bool $public, ?int $userId, ?int $excludeId): void
-    {
+    private function assertUniqueName(
+        string $tool,
+        string $name,
+        bool $public,
+        ?int $userId,
+        ?int $excludeId
+    ): void {
         $repo = $this->getRepository();
         if ($public) {
-            if ($repo->existsPublicWithName($name, $excludeId)) {
+            if ($repo->existsPublicWithName($tool, $name, $excludeId)) {
                 throw new DuplicateQueryNameException(
                     sprintf('A public query named "%s" already exists.', $name)
                 );
             }
-        } elseif (null !== $userId && $repo->existsPrivateWithName($userId, $name, $excludeId)) {
+        } elseif (null !== $userId && $repo->existsPrivateWithName($tool, $userId, $name, $excludeId)) {
             throw new DuplicateQueryNameException(
                 sprintf('You already have a private query named "%s".', $name)
             );
@@ -102,15 +113,15 @@ class SavedQueryManager
      *     hasMorePrivate: bool
      * }
      */
-    public function getMenuData(int $userId): array
+    public function getMenuData(int $userId, string $tool = SavedQuery::TOOL_DATABASE): array
     {
         $repo = $this->getRepository();
 
         return [
-            'public' => $repo->findRecentPublic(self::MENU_LIMIT),
-            'private' => $repo->findRecentPrivateForUser($userId, self::MENU_LIMIT),
-            'hasMorePublic' => $repo->countPublic() > self::MENU_LIMIT,
-            'hasMorePrivate' => $repo->countPrivateForUser($userId) > self::MENU_LIMIT,
+            'public' => $repo->findRecentPublic($tool, self::MENU_LIMIT),
+            'private' => $repo->findRecentPrivateForUser($tool, $userId, self::MENU_LIMIT),
+            'hasMorePublic' => $repo->countPublic($tool) > self::MENU_LIMIT,
+            'hasMorePrivate' => $repo->countPrivateForUser($tool, $userId) > self::MENU_LIMIT,
         ];
     }
 

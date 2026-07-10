@@ -9,7 +9,8 @@
              data-page-component-options="{{ {
                  indicesUrl: path('aaxis_devtools_elastic_viewer_indices'),
                  queryUrl: path('aaxis_devtools_elastic_viewer_query'),
-                 exportUrl: path('aaxis_devtools_elastic_viewer_export')
+                 exportUrl: path('aaxis_devtools_elastic_viewer_export'),
+                 savedQueriesUrl: path('aaxis_devtools_elastic_viewer_saved_queries')
              }|merge(options)|json_encode }}">
             <div class="container-fluid page-title">
                 <div class="aaxis-es-viewer__titlebar">
@@ -66,12 +67,38 @@
 
                 <div class="aaxis-es-viewer__main" data-role="main">
                     <div class="aaxis-es-viewer__editor-pane" data-role="editor-pane">
+                        <div class="aaxis-es-viewer__tabs" data-role="tabs">
+                            <div class="aaxis-es-viewer__tabs-list" data-role="tabs-list"></div>
+                            <button type="button" class="aaxis-es-viewer__tab-add" data-role="tab-add"
+                                    title="{{ 'aaxis.devtools.elastic_viewer.add_tab'|trans }}"
+                                    aria-label="{{ 'aaxis.devtools.elastic_viewer.add_tab'|trans }}">
+                                <span class="fa-plus" aria-hidden="true"></span>
+                            </button>
+                        </div>
                         <div class="aaxis-es-viewer__editor-host">
                             <textarea data-role="editor">FROM oro_search_*
 | LIMIT 100</textarea>
                         </div>
                         <div class="aaxis-es-viewer__toolbar">
                             <div class="aaxis-es-viewer__toolbar-left">
+                                <button type="button" class="btn" data-role="beautify"
+                                        title="{{ 'aaxis.devtools.elastic_viewer.beautify'|trans }}">
+                                    <span class="fa fa-magic" aria-hidden="true"></span>
+                                    {{ 'aaxis.devtools.elastic_viewer.beautify'|trans }}
+                                </button>
+                                <div class="btn-group">
+                                    <button type="button" class="btn dropdown-toggle" data-role="queries"
+                                            data-toggle="dropdown" data-placement="bottom-start"
+                                            data-inherit-parent-width="loosely"
+                                            aria-haspopup="true" aria-expanded="false">
+                                        {{ 'aaxis.devtools.elastic_viewer.queries'|trans }}
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu" data-role="queries-menu"></ul>
+                                </div>
+                                <button type="button" class="btn" data-role="update" hidden>
+                                    {{ 'aaxis.devtools.elastic_viewer.update'|trans }}
+                                </button>
                                 <span class="aaxis-es-viewer__esql-label">{{ 'aaxis.devtools.elastic_viewer.esql'|trans }}</span>
                             </div>
                             <div class="aaxis-es-viewer__toolbar-right">
@@ -93,6 +120,8 @@
                                 </div>
                                 {% endif %}
                                 <button type="button" class="btn btn-primary" data-role="run">
+                                    <span class="fa fa-spinner fa-spin" data-role="run-spinner"
+                                          aria-hidden="true" style="display: none"></span>
                                     {{ 'aaxis.devtools.elastic_viewer.run'|trans }}
                                 </button>
                             </div>

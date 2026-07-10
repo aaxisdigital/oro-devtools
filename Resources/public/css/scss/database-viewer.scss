@@ -320,6 +320,14 @@ $aaxis-db-splitter-hover: #b7b7b7;
         color: #888;
     }
 
+    &__loading {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 4px;
+        color: #888;
+    }
+
     // --- Splitters ---------------------------------------------------------
     &__v-splitter {
         flex: 0 0 6px;
@@ -417,6 +425,10 @@ $aaxis-db-splitter-hover: #b7b7b7;
     &__tab-name {
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    &__tab-spinner {
+        color: #5c6b7a;
     }
 
     &__tab-close {

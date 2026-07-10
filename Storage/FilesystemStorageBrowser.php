@@ -59,7 +59,7 @@ class FilesystemStorageBrowser implements StorageBrowserInterface
 
     private function basePath(): string
     {
-        return $this->browser->resolveBasePath((string) $this->configManager->get('aaxis_devtools.filesystem_browser_base_path'));
+        return $this->browser->resolveBasePath((string) $this->configManager->get('aaxis_devtools.filesystem_viewer_base_path'));
     }
 
     /**
@@ -69,7 +69,7 @@ class FilesystemStorageBrowser implements StorageBrowserInterface
     {
         return [
             $this->basePath(),
-            (bool) $this->configManager->get('aaxis_devtools.filesystem_browser_restricted'),
+            (bool) $this->configManager->get('aaxis_devtools.filesystem_viewer_restricted'),
         ];
     }
 }

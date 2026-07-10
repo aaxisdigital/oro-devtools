@@ -6,6 +6,7 @@ namespace Aaxis\Bundle\DevToolsBundle\Controller;
 
 use Aaxis\Bundle\DevToolsBundle\Database\ResultExporter;
 use Aaxis\Bundle\DevToolsBundle\Elastic\ElasticInspector;
+use Aaxis\Bundle\DevToolsBundle\Entity\SavedQuery;
 use Oro\Bundle\ConfigBundle\Config\ConfigManager;
 use Oro\Bundle\SecurityBundle\Attribute\CsrfProtection;
 use Psr\Log\LoggerInterface;
@@ -23,6 +24,8 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 class ElasticViewerController extends AbstractController
 {
+    use SavedQueryEndpointsTrait;
+
     #[Route(path: '/elastic-viewer/indices', name: 'aaxis_devtools_elastic_viewer_indices', methods: ['GET'])]
     public function indicesAction(): JsonResponse
     {
@@ -89,6 +92,51 @@ class ElasticViewerController extends AbstractController
         }
     }
 
+    #[Route(path: '/elastic-viewer/saved-queries', name: 'aaxis_devtools_elastic_viewer_saved_queries', methods: ['GET'])]
+    public function savedQueriesAction(): JsonResponse
+    {
+        return $this->listSavedQueries();
+    }
+
+    #[Route(
+        path: '/elastic-viewer/saved-queries/all',
+        name: 'aaxis_devtools_elastic_viewer_saved_queries_all',
+        methods: ['GET']
+    )]
+    public function savedQueriesAllAction(): JsonResponse
+    {
+        return $this->listAllSavedQueries();
+    }
+
+    #[Route(
+        path: '/elastic-viewer/saved-queries',
+        name: 'aaxis_devtools_elastic_viewer_saved_query_create',
+        methods: ['POST']
+    )]
+    #[CsrfProtection]
+    public function createSavedQueryAction(Request $request): JsonResponse
+    {
+        return $this->createSavedQueryResponse($request);
+    }
+
+    #[Route(
+        path: '/elastic-viewer/saved-queries/{id}',
+        name: 'aaxis_devtools_elastic_viewer_saved_query_update',
+        requirements: ['id' => '\d+'],
+        methods: ['PUT', 'POST']
+    )]
+    #[CsrfProtection]
+    public function updateSavedQueryAction(Request $request, int $id): JsonResponse
+    {
+        return $this->updateSavedQueryResponse($request, $id);
+    }
+
+    #[\Override]
+    protected function savedQueryTool(): string
+    {
+        return SavedQuery::TOOL_ELASTIC;
+    }
+
     /**
      * Elasticsearch error bodies are often a verbose JSON blob; surface the useful reason if present.
      */
@@ -110,7 +158,7 @@ class ElasticViewerController extends AbstractController
     #[\Override]
     public static function getSubscribedServices(): array
     {
-        return array_merge(parent::getSubscribedServices(), [
+        return array_merge(parent::getSubscribedServices(), self::savedQuerySubscribedServices(), [
             ElasticInspector::class,
             ResultExporter::class,
             ConfigManager::class,

@@ -220,6 +220,14 @@ $aaxis-es-splitter-hover: #b7b7b7;
         color: #888;
     }
 
+    &__loading {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 4px;
+        color: #888;
+    }
+
     // --- Splitters ---------------------------------------------------------
     &__v-splitter {
         flex: 0 0 6px;
@@ -255,6 +263,106 @@ $aaxis-es-splitter-hover: #b7b7b7;
         flex-direction: column;
         min-height: 80px;
         overflow: hidden;
+    }
+
+    // --- Query tabs --------------------------------------------------------
+    &__tabs {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: stretch;
+        gap: 2px;
+        padding: 4px 4px 0;
+        overflow-x: auto;
+        border-bottom: 1px solid $aaxis-es-border;
+    }
+
+    &__tabs-list {
+        display: flex;
+        align-items: stretch;
+        gap: 2px;
+    }
+
+    &__tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        max-width: 200px;
+        border: 1px solid $aaxis-es-border;
+        border-bottom: none;
+        border-radius: 4px 4px 0 0;
+        background: #f3f3f3;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &.is-active {
+            background: #fff;
+            font-weight: font-weight('bold');
+        }
+    }
+
+    &__tab-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__tab-spinner {
+        color: #5c6b7a;
+    }
+
+    &__tab-close {
+        border: 0;
+        background: none;
+        padding: 0 2px;
+        line-height: 1;
+        color: #999;
+        cursor: pointer;
+
+        &:hover {
+            color: #333;
+        }
+    }
+
+    &__tab-add {
+        flex: 0 0 auto;
+        border: 1px solid $aaxis-es-border;
+        border-bottom: none;
+        border-radius: 4px 4px 0 0;
+        background: #f3f3f3;
+        padding: 4px 10px;
+        cursor: pointer;
+    }
+
+    &__tab-star {
+        cursor: pointer;
+        color: #b0b0b0;
+
+        &.is-private {
+            color: #d9534f;
+        }
+
+        &.is-public {
+            color: #f0ad4e;
+        }
+    }
+
+    &__menu-icon {
+        width: 14px;
+        margin-right: 4px;
+        text-align: center;
+
+        &.is-private {
+            color: #d9534f;
+        }
+
+        &.is-public {
+            color: #f0ad4e;
+        }
+    }
+
+    &__menu-empty {
+        padding: 6px 16px;
+        color: #888;
     }
 
     &__editor-host {
@@ -306,17 +414,46 @@ $aaxis-es-splitter-hover: #b7b7b7;
         flex: 1 1 auto;
         min-height: 0;
         overflow: auto;
-        padding: 8px;
+        // No padding: the sticky header/row-number cells must sit flush with the scrollport edge.
+        padding: 0;
+
+        > .alert,
+        > .aaxis-es-viewer__empty {
+            margin: 8px;
+        }
 
         table {
             width: auto;
             min-width: 100%;
             margin-bottom: 0;
+            // Collapsed borders travel with the scrolled content and would leave the sticky
+            // header/row-number cells borderless; separate borders stay on the cells.
+            border-collapse: separate;
+            border-spacing: 0;
         }
 
         td,
         th {
             white-space: nowrap;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #f5f5f5;
+            box-shadow: inset 0 -1px 0 $aaxis-es-border;
+        }
+
+        td.aaxis-es-viewer__rownum-cell {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+        }
+
+        th.aaxis-es-viewer__rownum-cell {
+            left: 0;
+            z-index: 3;
         }
     }
 
@@ -335,7 +472,9 @@ $aaxis-es-splitter-hover: #b7b7b7;
 
         .is-col-selected,
         .is-row-selected {
-            background-color: rgba(43, 132, 237, .15) !important;
+            // Opaque (not rgba): sticky header/row-number cells must not let scrolled
+            // content show through the highlight.
+            background-color: #dfecfc !important;
         }
     }
 
@@ -402,4 +541,73 @@ $aaxis-es-splitter-hover: #b7b7b7;
 body.aaxis-es-viewer-resizing {
     user-select: none;
     cursor: col-resize;
+}
+
+// "All saved queries" modal list.
+.aaxis-es-viewer__all-queries {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 60vh;
+    overflow: auto;
+
+    li {
+        margin: 0;
+    }
+
+    a {
+        display: flex;
+        align-items: center;
+        padding: 6px 8px;
+        color: inherit;
+        text-decoration: none;
+
+        &:hover {
+            background: rgba(0, 0, 0, .06);
+        }
+    }
+}
+
+.aaxis-es-viewer__save-form {
+    .control-group {
+        margin-bottom: 12px;
+    }
+
+    .radio {
+        display: inline-block;
+        margin-right: 16px;
+        font-weight: normal;
+    }
+}
+
+// "Leaving with unsaved changes" dialog content.
+.aaxis-es-viewer__leave {
+    p {
+        margin: 0 0 10px;
+    }
+
+    &-list {
+        width: 100%;
+
+        td {
+            padding: 2px 12px 2px 0;
+        }
+
+        .radio {
+            display: inline-block;
+            margin: 0;
+            font-weight: normal;
+        }
+    }
+
+    &-name {
+        font-weight: font-weight('bold');
+        overflow-wrap: anywhere;
+    }
+
+    &-all {
+        display: flex;
+        gap: 16px;
+        margin-top: 10px;
+    }
 }

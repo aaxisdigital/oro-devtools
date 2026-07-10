@@ -57,7 +57,27 @@ interface QueryTab {
     savedPublic: boolean;
     savedOwned: boolean;
     savedText: string | null;
+    // Per-tab run state so tabs execute independently (a run keeps going while you view another tab).
+    running: boolean;
+    pending: any;
 }
+
+/**
+ * What we persist per tab so switching tabs restores that tab's own result instead of showing
+ * whatever the last-run tab produced. Either a successful grid payload or an error message.
+ */
+interface StoredResult {
+    columns?: string[];
+    rows?: Array<Record<string, unknown>>;
+    rowCount?: number;
+    durationMs?: number;
+    truncated?: boolean;
+    error?: string;
+}
+
+// sessionStorage key prefix for per-tab results (session-scoped; cleared on load so a reload
+// starts fresh, matching the "results live for the session" behaviour).
+const RESULT_STORAGE_PREFIX = 'aaxis-dbv-result:';
 
 type SelectionMode = 'none' | 'columns' | 'rows';
 
@@ -103,7 +123,9 @@ class DatabaseViewerComponent extends BaseComponent {
     private allowExport!: boolean;
 
     private editor!: any;
-    private running!: boolean;
+
+    // In-memory fallback for results too large for sessionStorage (quota); keyed by tab id.
+    private resultFallback!: Record<string, StoredResult>;
 
     private objects!: DatabaseObject[];
     private columnsByName!: Record<string, ColumnInfo[]>;
@@ -144,7 +166,8 @@ class DatabaseViewerComponent extends BaseComponent {
         this.allowExport = options.allowExport !== false;
 
         this.editor = null;
-        this.running = false;
+        this.resultFallback = {};
+        this.clearAllResults();
         this.objects = [];
         this.columnsByName = {};
         this.expanded = {};
@@ -343,6 +366,7 @@ class DatabaseViewerComponent extends BaseComponent {
         this.tabs.push(tab);
         this.activeTabId = tab.id;
         this.renderTabs();
+        this.renderActiveResult();
     }
 
     private createTab(opts: Partial<QueryTab> & {sql: string}): QueryTab {
@@ -354,7 +378,9 @@ class DatabaseViewerComponent extends BaseComponent {
             savedId: opts.savedId ?? null,
             savedPublic: opts.savedPublic ?? false,
             savedOwned: opts.savedOwned ?? false,
-            savedText: opts.savedText ?? null
+            savedText: opts.savedText ?? null,
+            running: false,
+            pending: null
         };
     }
 
@@ -387,6 +413,12 @@ class DatabaseViewerComponent extends BaseComponent {
             }));
 
             $tab.append($('<span/>', {'class': 'aaxis-db-viewer__tab-name', text: tab.name}));
+            if (tab.running) {
+                $tab.append($('<span/>', {
+                    'class': 'aaxis-db-viewer__tab-spinner fa fa-spinner fa-spin',
+                    'aria-hidden': 'true'
+                }));
+            }
             if (closable) {
                 $tab.append($('<button/>', {
                     type: 'button',
@@ -425,6 +457,7 @@ class DatabaseViewerComponent extends BaseComponent {
         }
         this.renderTabs();
         this.updateUpdateButton();
+        this.renderActiveResult();
     }
 
     private onTabClick(event: any): void {
@@ -446,6 +479,7 @@ class DatabaseViewerComponent extends BaseComponent {
         }
         this.renderTabs();
         this.updateUpdateButton();
+        this.renderActiveResult();
     }
 
     private onCloseTab(event: any): void {
@@ -472,8 +506,13 @@ class DatabaseViewerComponent extends BaseComponent {
         if (index === -1 || this.tabs.length <= 1) {
             return;
         }
-        this.tabs.splice(index, 1);
-        if (this.activeTabId === id) {
+        const [removed] = this.tabs.splice(index, 1);
+        if (removed.pending && typeof removed.pending.abort === 'function') {
+            removed.pending.abort();
+        }
+        this.removeResult(removed.id);
+        const wasActive = this.activeTabId === id;
+        if (wasActive) {
             const next = this.tabs[Math.max(0, index - 1)];
             this.activeTabId = next.id;
             if (this.editor) {
@@ -482,6 +521,9 @@ class DatabaseViewerComponent extends BaseComponent {
         }
         this.renderTabs();
         this.updateUpdateButton();
+        if (wasActive) {
+            this.renderActiveResult();
+        }
     }
 
     private confirmDiscardTab(tab: QueryTab): void {
@@ -1072,14 +1114,26 @@ class DatabaseViewerComponent extends BaseComponent {
     private loadObjects(): void {
         // The metric (none/quantity/bytes) follows the order-key button so counts/sizes are only
         // computed server-side when the user asks for them.
+        this.renderObjectsLoading();
         $.ajax({url: this.objectsUrl, method: 'GET', data: {metric: ORDER_METRIC[this.orderMode]}, errorHandlerMessage: false})
             .done((response: {objects?: DatabaseObject[]}) => {
                 this.objects = response.objects || [];
                 this.renderObjects();
             })
             .fail(() => {
+                this.objects = [];
+                this.renderObjects();
                 messenger.notificationFlashMessage('error', __('aaxis.devtools.database_viewer.tables_error'));
             });
+    }
+
+    private renderObjectsLoading(): void {
+        this.$el.find('[data-role="objects"]').empty().append(
+            $('<li/>', {'class': 'aaxis-db-viewer__loading'}).append(
+                $('<span/>', {'class': 'fa fa-spinner fa-spin', 'aria-hidden': 'true'}),
+                $('<span/>', {text: __('aaxis.devtools.database_viewer.loading')})
+            )
+        );
     }
 
     private renderObjects(): void {
@@ -1253,51 +1307,148 @@ class DatabaseViewerComponent extends BaseComponent {
     // --- Query execution -----------------------------------------------------
 
     private onRun(): void {
-        if (this.running) {
+        const tab = this.activeTab();
+        if (!tab || tab.running) {
             return;
         }
-        const query = this.editor ? String(this.editor.getValue()).trim() : '';
+        this.saveActiveTab();
+        const query = String(tab.sql).trim();
         if (query === '') {
             messenger.notificationFlashMessage('warning', __('aaxis.devtools.database_viewer.empty_query'));
             return;
         }
 
-        this.setRunning(true);
+        tab.running = true;
+        this.renderTabs();
+        this.updateRunButton();
         this.setStatus(__('aaxis.devtools.database_viewer.running'));
+        // Clear the previous error only; a prior grid stays visible until the new result lands.
         this.$el.find('[data-role="result"]').children('.alert').remove();
 
-        $.ajax({
+        // The result is bound to the tab, so switching away lets the query keep running and
+        // populate its own tab. Errors render in the pane; opt out of Oro's global ajax flash.
+        tab.pending = $.ajax({
             url: this.queryUrl,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({query}),
-            // The error is rendered in the result pane; keep Oro's global ajax error
-            // handler from flashing a second, sticky copy at the top of the page.
             errorHandlerMessage: false
         }).done((response: QueryResponse) => {
-            this.onResult(response);
+            this.storeResult(tab.id, {
+                columns: response.columns || [],
+                rows: response.rows || [],
+                rowCount: response.rowCount || 0,
+                durationMs: response.durationMs || 0,
+                truncated: !!response.truncated
+            });
         }).fail((jqXhr: any) => {
+            if (jqXhr.statusText === 'abort') {
+                return;
+            }
             const response: QueryResponse = (jqXhr.responseJSON as QueryResponse) || {};
-            this.renderError(response.message || __('aaxis.devtools.database_viewer.query_error'));
+            this.storeResult(tab.id, {
+                error: response.message || __('aaxis.devtools.database_viewer.query_error')
+            });
         }).always(() => {
-            this.setRunning(false);
+            tab.running = false;
+            tab.pending = null;
+            this.renderTabs();
+            if (tab.id === this.activeTabId) {
+                this.renderActiveResult();
+            }
         });
     }
 
-    private onResult(response: QueryResponse): void {
-        this.lastResult = {columns: response.columns || [], rows: response.rows || []};
+    /** Renders the active tab's stored result (grid, error or empty) and syncs status/run button. */
+    private renderActiveResult(): void {
+        const tab = this.activeTab();
+        this.clearSelection();
         this.hiddenColumns = [];
         this.hiddenRows = [];
-        this.clearSelection();
-        this.setExportEnabled(this.lastResult.columns.length > 0);
+        this.lastResult = null;
 
-        const summary = __('aaxis.devtools.database_viewer.result_summary', {
-            count: response.rowCount || 0,
-            duration: response.durationMs || 0
-        });
-        this.setStatus(summary + (response.truncated ? ' ' + __('aaxis.devtools.database_viewer.truncated') : ''));
+        const $result = this.$el.find('[data-role="result"]').empty();
+        const stored = tab ? this.loadResult(tab.id) : null;
 
-        this.renderTable();
+        if (stored && stored.error) {
+            this.setExportEnabled(false);
+            this.setStatus('');
+            $result.append($('<div/>', {'class': 'alert alert-error', role: 'alert'}).text(stored.error));
+        } else if (stored) {
+            this.lastResult = {columns: stored.columns || [], rows: stored.rows || []};
+            this.setExportEnabled(this.lastResult.columns.length > 0);
+            this.setStatus(__('aaxis.devtools.database_viewer.result_summary', {
+                count: stored.rowCount || 0,
+                duration: stored.durationMs || 0
+            }) + (stored.truncated ? ' ' + __('aaxis.devtools.database_viewer.truncated') : ''));
+            this.renderTable();
+        } else {
+            this.setExportEnabled(false);
+            this.setStatus('');
+        }
+
+        if (tab && tab.running) {
+            this.setStatus(__('aaxis.devtools.database_viewer.running'));
+        }
+        this.updateRunButton();
+    }
+
+    // --- Per-tab result storage (sessionStorage; in-memory fallback when over quota) ----------
+
+    private resultKey(tabId: string): string {
+        return RESULT_STORAGE_PREFIX + tabId;
+    }
+
+    private storeResult(tabId: string, data: StoredResult): void {
+        try {
+            window.sessionStorage.setItem(this.resultKey(tabId), JSON.stringify(data));
+            delete this.resultFallback[tabId];
+        } catch (e) {
+            // Quota exceeded or serialization failure: keep it in memory for this session instead.
+            try {
+                window.sessionStorage.removeItem(this.resultKey(tabId));
+            } catch (ignore) {
+                // sessionStorage unavailable; the in-memory fallback below still works.
+            }
+            this.resultFallback[tabId] = data;
+        }
+    }
+
+    private loadResult(tabId: string): StoredResult | null {
+        if (Object.prototype.hasOwnProperty.call(this.resultFallback, tabId)) {
+            return this.resultFallback[tabId];
+        }
+        try {
+            const raw = window.sessionStorage.getItem(this.resultKey(tabId));
+            return raw ? JSON.parse(raw) as StoredResult : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    private removeResult(tabId: string): void {
+        delete this.resultFallback[tabId];
+        try {
+            window.sessionStorage.removeItem(this.resultKey(tabId));
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    private clearAllResults(): void {
+        this.resultFallback = {};
+        try {
+            const keys: string[] = [];
+            for (let i = 0; i < window.sessionStorage.length; i++) {
+                const key = window.sessionStorage.key(i);
+                if (key && key.indexOf(RESULT_STORAGE_PREFIX) === 0) {
+                    keys.push(key);
+                }
+            }
+            keys.forEach(key => window.sessionStorage.removeItem(key));
+        } catch (e) {
+            // ignore
+        }
     }
 
     // --- Result grid ---------------------------------------------------------
@@ -1716,22 +1867,14 @@ class DatabaseViewerComponent extends BaseComponent {
 
     // --- Helpers -------------------------------------------------------------
 
-    private renderError(message: string): void {
-        this.setStatus('');
-        this.lastResult = null;
-        this.clearSelection();
-        this.setExportEnabled(false);
-        this.$el.find('[data-role="result"]').empty().append(
-            $('<div/>', {'class': 'alert alert-error', role: 'alert'}).text(message)
-        );
-    }
-
     private setStatus(text: string): void {
         this.$el.find('[data-role="status"]').text(text);
     }
 
-    private setRunning(running: boolean): void {
-        this.running = running;
+    /** Run button reflects the ACTIVE tab's run state (each tab runs independently). */
+    private updateRunButton(): void {
+        const tab = this.activeTab();
+        const running = !!(tab && tab.running);
         this.$el.find('[data-role="run"]').prop('disabled', running);
         // .toggle() (inline display) rather than [hidden]: the fa display rules would win over it.
         this.$el.find('[data-role="run-spinner"]').toggle(running);
@@ -1746,6 +1889,12 @@ class DatabaseViewerComponent extends BaseComponent {
         $(window).off('.aaxisDbViewer');
         mediator.off('openLink:before', this.onBeforePageChange, this);
         $('body').removeClass('aaxis-db-viewer-resizing');
+        this.tabs.forEach(tab => {
+            if (tab.pending && typeof tab.pending.abort === 'function') {
+                tab.pending.abort();
+            }
+        });
+        this.clearAllResults();
         if (this.$contextMenu) {
             this.$contextMenu.remove();
             this.$contextMenu = null;

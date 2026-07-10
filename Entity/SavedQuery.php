@@ -14,10 +14,14 @@ use Oro\Bundle\UserBundle\Entity\User;
  */
 #[ORM\Entity(repositoryClass: SavedQueryRepository::class)]
 #[ORM\Table(name: 'aaxis_dbviewer_saved_query')]
-#[ORM\Index(columns: ['is_public', 'created_at'], name: 'aaxis_saved_query_public_idx')]
+#[ORM\Index(columns: ['tool', 'is_public', 'created_at'], name: 'aaxis_saved_query_public_idx')]
 class SavedQuery
 {
     public const int NAME_MAX_LENGTH = 40;
+
+    /** The viewer a saved query belongs to; the table is shared between the two SQL-style viewers. */
+    public const string TOOL_DATABASE = 'database';
+    public const string TOOL_ELASTIC = 'elastic';
 
     #[ORM\Id]
     #[ORM\Column(name: 'id', type: Types::INTEGER)]
@@ -27,6 +31,9 @@ class SavedQuery
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
     private ?User $user = null;
+
+    #[ORM\Column(name: 'tool', type: Types::STRING, length: 16, options: ['default' => self::TOOL_DATABASE])]
+    private string $tool = self::TOOL_DATABASE;
 
     #[ORM\Column(name: 'is_public', type: Types::BOOLEAN, options: ['default' => false])]
     private bool $public = false;
@@ -56,6 +63,18 @@ class SavedQuery
     public function setUser(?User $user): self
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    public function getTool(): string
+    {
+        return $this->tool;
+    }
+
+    public function setTool(string $tool): self
+    {
+        $this->tool = $tool;
 
         return $this;
     }

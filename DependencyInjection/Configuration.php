@@ -61,27 +61,27 @@ class Configuration implements ConfigurationInterface
             'mongodb_viewer_private_dsn' => ['type' => 'string', 'value' => ''],
             'mongodb_viewer_private_password' => ['type' => 'string', 'value' => ''],
 
-            // Filesystem Browser
-            'filesystem_browser_enabled' => ['type' => 'boolean', 'value' => true],
-            'filesystem_browser_base_path' => ['type' => 'string', 'value' => ''],
-            'filesystem_browser_restricted' => ['type' => 'boolean', 'value' => true],
-            'filesystem_browser_col_type' => ['type' => 'boolean', 'value' => true],
-            'filesystem_browser_col_filename' => ['type' => 'boolean', 'value' => true],
-            'filesystem_browser_col_filesize' => ['type' => 'boolean', 'value' => true],
-            'filesystem_browser_col_modified' => ['type' => 'boolean', 'value' => true],
-            'filesystem_browser_col_created' => ['type' => 'boolean', 'value' => true],
-            'filesystem_browser_col_owner_user' => ['type' => 'boolean', 'value' => true],
-            'filesystem_browser_col_owner_group' => ['type' => 'boolean', 'value' => true],
-            'filesystem_browser_col_preview' => ['type' => 'boolean', 'value' => true],
+            // Filesystem Viewer
+            'filesystem_viewer_enabled' => ['type' => 'boolean', 'value' => true],
+            'filesystem_viewer_base_path' => ['type' => 'string', 'value' => ''],
+            'filesystem_viewer_restricted' => ['type' => 'boolean', 'value' => true],
+            'filesystem_viewer_col_type' => ['type' => 'boolean', 'value' => true],
+            'filesystem_viewer_col_filename' => ['type' => 'boolean', 'value' => true],
+            'filesystem_viewer_col_filesize' => ['type' => 'boolean', 'value' => true],
+            'filesystem_viewer_col_modified' => ['type' => 'boolean', 'value' => true],
+            'filesystem_viewer_col_created' => ['type' => 'boolean', 'value' => true],
+            'filesystem_viewer_col_owner_user' => ['type' => 'boolean', 'value' => true],
+            'filesystem_viewer_col_owner_group' => ['type' => 'boolean', 'value' => true],
+            'filesystem_viewer_col_preview' => ['type' => 'boolean', 'value' => true],
 
-            // Bucket Browser
-            'bucket_browser_enabled' => ['type' => 'boolean', 'value' => true],
-            'bucket_browser_test' => ['type' => 'string', 'value' => ''],
-            'bucket_browser_url' => ['type' => 'string', 'value' => 'http://minio:9000'],
-            'bucket_browser_user' => ['type' => 'string', 'value' => ''],
-            'bucket_browser_pass' => ['type' => 'string', 'value' => ''],
-            'bucket_browser_name' => ['type' => 'string', 'value' => ''],
-            'bucket_browser_read_only' => ['type' => 'boolean', 'value' => false],
+            // Bucket Viewer
+            'bucket_viewer_enabled' => ['type' => 'boolean', 'value' => true],
+            'bucket_viewer_test' => ['type' => 'string', 'value' => ''],
+            'bucket_viewer_url' => ['type' => 'string', 'value' => 'http://minio:9000'],
+            'bucket_viewer_user' => ['type' => 'string', 'value' => ''],
+            'bucket_viewer_pass' => ['type' => 'string', 'value' => ''],
+            'bucket_viewer_name' => ['type' => 'string', 'value' => ''],
+            'bucket_viewer_read_only' => ['type' => 'boolean', 'value' => false],
 
             // Runtime Config
             'runtime_config_enabled' => ['type' => 'boolean', 'value' => true],

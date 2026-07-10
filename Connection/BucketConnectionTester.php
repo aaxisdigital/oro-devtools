@@ -8,21 +8,21 @@ use Aaxis\Bundle\CommonBundle\Connection\ConnectionTesterInterface;
 use Aaxis\Bundle\DevToolsBundle\Storage\BucketStorageBrowser;
 
 /**
- * "Test connection" check for the Bucket Browser. The test reads the values currently entered in the
+ * "Test connection" check for the Bucket Viewer. The test reads the values currently entered in the
  * config form (even before saving) via $overrides; the secret is never returned.
  *
  * @phpstan-import-type TestResult from ConnectionTesterInterface
  */
 class BucketConnectionTester implements ConnectionTesterInterface
 {
-    public function __construct(private readonly BucketStorageBrowser $bucketBrowser)
+    public function __construct(private readonly BucketStorageBrowser $bucketViewer)
     {
     }
 
     #[\Override]
     public function getTool(): string
     {
-        return 'bucket_browser';
+        return 'bucket_viewer';
     }
 
     /**
@@ -32,7 +32,7 @@ class BucketConnectionTester implements ConnectionTesterInterface
     public function test(array $overrides = []): array
     {
         try {
-            return $this->bucketBrowser->testConnection($overrides);
+            return $this->bucketViewer->testConnection($overrides);
         } catch (\Throwable $e) {
             return [
                 'success' => false,

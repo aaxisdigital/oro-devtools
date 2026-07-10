@@ -9,16 +9,21 @@ use Doctrine\ORM\EntityRepository;
 
 /**
  * @extends EntityRepository<SavedQuery>
+ *
+ * All lookups are scoped by {@see SavedQuery} `tool` so the Database Viewer and the Elastic Viewer
+ * share the table without seeing each other's saved queries.
  */
 class SavedQueryRepository extends EntityRepository
 {
     /**
      * @return SavedQuery[]
      */
-    public function findRecentPublic(int $limit): array
+    public function findRecentPublic(string $tool, int $limit): array
     {
         return $this->createQueryBuilder('q')
-            ->where('q.public = true')
+            ->where('q.tool = :tool')
+            ->andWhere('q.public = true')
+            ->setParameter('tool', $tool)
             ->orderBy('q.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
@@ -28,11 +33,13 @@ class SavedQueryRepository extends EntityRepository
     /**
      * @return SavedQuery[]
      */
-    public function findRecentPrivateForUser(int $userId, int $limit): array
+    public function findRecentPrivateForUser(string $tool, int $userId, int $limit): array
     {
         return $this->createQueryBuilder('q')
-            ->where('q.public = false')
+            ->where('q.tool = :tool')
+            ->andWhere('q.public = false')
             ->andWhere('q.user = :userId')
+            ->setParameter('tool', $tool)
             ->setParameter('userId', $userId)
             ->orderBy('q.createdAt', 'DESC')
             ->setMaxResults($limit)
@@ -40,32 +47,38 @@ class SavedQueryRepository extends EntityRepository
             ->getResult();
     }
 
-    public function countPublic(): int
+    public function countPublic(string $tool): int
     {
         return (int) $this->createQueryBuilder('q')
             ->select('COUNT(q.id)')
-            ->where('q.public = true')
+            ->where('q.tool = :tool')
+            ->andWhere('q.public = true')
+            ->setParameter('tool', $tool)
             ->getQuery()
             ->getSingleScalarResult();
     }
 
-    public function countPrivateForUser(int $userId): int
+    public function countPrivateForUser(string $tool, int $userId): int
     {
         return (int) $this->createQueryBuilder('q')
             ->select('COUNT(q.id)')
-            ->where('q.public = false')
+            ->where('q.tool = :tool')
+            ->andWhere('q.public = false')
             ->andWhere('q.user = :userId')
+            ->setParameter('tool', $tool)
             ->setParameter('userId', $userId)
             ->getQuery()
             ->getSingleScalarResult();
     }
 
-    public function existsPublicWithName(string $name, ?int $excludeId = null): bool
+    public function existsPublicWithName(string $tool, string $name, ?int $excludeId = null): bool
     {
         $qb = $this->createQueryBuilder('q')
             ->select('COUNT(q.id)')
-            ->where('q.public = true')
+            ->where('q.tool = :tool')
+            ->andWhere('q.public = true')
             ->andWhere('q.queryName = :name')
+            ->setParameter('tool', $tool)
             ->setParameter('name', $name);
         if (null !== $excludeId) {
             $qb->andWhere('q.id <> :id')->setParameter('id', $excludeId);
@@ -74,13 +87,15 @@ class SavedQueryRepository extends EntityRepository
         return (int) $qb->getQuery()->getSingleScalarResult() > 0;
     }
 
-    public function existsPrivateWithName(int $userId, string $name, ?int $excludeId = null): bool
+    public function existsPrivateWithName(string $tool, int $userId, string $name, ?int $excludeId = null): bool
     {
         $qb = $this->createQueryBuilder('q')
             ->select('COUNT(q.id)')
-            ->where('q.public = false')
+            ->where('q.tool = :tool')
+            ->andWhere('q.public = false')
             ->andWhere('q.user = :userId')
             ->andWhere('q.queryName = :name')
+            ->setParameter('tool', $tool)
             ->setParameter('userId', $userId)
             ->setParameter('name', $name);
         if (null !== $excludeId) {
@@ -91,15 +106,19 @@ class SavedQueryRepository extends EntityRepository
     }
 
     /**
-     * All queries visible to the user: every public query plus the user's own private ones.
+     * All queries of the given tool visible to the user: every public query plus the user's own
+     * private ones.
      *
      * @return SavedQuery[]
      */
-    public function findAllVisibleForUser(int $userId): array
+    public function findAllVisibleForUser(string $tool, int $userId): array
     {
-        return $this->createQueryBuilder('q')
-            ->where('q.public = true')
-            ->orWhere('q.user = :userId')
+        $qb = $this->createQueryBuilder('q');
+
+        return $qb
+            ->where('q.tool = :tool')
+            ->andWhere($qb->expr()->orX('q.public = true', 'q.user = :userId'))
+            ->setParameter('tool', $tool)
             ->setParameter('userId', $userId)
             ->orderBy('q.createdAt', 'DESC')
             ->getQuery()

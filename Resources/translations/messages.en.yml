@@ -9,11 +9,11 @@ aaxis:
             aaxis_devtools_connection_info:
                 label: Connection Info
                 description: Inspect how the request arrived and resolve the end-user IP (trusted-proxy aware)
-            aaxis_devtools_filesystem_browser:
-                label: Filesystem Browser
+            aaxis_devtools_filesystem_viewer:
+                label: Filesystem Viewer
                 description: Browse the server filesystem and preview files
-            aaxis_devtools_bucket_browser:
-                label: Bucket Browser
+            aaxis_devtools_bucket_viewer:
+                label: Bucket Viewer
                 description: Browse object-storage buckets and files
             aaxis_devtools_database_viewer:
                 label: Database Viewer
@@ -39,7 +39,7 @@ aaxis:
                 description: 'Allow access to the Aaxis Dev Tools back-office section (all tools and their pages).'
             aaxis_devtools_write:
                 label: 'Modify storage buckets (write / delete)'
-                description: 'Allow destructive Bucket Browser operations: create folders, upload files and delete objects. Not granted by default — assign it deliberately.'
+                description: 'Allow destructive Bucket Viewer operations: create folders, upload files and delete objects. Not granted by default — assign it deliberately.'
         feature:
             label: 'Aaxis Dev Tools'
             database_viewer:
@@ -52,10 +52,10 @@ aaxis:
                 label: 'Aaxis Dev Tools - Redis Viewer'
             mongodb_viewer:
                 label: 'Aaxis Dev Tools - MongoDB Viewer'
-            filesystem_browser:
-                label: 'Aaxis Dev Tools - Filesystem Browser'
-            bucket_browser:
-                label: 'Aaxis Dev Tools - Bucket Browser'
+            filesystem_viewer:
+                label: 'Aaxis Dev Tools - Filesystem Viewer'
+            bucket_viewer:
+                label: 'Aaxis Dev Tools - Bucket Viewer'
             runtime_config:
                 label: 'Aaxis Dev Tools - Runtime Config'
             connection_info:
@@ -122,8 +122,8 @@ aaxis:
                 private_password:
                     label: 'Private Password'
                     tooltip: 'Password for the private connection, stored encrypted. Leave empty if none is required.'
-            filesystem_browser:
-                title: 'Filesystem Browser'
+            filesystem_viewer:
+                title: 'Filesystem Viewer'
                 base_path:
                     label: 'Default base path'
                     tooltip: 'Leave empty to use the application start path. Shown/resolved in full (real) path form.'
@@ -146,8 +146,8 @@ aaxis:
                     label: 'Show owner group column'
                 col_preview:
                     label: 'Show file preview button'
-            bucket_browser:
-                title: 'Bucket Browser'
+            bucket_viewer:
+                title: 'Bucket Viewer'
                 url:
                     label: 'Endpoint URL'
                     tooltip: 'S3-compatible endpoint, e.g. http://minio:9000 (as reachable from the application container).'
@@ -274,6 +274,10 @@ aaxis:
             esql: 'ES|QL'
             run: Run
             export: Export
+            beautify: Beautify
+            queries: Queries
+            update: Update
+            add_tab: 'New query tab'
             help_dialog:
                 intro: 'Browse Elasticsearch indices and run ES|QL queries against them. ES|QL is read-only and results are capped at the first 1000 rows.'
                 indices:
@@ -292,10 +296,10 @@ aaxis:
                     item2: 'Click a column header to select a column, or a row to select a row. Hold Ctrl/Cmd or Shift to select several.'
                     item3: 'Right-click a selection to copy it as JSON or CSV, or to hide the selected columns or rows.'
                     item4: 'Export the current result as CSV, JSON or XLSX.'
-        bucket_browser:
+        bucket_viewer:
             hint: 'Read-only browser of an S3-compatible bucket. Configure the endpoint and bucket in System Configuration.'
             hint_rw: 'Browse an S3-compatible bucket — upload, create folders and delete objects. Configure the endpoint and bucket in System Configuration.'
-            help: 'Bucket Browser help'
+            help: 'Bucket Viewer help'
             path_placeholder: 'Type a prefix and press Enter...'
             search: 'Filter names'
             filter_placeholder: 'Filter by name...'
@@ -312,9 +316,9 @@ aaxis:
                     title: 'Listing and preview'
                     item1: 'Folders (prefixes) and objects use distinct icons; sort by clicking a column header.'
                     item2: 'Use the preview button to open a text/image/PDF object in a new tab, or the download button to fetch it. Binary files are downloaded rather than previewed.'
-        filesystem_browser:
+        filesystem_viewer:
             hint: 'Read-only browser of the server filesystem. Navigation may be restricted to a base path.'
-            help: 'Filesystem Browser help'
+            help: 'Filesystem Viewer help'
             path_placeholder: 'Type a path and press Enter...'
             search: 'Filter file names'
             filter_placeholder: 'Filter by name...'

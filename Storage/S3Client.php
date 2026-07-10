@@ -7,7 +7,7 @@ namespace Aaxis\Bundle\DevToolsBundle\Storage;
 /**
  * Minimal, dependency-free S3 client (AWS Signature V4, path-style addressing) built on curl.
  *
- * Only the read operations needed by the Bucket Browser are implemented: list a bucket with a
+ * Only the read operations needed by the Bucket Viewer are implemented: list a bucket with a
  * prefix/delimiter, fetch an object (optionally a byte range) and a HEAD bucket check. It targets
  * S3-compatible endpoints such as MinIO. Credentials are never echoed back to the client.
  */

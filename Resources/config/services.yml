@@ -67,7 +67,7 @@ services:
         arguments:
             - '%kernel.project_dir%'
 
-    aaxis_devtools.filesystem_browser:
+    aaxis_devtools.filesystem_viewer:
         alias: Aaxis\Bundle\DevToolsBundle\Filesystem\FilesystemBrowser
         public: true
 
@@ -165,7 +165,7 @@ services:
         arguments:
             - '@Aaxis\Bundle\DevToolsBundle\Storage\BucketStorageBrowser'
         tags:
-            - { name: aaxis_common.connection_tester, tool: bucket_browser }
+            - { name: aaxis_common.connection_tester, tool: bucket_viewer }
 
     # Shared TypeScript build pipeline (classes live in AaxisCommonBundle).
     aaxis_devtools.typescript_compiler:

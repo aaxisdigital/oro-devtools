@@ -32,36 +32,36 @@ features:
             - aaxis_devtools_connection_info
             - aaxis_devtools_connection_info_resolve
 
-    aaxis_devtools_filesystem_browser:
-        label: aaxis.devtools.feature.filesystem_browser.label
-        toggle: aaxis_devtools.filesystem_browser_enabled
+    aaxis_devtools_filesystem_viewer:
+        label: aaxis.devtools.feature.filesystem_viewer.label
+        toggle: aaxis_devtools.filesystem_viewer_enabled
         dependencies:
             - aaxis_devtools
         navigation_items:
-            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_filesystem_browser
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_filesystem_viewer
         routes:
-            - aaxis_devtools_filesystem_browser
-            - aaxis_devtools_filesystem_browser_list
-            - aaxis_devtools_filesystem_browser_preview
-            - aaxis_devtools_filesystem_browser_raw
-            - aaxis_devtools_filesystem_browser_download
+            - aaxis_devtools_filesystem_viewer
+            - aaxis_devtools_filesystem_viewer_list
+            - aaxis_devtools_filesystem_viewer_preview
+            - aaxis_devtools_filesystem_viewer_raw
+            - aaxis_devtools_filesystem_viewer_download
 
-    aaxis_devtools_bucket_browser:
-        label: aaxis.devtools.feature.bucket_browser.label
-        toggle: aaxis_devtools.bucket_browser_enabled
+    aaxis_devtools_bucket_viewer:
+        label: aaxis.devtools.feature.bucket_viewer.label
+        toggle: aaxis_devtools.bucket_viewer_enabled
         dependencies:
             - aaxis_devtools
         navigation_items:
-            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_bucket_browser
+            - application_menu.aaxis_tab.aaxis_devtools_group.aaxis_devtools_bucket_viewer
         routes:
-            - aaxis_devtools_bucket_browser
-            - aaxis_devtools_bucket_browser_list
-            - aaxis_devtools_bucket_browser_preview
-            - aaxis_devtools_bucket_browser_raw
-            - aaxis_devtools_bucket_browser_download
-            - aaxis_devtools_bucket_browser_folder
-            - aaxis_devtools_bucket_browser_upload
-            - aaxis_devtools_bucket_browser_delete
+            - aaxis_devtools_bucket_viewer
+            - aaxis_devtools_bucket_viewer_list
+            - aaxis_devtools_bucket_viewer_preview
+            - aaxis_devtools_bucket_viewer_raw
+            - aaxis_devtools_bucket_viewer_download
+            - aaxis_devtools_bucket_viewer_folder
+            - aaxis_devtools_bucket_viewer_upload
+            - aaxis_devtools_bucket_viewer_delete
 
     aaxis_devtools_database_viewer:
         label: aaxis.devtools.feature.database_viewer.label
@@ -93,6 +93,10 @@ features:
             - aaxis_devtools_elastic_viewer_indices
             - aaxis_devtools_elastic_viewer_query
             - aaxis_devtools_elastic_viewer_export
+            - aaxis_devtools_elastic_viewer_saved_queries
+            - aaxis_devtools_elastic_viewer_saved_queries_all
+            - aaxis_devtools_elastic_viewer_saved_query_create
+            - aaxis_devtools_elastic_viewer_saved_query_update
 
     aaxis_devtools_redis_viewer:
         label: aaxis.devtools.feature.redis_viewer.label

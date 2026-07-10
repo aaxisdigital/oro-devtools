@@ -24,21 +24,21 @@ navigation:
                     routes: ['aaxis_devtools_connection_info']
                     description: 'aaxis.devtools.menu.aaxis_devtools_connection_info.description'
 
-            aaxis_devtools_filesystem_browser:
-                label: 'aaxis.devtools.menu.aaxis_devtools_filesystem_browser.label'
-                route: 'aaxis_devtools_filesystem_browser'
+            aaxis_devtools_filesystem_viewer:
+                label: 'aaxis.devtools.menu.aaxis_devtools_filesystem_viewer.label'
+                route: 'aaxis_devtools_filesystem_viewer'
                 position: 10
                 extras:
-                    routes: ['aaxis_devtools_filesystem_browser']
-                    description: 'aaxis.devtools.menu.aaxis_devtools_filesystem_browser.description'
+                    routes: ['aaxis_devtools_filesystem_viewer']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_filesystem_viewer.description'
 
-            aaxis_devtools_bucket_browser:
-                label: 'aaxis.devtools.menu.aaxis_devtools_bucket_browser.label'
-                route: 'aaxis_devtools_bucket_browser'
+            aaxis_devtools_bucket_viewer:
+                label: 'aaxis.devtools.menu.aaxis_devtools_bucket_viewer.label'
+                route: 'aaxis_devtools_bucket_viewer'
                 position: 20
                 extras:
-                    routes: ['aaxis_devtools_bucket_browser']
-                    description: 'aaxis.devtools.menu.aaxis_devtools_bucket_browser.description'
+                    routes: ['aaxis_devtools_bucket_viewer']
+                    description: 'aaxis.devtools.menu.aaxis_devtools_bucket_viewer.description'
 
             aaxis_devtools_database_viewer:
                 label: 'aaxis.devtools.menu.aaxis_devtools_database_viewer.label'
@@ -89,8 +89,8 @@ navigation:
                                 children:
                                     aaxis_devtools_runtime_config: ~
                                     aaxis_devtools_connection_info: ~
-                                    aaxis_devtools_filesystem_browser: ~
-                                    aaxis_devtools_bucket_browser: ~
+                                    aaxis_devtools_filesystem_viewer: ~
+                                    aaxis_devtools_bucket_viewer: ~
                                     aaxis_devtools_database_viewer: ~
                                     aaxis_devtools_elastic_viewer: ~
                                     aaxis_devtools_redis_viewer: ~
@@ -100,8 +100,8 @@ navigation:
     titles:
         aaxis_devtools_runtime_config: 'aaxis.devtools.menu.aaxis_devtools_runtime_config.label'
         aaxis_devtools_connection_info: 'aaxis.devtools.menu.aaxis_devtools_connection_info.label'
-        aaxis_devtools_filesystem_browser: 'aaxis.devtools.menu.aaxis_devtools_filesystem_browser.label'
-        aaxis_devtools_bucket_browser: 'aaxis.devtools.menu.aaxis_devtools_bucket_browser.label'
+        aaxis_devtools_filesystem_viewer: 'aaxis.devtools.menu.aaxis_devtools_filesystem_viewer.label'
+        aaxis_devtools_bucket_viewer: 'aaxis.devtools.menu.aaxis_devtools_bucket_viewer.label'
         aaxis_devtools_database_viewer: 'aaxis.devtools.menu.aaxis_devtools_database_viewer.label'
         aaxis_devtools_elastic_viewer: 'aaxis.devtools.menu.aaxis_devtools_elastic_viewer.label'
         aaxis_devtools_redis_viewer: 'aaxis.devtools.menu.aaxis_devtools_redis_viewer.label'

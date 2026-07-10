@@ -76,41 +76,41 @@ class DevToolsPageController extends AbstractController
         return [];
     }
 
-    #[Route(path: '/filesystem-browser', name: 'aaxis_devtools_filesystem_browser')]
-    #[Template('@AaxisDevTools/Tools/filesystemBrowser.html.twig')]
-    public function filesystemBrowserAction(): array
+    #[Route(path: '/filesystem-viewer', name: 'aaxis_devtools_filesystem_viewer')]
+    #[Template('@AaxisDevTools/Tools/filesystemViewer.html.twig')]
+    public function filesystemViewerAction(): array
     {
         $config = $this->config();
         $browser = $this->container->get(FilesystemBrowser::class);
-        $basePath = $browser->resolveBasePath((string) $config->get('aaxis_devtools.filesystem_browser_base_path'));
+        $basePath = $browser->resolveBasePath((string) $config->get('aaxis_devtools.filesystem_viewer_base_path'));
 
         return [
             'options' => [
                 'basePath' => $basePath,
-                'restricted' => (bool) $config->get('aaxis_devtools.filesystem_browser_restricted'),
+                'restricted' => (bool) $config->get('aaxis_devtools.filesystem_viewer_restricted'),
                 'columns' => [
-                    'type' => (bool) $config->get('aaxis_devtools.filesystem_browser_col_type'),
-                    'created' => (bool) $config->get('aaxis_devtools.filesystem_browser_col_created'),
-                    'modified' => (bool) $config->get('aaxis_devtools.filesystem_browser_col_modified'),
-                    'ownerUser' => (bool) $config->get('aaxis_devtools.filesystem_browser_col_owner_user'),
-                    'ownerGroup' => (bool) $config->get('aaxis_devtools.filesystem_browser_col_owner_group'),
-                    'filename' => (bool) $config->get('aaxis_devtools.filesystem_browser_col_filename'),
-                    'filesize' => (bool) $config->get('aaxis_devtools.filesystem_browser_col_filesize'),
-                    'preview' => (bool) $config->get('aaxis_devtools.filesystem_browser_col_preview'),
+                    'type' => (bool) $config->get('aaxis_devtools.filesystem_viewer_col_type'),
+                    'created' => (bool) $config->get('aaxis_devtools.filesystem_viewer_col_created'),
+                    'modified' => (bool) $config->get('aaxis_devtools.filesystem_viewer_col_modified'),
+                    'ownerUser' => (bool) $config->get('aaxis_devtools.filesystem_viewer_col_owner_user'),
+                    'ownerGroup' => (bool) $config->get('aaxis_devtools.filesystem_viewer_col_owner_group'),
+                    'filename' => (bool) $config->get('aaxis_devtools.filesystem_viewer_col_filename'),
+                    'filesize' => (bool) $config->get('aaxis_devtools.filesystem_viewer_col_filesize'),
+                    'preview' => (bool) $config->get('aaxis_devtools.filesystem_viewer_col_preview'),
                 ],
             ],
         ];
     }
 
-    #[Route(path: '/bucket-browser', name: 'aaxis_devtools_bucket_browser')]
-    #[Template('@AaxisDevTools/Tools/bucketBrowser.html.twig')]
-    public function bucketBrowserAction(): array
+    #[Route(path: '/bucket-viewer', name: 'aaxis_devtools_bucket_viewer')]
+    #[Template('@AaxisDevTools/Tools/bucketViewer.html.twig')]
+    public function bucketViewerAction(): array
     {
         $config = $this->config();
 
         return [
             'options' => [
-                'readOnly' => (bool) $config->get('aaxis_devtools.bucket_browser_read_only'),
+                'readOnly' => (bool) $config->get('aaxis_devtools.bucket_viewer_read_only'),
                 // Buckets expose name/size/modified; owner/group/created don't apply to objects.
                 'columns' => [
                     'type' => true,

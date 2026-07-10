@@ -10,8 +10,8 @@ css:
         - 'bundles/aaxisdevtools/css/scss/redis-viewer.scss'
         # MongoDB Viewer page styles.
         - 'bundles/aaxisdevtools/css/scss/mongo-viewer.scss'
-        # Filesystem Browser page styles.
-        - 'bundles/aaxisdevtools/css/scss/filesystem-browser.scss'
+        # Filesystem Viewer page styles.
+        - 'bundles/aaxisdevtools/css/scss/filesystem-viewer.scss'
         # Runtime Config view page styles.
         - 'bundles/aaxisdevtools/css/scss/runtime-config.scss'
         # Connection Info page styles.

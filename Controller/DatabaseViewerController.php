@@ -8,9 +8,7 @@ use Aaxis\Bundle\DevToolsBundle\Database\DatabaseInspector;
 use Aaxis\Bundle\DevToolsBundle\Database\ResultExporter;
 use Aaxis\Bundle\DevToolsBundle\Entity\QueryHistory;
 use Aaxis\Bundle\DevToolsBundle\Entity\SavedQuery;
-use Aaxis\Bundle\DevToolsBundle\Exception\DuplicateQueryNameException;
 use Aaxis\Bundle\DevToolsBundle\Manager\QueryHistoryManager;
-use Aaxis\Bundle\DevToolsBundle\Manager\SavedQueryManager;
 use Oro\Bundle\ConfigBundle\Config\ConfigManager;
 use Oro\Bundle\SecurityBundle\Attribute\CsrfProtection;
 use Psr\Log\LoggerInterface;
@@ -28,6 +26,8 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 class DatabaseViewerController extends AbstractController
 {
+    use SavedQueryEndpointsTrait;
+
     #[Route(path: '/database-viewer/objects', name: 'aaxis_devtools_database_viewer_objects', methods: ['GET'])]
     public function objectsAction(Request $request): JsonResponse
     {
@@ -135,16 +135,7 @@ class DatabaseViewerController extends AbstractController
     #[Route(path: '/database-viewer/saved-queries', name: 'aaxis_devtools_database_viewer_saved_queries', methods: ['GET'])]
     public function savedQueriesAction(): JsonResponse
     {
-        $manager = $this->container->get(SavedQueryManager::class);
-        $userId = (int) $manager->getCurrentUserId();
-        $data = $manager->getMenuData($userId);
-
-        return new JsonResponse([
-            'public' => array_map(fn (SavedQuery $q) => $this->serializeQuery($q, $userId), $data['public']),
-            'private' => array_map(fn (SavedQuery $q) => $this->serializeQuery($q, $userId), $data['private']),
-            'hasMorePublic' => $data['hasMorePublic'],
-            'hasMorePrivate' => $data['hasMorePrivate'],
-        ]);
+        return $this->listSavedQueries();
     }
 
     #[Route(
@@ -154,13 +145,7 @@ class DatabaseViewerController extends AbstractController
     )]
     public function savedQueriesAllAction(): JsonResponse
     {
-        $manager = $this->container->get(SavedQueryManager::class);
-        $userId = (int) $manager->getCurrentUserId();
-        $items = $manager->getRepository()->findAllVisibleForUser($userId);
-
-        return new JsonResponse([
-            'items' => array_map(fn (SavedQuery $q) => $this->serializeQuery($q, $userId), $items),
-        ]);
+        return $this->listAllSavedQueries();
     }
 
     #[Route(
@@ -171,30 +156,7 @@ class DatabaseViewerController extends AbstractController
     #[CsrfProtection]
     public function createSavedQueryAction(Request $request): JsonResponse
     {
-        $payload = json_decode($request->getContent(), true);
-        if (!\is_array($payload)) {
-            return new JsonResponse(['success' => false, 'message' => 'Invalid payload.'], 400);
-        }
-
-        $name = trim((string) ($payload['name'] ?? ''));
-        $text = (string) ($payload['text'] ?? '');
-        $public = (bool) ($payload['public'] ?? false);
-
-        if ($name === '' || trim($text) === '') {
-            return new JsonResponse(['success' => false, 'message' => 'Name and query text are required.'], 400);
-        }
-
-        $manager = $this->container->get(SavedQueryManager::class);
-        try {
-            $entity = $manager->create($name, $text, $public);
-        } catch (DuplicateQueryNameException $e) {
-            return new JsonResponse(['success' => false, 'message' => $e->getMessage()], 409);
-        }
-
-        return new JsonResponse([
-            'success' => true,
-            'query' => $this->serializeQuery($entity, (int) $manager->getCurrentUserId()),
-        ]);
+        return $this->createSavedQueryResponse($request);
     }
 
     #[Route(
@@ -206,55 +168,13 @@ class DatabaseViewerController extends AbstractController
     #[CsrfProtection]
     public function updateSavedQueryAction(Request $request, int $id): JsonResponse
     {
-        $manager = $this->container->get(SavedQueryManager::class);
-        $userId = (int) $manager->getCurrentUserId();
-
-        /** @var SavedQuery|null $entity */
-        $entity = $manager->getRepository()->find($id);
-        if (null === $entity) {
-            return new JsonResponse(['success' => false, 'message' => 'Saved query not found.'], 404);
-        }
-        if (null === $entity->getUser() || $entity->getUser()->getId() !== $userId) {
-            return new JsonResponse(['success' => false, 'message' => 'You can only update your own queries.'], 403);
-        }
-
-        $payload = json_decode($request->getContent(), true);
-        if (!\is_array($payload)) {
-            return new JsonResponse(['success' => false, 'message' => 'Invalid payload.'], 400);
-        }
-
-        $name = \array_key_exists('name', $payload) ? trim((string) $payload['name']) : null;
-        $public = \array_key_exists('public', $payload) ? (bool) $payload['public'] : null;
-        $text = \array_key_exists('text', $payload) ? (string) $payload['text'] : null;
-
-        if (null !== $name && $name === '') {
-            return new JsonResponse(['success' => false, 'message' => 'Query name is required.'], 400);
-        }
-        if (null !== $text && trim($text) === '') {
-            return new JsonResponse(['success' => false, 'message' => 'Query text is required.'], 400);
-        }
-
-        try {
-            $manager->update($entity, $name, $public, $text);
-        } catch (DuplicateQueryNameException $e) {
-            return new JsonResponse(['success' => false, 'message' => $e->getMessage()], 409);
-        }
-
-        return new JsonResponse(['success' => true, 'query' => $this->serializeQuery($entity, $userId)]);
+        return $this->updateSavedQueryResponse($request, $id);
     }
 
-    /**
-     * @return array{id: int|null, name: string|null, public: bool, text: string|null, owned: bool}
-     */
-    private function serializeQuery(SavedQuery $query, int $currentUserId): array
+    #[\Override]
+    protected function savedQueryTool(): string
     {
-        return [
-            'id' => $query->getId(),
-            'name' => $query->getQueryName(),
-            'public' => $query->isPublic(),
-            'text' => $query->getQueryText(),
-            'owned' => null !== $query->getUser() && $query->getUser()->getId() === $currentUserId,
-        ];
+        return SavedQuery::TOOL_DATABASE;
     }
 
     private function elapsedMs(float $startedAt): int
@@ -265,11 +185,10 @@ class DatabaseViewerController extends AbstractController
     #[\Override]
     public static function getSubscribedServices(): array
     {
-        return array_merge(parent::getSubscribedServices(), [
+        return array_merge(parent::getSubscribedServices(), self::savedQuerySubscribedServices(), [
             DatabaseInspector::class,
             ResultExporter::class,
             QueryHistoryManager::class,
-            SavedQueryManager::class,
             ConfigManager::class,
             LoggerInterface::class,
         ]);

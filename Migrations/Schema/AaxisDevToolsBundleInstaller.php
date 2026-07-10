@@ -21,7 +21,9 @@ class AaxisDevToolsBundleInstaller implements Installation
     #[\Override]
     public function getMigrationVersion(): string
     {
-        return 'v1_0';
+        // Fresh installs already include the saved-query `tool` column, so they are recorded at the
+        // latest version and the v1_1 upgrade migration is skipped for them.
+        return 'v1_1';
     }
 
     #[\Override]
@@ -54,6 +56,9 @@ class AaxisDevToolsBundleInstaller implements Installation
         $table = $schema->createTable('aaxis_dbviewer_saved_query');
         $table->addColumn('id', 'integer', ['autoincrement' => true]);
         $table->addColumn('user_id', 'integer', ['notnull' => false]);
+        // Discriminates which viewer a query belongs to ('database' | 'elastic'); the table is
+        // shared, so uniqueness and listing are scoped per tool.
+        $table->addColumn('tool', 'string', ['length' => 16, 'default' => 'database']);
         $table->addColumn('is_public', 'boolean', ['default' => false]);
         $table->addColumn('query_name', 'string', ['length' => 40]);
         $table->addColumn('query_text', 'text', []);
@@ -61,7 +66,7 @@ class AaxisDevToolsBundleInstaller implements Installation
         $table->addColumn('updated_at', 'datetime', []);
         $table->setPrimaryKey(['id']);
         $table->addIndex(['user_id'], 'aaxis_saved_query_user_idx');
-        $table->addIndex(['is_public', 'created_at'], 'aaxis_saved_query_public_idx');
+        $table->addIndex(['tool', 'is_public', 'created_at'], 'aaxis_saved_query_public_idx');
     }
 
     private function createNetworkTestHistoryTable(Schema $schema): void

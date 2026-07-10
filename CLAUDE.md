@@ -5,7 +5,7 @@ Guidance for working in this bundle. Read alongside `README.md` (user-facing) an
 
 ## What this bundle is
 
-The operational/developer toolbox: **Runtime Config, Filesystem Browser, Bucket Browser, Database
+The operational/developer toolbox: **Runtime Config, Filesystem Viewer, Bucket Viewer, Database
 Viewer, Elastic Viewer, Redis Viewer, MongoDB Viewer, Network Tools**. It was split out of
 `AaxisToolsBundle`. It depends only on `AaxisCommonBundle` and is independent of `AaxisToolsBundle`.
 
@@ -39,7 +39,7 @@ name lowercased with `Bundle` stripped — that one is fine as-is.
 - `Controller/DevToolsPageController.php` — the **page** actions for the 7 page-tools (renders the
   twig + passes System Configuration options). Per-tool **AJAX** endpoints live in dedicated
   controllers (`DatabaseViewerController`, `ElasticViewerController`, `RedisViewerController`,
-  `MongoViewerController`, `FilesystemBrowserController`, `BucketBrowserController`,
+  `MongoViewerController`, `FilesystemViewerController`, `BucketViewerController`,
   `NetworkToolsController`). `RuntimeConfigController` renders its own page (no AJAX).
 - `Storage/` — shared filesystem+bucket engine (`StorageBrowserInterface`,
   `FilesystemStorageBrowser`, `BucketStorageBrowser`, `S3Client`); `Controller/AbstractStorageBrowserController`
@@ -70,7 +70,7 @@ Access is gated by two **action** capabilities in `acls.yml`:
 - **`aaxis_devtools`** — class-bound to every controller; grants access to all tool pages + AJAX
   endpoints (read/browse). Granted to Administrator by
   `Migrations/Data/ORM/LoadAaxisDevToolsAdminPermissions`.
-- **`aaxis_devtools_write`** — gates the *destructive* Bucket Browser actions (create folder,
+- **`aaxis_devtools_write`** — gates the *destructive* Bucket Viewer actions (create folder,
   upload, delete) via method-level `#[AclAncestor('aaxis_devtools_write')]`. It is **not** bound to
   a controller and **not** granted by any migration, so bucket writes are denied for everyone (incl.
   admins) until someone assigns it to a role (System → Roles → Capabilities). Re-enable from the UI,
@@ -145,9 +145,21 @@ entity needs a `runAt` field. Add a `purge(...)` line per history entity.
 8. **Templates**: `Resources/views/Tools/<tool>.html.twig` (+ `_<tool>Help.html.twig` importing
    `@AaxisCommon/Tools/help.html.twig`).
 9. **Translations**: `aaxis.devtools.*` in `messages.en.yml` (+ JS strings in `jsmessages.en.yml`).
-10. **Migration** (if it persists data): add a table in
-    `Migrations/Schema/AaxisDevToolsBundleInstaller` (consolidated install — this is pre-prod, no
-    upgrade migrations).
+10. **Migration** (if it persists data): use proper Oro migrations — do **not** ship schema changes
+    that only exist in code. Update the consolidated installer
+    `Migrations/Schema/AaxisDevToolsBundleInstaller` so **fresh installs** get the final schema, and
+    for a change to an **already-installed** schema (a new column on an existing table, etc.) also
+    add a versioned upgrade migration under `Migrations/Schema/v<major>_<minor>/` implementing
+    `Migration`, so `oro:migration:load` applies it on databases at the previous version. Bump the
+    installer's `getMigrationVersion()` to the newest upgrade version so fresh installs record the
+    top version and skip the upgrades. Example: the saved-query `tool` column is created by the
+    installer (v1_1) **and** added to existing DBs by `v1_1/AddSavedQueryToolColumn`.
+
+    **Data preservation is NOT a goal right now** — the bundle is still in active development, so
+    breaking schema changes and losing existing rows are acceptable. Write the simplest migration
+    that lands the target schema; don't add backfill logic, defaults-then-alter dances, or
+    idempotency guards to protect data unless it's genuinely low-effort. When a change would be
+    awkward to do in place, dropping and recreating the table in the migration is fine.
 
 ## Front end / TypeScript
 

@@ -14,14 +14,14 @@ acls:
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\NetworkToolsController }
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\ConnectionInfoController }
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\RuntimeConfigController }
-            - { class: Aaxis\Bundle\DevToolsBundle\Controller\BucketBrowserController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\BucketViewerController }
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\DatabaseViewerController }
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\ElasticViewerController }
-            - { class: Aaxis\Bundle\DevToolsBundle\Controller\FilesystemBrowserController }
+            - { class: Aaxis\Bundle\DevToolsBundle\Controller\FilesystemViewerController }
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\MongoViewerController }
             - { class: Aaxis\Bundle\DevToolsBundle\Controller\RedisViewerController }
 
-    # Separate capability for DESTRUCTIVE Bucket Browser operations (create folder, upload, delete).
+    # Separate capability for DESTRUCTIVE Bucket Viewer operations (create folder, upload, delete).
     # It is intentionally NOT granted by default (no data migration grants it), so bucket writes are
     # disabled until an administrator explicitly assigns this capability to a role. Browsing/reading
     # the bucket stays under `aaxis_devtools`. Referenced via #[AclAncestor] on the write actions.

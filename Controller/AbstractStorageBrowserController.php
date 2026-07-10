@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Shared read-only browsing endpoints (list / preview / raw / download) used by both the
- * Filesystem Browser and the Bucket Browser. Subclasses only supply the storage implementation
+ * Filesystem Viewer and the Bucket Viewer. Subclasses only supply the storage implementation
  * and declare the routes.
  */
 abstract class AbstractStorageBrowserController extends AbstractController

@@ -8,7 +8,7 @@ use Oro\Bundle\ConfigBundle\Config\ConfigManager;
 use Oro\Bundle\SecurityBundle\Encoder\SymmetricCrypterInterface;
 
 /**
- * Read-only browsing of an S3-compatible bucket (e.g. MinIO) for the Bucket Browser tool.
+ * Read-only browsing of an S3-compatible bucket (e.g. MinIO) for the Bucket Viewer tool.
  *
  * Folders are modelled with the "/" delimiter (common prefixes); objects are files. The S3
  * client and bucket are built from configuration on each call so settings changes take effect
@@ -122,7 +122,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
 
     public function isReadOnly(): bool
     {
-        return (bool) $this->configManager->get('aaxis_devtools.bucket_browser_read_only');
+        return (bool) $this->configManager->get('aaxis_devtools.bucket_viewer_read_only');
     }
 
     public function createFolder(string $path, string $name): void
@@ -193,7 +193,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
 
     private function config(string $key): string
     {
-        return trim((string) $this->configManager->get('aaxis_devtools.bucket_browser_' . $key));
+        return trim((string) $this->configManager->get('aaxis_devtools.bucket_viewer_' . $key));
     }
 
     /**
@@ -202,7 +202,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
      */
     private function savedSecret(): string
     {
-        $encrypted = trim((string) $this->configManager->get('aaxis_devtools.bucket_browser_pass'));
+        $encrypted = trim((string) $this->configManager->get('aaxis_devtools.bucket_viewer_pass'));
         if ($encrypted === '') {
             return '';
         }

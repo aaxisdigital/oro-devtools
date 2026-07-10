@@ -14,38 +14,38 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * Read-only JSON endpoints backing the Bucket Browser page (S3-compatible storage).
+ * Read-only JSON endpoints backing the Bucket Viewer page (S3-compatible storage).
  *
- * Shares all browsing logic with the Filesystem Browser via {@see AbstractStorageBrowserController};
+ * Shares all browsing logic with the Filesystem Viewer via {@see AbstractStorageBrowserController};
  * only the storage implementation differs.
  */
-class BucketBrowserController extends AbstractStorageBrowserController
+class BucketViewerController extends AbstractStorageBrowserController
 {
-    #[Route(path: '/bucket-browser/list', name: 'aaxis_devtools_bucket_browser_list', methods: ['GET'])]
+    #[Route(path: '/bucket-viewer/list', name: 'aaxis_devtools_bucket_viewer_list', methods: ['GET'])]
     public function listAction(Request $request): JsonResponse
     {
         return $this->doList($request);
     }
 
-    #[Route(path: '/bucket-browser/preview', name: 'aaxis_devtools_bucket_browser_preview', methods: ['GET'])]
+    #[Route(path: '/bucket-viewer/preview', name: 'aaxis_devtools_bucket_viewer_preview', methods: ['GET'])]
     public function previewAction(Request $request): JsonResponse
     {
         return $this->doPreview($request);
     }
 
-    #[Route(path: '/bucket-browser/raw', name: 'aaxis_devtools_bucket_browser_raw', methods: ['GET'])]
+    #[Route(path: '/bucket-viewer/raw', name: 'aaxis_devtools_bucket_viewer_raw', methods: ['GET'])]
     public function rawAction(Request $request): Response
     {
         return $this->doStream($request, $this->disposition('inline'));
     }
 
-    #[Route(path: '/bucket-browser/download', name: 'aaxis_devtools_bucket_browser_download', methods: ['GET'])]
+    #[Route(path: '/bucket-viewer/download', name: 'aaxis_devtools_bucket_viewer_download', methods: ['GET'])]
     public function downloadAction(Request $request): Response
     {
         return $this->doStream($request, $this->disposition('attachment'));
     }
 
-    #[Route(path: '/bucket-browser/folder', name: 'aaxis_devtools_bucket_browser_folder', methods: ['POST'])]
+    #[Route(path: '/bucket-viewer/folder', name: 'aaxis_devtools_bucket_viewer_folder', methods: ['POST'])]
     #[CsrfProtection]
     #[AclAncestor('aaxis_devtools_write')]
     public function createFolderAction(Request $request): JsonResponse
@@ -64,7 +64,7 @@ class BucketBrowserController extends AbstractStorageBrowserController
         return new JsonResponse(['success' => true]);
     }
 
-    #[Route(path: '/bucket-browser/upload', name: 'aaxis_devtools_bucket_browser_upload', methods: ['POST'])]
+    #[Route(path: '/bucket-viewer/upload', name: 'aaxis_devtools_bucket_viewer_upload', methods: ['POST'])]
     #[CsrfProtection]
     #[AclAncestor('aaxis_devtools_write')]
     public function uploadAction(Request $request): JsonResponse
@@ -88,7 +88,7 @@ class BucketBrowserController extends AbstractStorageBrowserController
         return new JsonResponse(['success' => true]);
     }
 
-    #[Route(path: '/bucket-browser/delete', name: 'aaxis_devtools_bucket_browser_delete', methods: ['POST'])]
+    #[Route(path: '/bucket-viewer/delete', name: 'aaxis_devtools_bucket_viewer_delete', methods: ['POST'])]
     #[CsrfProtection]
     #[AclAncestor('aaxis_devtools_write')]
     public function deleteAction(Request $request): JsonResponse

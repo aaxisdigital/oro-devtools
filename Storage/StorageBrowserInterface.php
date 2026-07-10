@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Aaxis\Bundle\DevToolsBundle\Storage;
 
 /**
- * Common contract for the read-only "browser" tools (Filesystem Browser, Bucket Browser).
+ * Common contract for the read-only "browser" tools (Filesystem Viewer, Bucket Viewer).
  *
  * Implementations read their own configuration and enforce their own safety model; the shared
  * controller and front-end component treat both the local filesystem and an S3 bucket uniformly.

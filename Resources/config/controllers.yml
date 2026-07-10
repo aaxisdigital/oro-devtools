@@ -8,16 +8,16 @@ services:
         tags:
             - { name: container.service_subscriber }
             - { name: container.service_subscriber, id: oro_config.global, key: Oro\Bundle\ConfigBundle\Config\ConfigManager }
-            - { name: container.service_subscriber, id: aaxis_devtools.filesystem_browser, key: Aaxis\Bundle\DevToolsBundle\Filesystem\FilesystemBrowser }
+            - { name: container.service_subscriber, id: aaxis_devtools.filesystem_viewer, key: Aaxis\Bundle\DevToolsBundle\Filesystem\FilesystemBrowser }
 
-    Aaxis\Bundle\DevToolsBundle\Controller\FilesystemBrowserController:
+    Aaxis\Bundle\DevToolsBundle\Controller\FilesystemViewerController:
         calls:
             - [setContainer, ['@Psr\Container\ContainerInterface']]
         tags:
             - { name: container.service_subscriber }
             - { name: container.service_subscriber, id: aaxis_devtools.filesystem_storage_browser, key: Aaxis\Bundle\DevToolsBundle\Storage\FilesystemStorageBrowser }
 
-    Aaxis\Bundle\DevToolsBundle\Controller\BucketBrowserController:
+    Aaxis\Bundle\DevToolsBundle\Controller\BucketViewerController:
         calls:
             - [setContainer, ['@Psr\Container\ContainerInterface']]
         tags:
@@ -65,6 +65,7 @@ services:
             - { name: container.service_subscriber }
             - { name: container.service_subscriber, id: aaxis_devtools.elastic_inspector, key: Aaxis\Bundle\DevToolsBundle\Elastic\ElasticInspector }
             - { name: container.service_subscriber, id: aaxis_devtools.result_exporter, key: Aaxis\Bundle\DevToolsBundle\Database\ResultExporter }
+            - { name: container.service_subscriber, id: aaxis_devtools.saved_query_manager, key: Aaxis\Bundle\DevToolsBundle\Manager\SavedQueryManager }
             - { name: container.service_subscriber, id: oro_config.global, key: Oro\Bundle\ConfigBundle\Config\ConfigManager }
 
     Aaxis\Bundle\DevToolsBundle\Controller\RedisViewerController:
