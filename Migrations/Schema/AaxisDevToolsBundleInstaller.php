@@ -21,9 +21,11 @@ class AaxisDevToolsBundleInstaller implements Installation
     #[\Override]
     public function getMigrationVersion(): string
     {
-        // Fresh installs already include the saved-query `tool` column, so they are recorded at the
-        // latest version and the v1_1 upgrade migration is skipped for them.
-        return 'v1_1';
+        // NEVER change this installer or its version once released. It is the frozen v1_0 baseline;
+        // fresh installs run it and then every migration with a higher version (v1_1, v1_2, ...),
+        // so all schema evolution lives in those migrations, not here. Editing the installer would
+        // diverge already-installed databases from fresh ones. See CLAUDE.md "Migration".
+        return 'v1_0';
     }
 
     #[\Override]
@@ -53,12 +55,12 @@ class AaxisDevToolsBundleInstaller implements Installation
 
     private function createSavedQueryTable(Schema $schema): void
     {
+        // Frozen v1_0 baseline: original table name, no `tool` column, 2-column public index. The
+        // `tool` column (v1_1) and the rename to `aaxis_saved_query` (v1_2) are applied by the
+        // migrations, which run on fresh installs too (their versions are above this installer's).
         $table = $schema->createTable('aaxis_dbviewer_saved_query');
         $table->addColumn('id', 'integer', ['autoincrement' => true]);
         $table->addColumn('user_id', 'integer', ['notnull' => false]);
-        // Discriminates which viewer a query belongs to ('database' | 'elastic'); the table is
-        // shared, so uniqueness and listing are scoped per tool.
-        $table->addColumn('tool', 'string', ['length' => 16, 'default' => 'database']);
         $table->addColumn('is_public', 'boolean', ['default' => false]);
         $table->addColumn('query_name', 'string', ['length' => 40]);
         $table->addColumn('query_text', 'text', []);
@@ -66,7 +68,7 @@ class AaxisDevToolsBundleInstaller implements Installation
         $table->addColumn('updated_at', 'datetime', []);
         $table->setPrimaryKey(['id']);
         $table->addIndex(['user_id'], 'aaxis_saved_query_user_idx');
-        $table->addIndex(['tool', 'is_public', 'created_at'], 'aaxis_saved_query_public_idx');
+        $table->addIndex(['is_public', 'created_at'], 'aaxis_saved_query_public_idx');
     }
 
     private function createNetworkTestHistoryTable(Schema $schema): void

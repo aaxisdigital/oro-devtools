@@ -146,20 +146,35 @@ entity needs a `runAt` field. Add a `purge(...)` line per history entity.
    `@AaxisCommon/Tools/help.html.twig`).
 9. **Translations**: `aaxis.devtools.*` in `messages.en.yml` (+ JS strings in `jsmessages.en.yml`).
 10. **Migration** (if it persists data): use proper Oro migrations — do **not** ship schema changes
-    that only exist in code. Update the consolidated installer
-    `Migrations/Schema/AaxisDevToolsBundleInstaller` so **fresh installs** get the final schema, and
-    for a change to an **already-installed** schema (a new column on an existing table, etc.) also
-    add a versioned upgrade migration under `Migrations/Schema/v<major>_<minor>/` implementing
-    `Migration`, so `oro:migration:load` applies it on databases at the previous version. Bump the
-    installer's `getMigrationVersion()` to the newest upgrade version so fresh installs record the
-    top version and skip the upgrades. Example: the saved-query `tool` column is created by the
-    installer (v1_1) **and** added to existing DBs by `v1_1/AddSavedQueryToolColumn`.
+    that only exist in code (an entity mapping with no matching table change 500s).
+
+    **NEVER change an already-released migration — including the installer.** The installer
+    (`Migrations/Schema/AaxisDevToolsBundleInstaller`) is the **frozen v1_0 baseline** and must stay
+    exactly as it is (its `up()` body, table/column/index names, and `getMigrationVersion()` = `v1_0`).
+    Every schema change is a **new** versioned migration under `Migrations/Schema/v<major>_<minor>/`
+    implementing `Migration`. Do the same for released `v1_x` migrations — once executed anywhere,
+    treat them as immutable; fix mistakes with a *further* migration.
+
+    Why: Oro (`MigrationsLoader`) skips migrations whose version is `<=` the installer's version
+    (`removeMigrationsCoveredByInstallers`) and, for an installed DB, skips versions `<=` the
+    recorded version (`filterMigrations`). So a **fresh install** runs the installer (v1_0) and then
+    **every** higher migration (v1_1, v1_2, …); an **existing DB** runs only migrations above its
+    recorded version. Keeping the installer frozen means fresh and existing databases converge on the
+    same schema. If you instead edit the installer (e.g. bump it to v1_2 and have it create the final
+    table), a fresh install would create tables a lower-numbered migration then can't find and the
+    run fails — the exact trap to avoid. New/updated DBs must both end identical using only the
+    migration chain.
+
+    Worked example (saved-query table): installer (v1_0) creates `aaxis_dbviewer_saved_query`;
+    `v1_1/AddSavedQueryToolColumn` adds the `tool` column; `v1_2/RenameSavedQueryTable` renames it to
+    the shared `aaxis_saved_query`. All three run on a fresh install, in order; a DB already at v1_1
+    runs only v1_2. The entity mapping reflects the **final** schema (`aaxis_saved_query` + `tool`).
 
     **Data preservation is NOT a goal right now** — the bundle is still in active development, so
-    breaking schema changes and losing existing rows are acceptable. Write the simplest migration
-    that lands the target schema; don't add backfill logic, defaults-then-alter dances, or
-    idempotency guards to protect data unless it's genuinely low-effort. When a change would be
-    awkward to do in place, dropping and recreating the table in the migration is fine.
+    breaking schema changes and losing existing rows are acceptable. Write the simplest *new*
+    migration that lands the target schema; don't add backfill logic or defaults-then-alter dances to
+    protect data unless it's genuinely low-effort. Dropping and recreating a table in a new migration
+    is fine. (This never licenses editing an existing migration — add a new one.)
 
 ## Front end / TypeScript
 
@@ -169,6 +184,22 @@ entity needs a `runAt` field. Add a `purge(...)` line per history entity.
 the `.ts`, never the `.js`. The build fails loudly if `tsc` is missing (no committed JS fallback) and
 recompiles even under `vendor/aaxisdigital/oro*`. `tsconfig.json` extends CommonBundle's
 `tsconfig.base.json`. Shared grid/dialog widgets come from `aaxiscommon/js/app/widgets/*`.
+
+**Shared query-viewer base.** The Database Viewer and Elastic Viewer are near-identical, so all the
+common behaviour (query editor, independent query tabs, saved-query favourites, unsaved-changes
+guard, resizable splitters, per-tab result storage in `sessionStorage`, the result grid with
+column/row selection + copy/hide context menu + export, parallel per-tab runs) lives once in
+`abstract-query-viewer-component.ts`. `database-viewer-component.ts` and `elastic-viewer-component.ts`
+extend it and only implement the parts that differ: the sidebar (tables/views/functions vs indices),
+the pretty-printer (`formatQuery`), the editor mode, and naming hooks — `cssPrefix()`,
+`transPrefix()`, `eventNs()`, `storagePrefix()`. The base uses `this.cls('x')` (→
+`<cssPrefix>__x`) and `this.t('k')` (→ `<transPrefix>.k`) so each viewer keeps its own CSS
+classes and translation keys; the two SCSS files (`database-viewer.scss`, `elastic-viewer.scss`)
+therefore stay separate and per-prefix. The base is a plain dependency import (not a page component),
+so it needs no `jsmodules.yml` entry — only the two concrete components are registered there. When
+adding a feature to one viewer, put it in the base if both should have it. The two storage viewers
+(Filesystem/Bucket) share their front end differently: a single `storage-browser-component.ts` plus
+the `AbstractStorageBrowserController` + `StorageBrowserInterface` engine.
 
 ## Verify after changes
 

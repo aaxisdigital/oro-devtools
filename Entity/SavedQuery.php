@@ -13,7 +13,7 @@ use Oro\Bundle\UserBundle\Entity\User;
  * A query saved (as favorite) from the Database Viewer, either private to its owner or public.
  */
 #[ORM\Entity(repositoryClass: SavedQueryRepository::class)]
-#[ORM\Table(name: 'aaxis_dbviewer_saved_query')]
+#[ORM\Table(name: 'aaxis_saved_query')]
 #[ORM\Index(columns: ['tool', 'is_public', 'created_at'], name: 'aaxis_saved_query_public_idx')]
 class SavedQuery
 {
