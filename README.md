@@ -2,7 +2,7 @@
 
 A back-office (admin) toolbox for OroCommerce that bundles several operational / developer tools
 under a single **"Dev Tools"** application-menu sub-group. Every tool can be enabled/disabled and
-configured from **System Configuration → General Setup → Aaxis Dev Tools**.
+configured from **System Configuration → Aaxis → General → Aaxis Dev Tools**.
 
 - Namespace: `Aaxis\Bundle\DevToolsBundle`
 - Bundle class: `AaxisDevToolsBundle` (auto-registers, but **disabled by default** — you opt in at runtime; see [Enabling the toolbox](#enabling-the-toolbox))

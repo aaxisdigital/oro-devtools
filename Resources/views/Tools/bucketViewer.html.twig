@@ -13,7 +13,7 @@
                  downloadUrl: path('aaxis_devtools_bucket_viewer_download'),
                  basePath: '',
                  helpTitle: 'aaxis.devtools.bucket_viewer.help'|trans,
-                 configUrl: path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}),
+                 configUrl: path('oro_config_configuration_system', {activeGroup: 'aaxis', activeSubGroup: 'aaxis_devtools'}),
                  readOnly: options.readOnly,
                  createFolderUrl: path('aaxis_devtools_bucket_viewer_folder'),
                  uploadUrl: path('aaxis_devtools_bucket_viewer_upload'),
@@ -23,7 +23,7 @@
                 <div class="aaxis-fs__titlebar">
                     <h1 class="page-title__entity-title aaxis-fs__title">
                         {{ 'aaxis.devtools.menu.aaxis_devtools_bucket_viewer.label'|trans }}
-                        <a href="{{ path('oro_config_configuration_system', {activeGroup: 'platform', activeSubGroup: 'aaxis_devtools'}) }}"
+                        <a href="{{ path('oro_config_configuration_system', {activeGroup: 'aaxis', activeSubGroup: 'aaxis_devtools'}) }}"
                            class="aaxis-tool-config-btn" data-role="config"
                            title="{{ 'aaxis.devtools.config_link'|trans }}"
                            aria-label="{{ 'aaxis.devtools.config_link'|trans }}">
