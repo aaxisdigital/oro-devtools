@@ -93,6 +93,8 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
     protected showRowNumbers!: boolean;
 
     protected filterText!: string;
+    /** Sidebar sort direction; the key/mode itself stays subclass-specific. */
+    protected sortDir!: 'asc' | 'desc';
 
     // In-memory fallback for results too large for sessionStorage (quota); keyed by tab id.
     private resultFallback!: Record<string, StoredResult>;
@@ -137,10 +139,12 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
     protected abstract loadSidebar(): void;
     /** Render the sidebar list from current state (also used by the filter). */
     protected abstract renderSidebar(): void;
-    /** Render a loading placeholder in the sidebar list. */
-    protected abstract renderSidebarLoading(): void;
+    /** data-role of the sidebar's <ul>, e.g. 'objects' / 'indices'. */
+    protected abstract sidebarListRole(): string;
     /** Bind sidebar-specific events (ordering, item click, expand, type toggles). */
     protected abstract bindSidebarEvents(): void;
+    /** Repaint the sidebar's order-key button for the current mode (each viewer has its own set). */
+    protected abstract updateOrderButtons(): void;
     /** Optional: run after the whole viewer is set up (e.g. render order buttons). */
     protected afterSetup(): void {
         // no-op by default
@@ -148,6 +152,54 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
     /** Optional: sidebar cleanup on dispose. */
     protected disposeSidebar(): void {
         // no-op by default
+    }
+
+    // --- Shared sidebar / formatting helpers ---------------------------------
+
+    /** Flips the sidebar sort direction and repaints. */
+    protected onOrderDir(event: any): void {
+        event.preventDefault();
+        this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+        this.updateOrderButtons();
+        this.renderSidebar();
+    }
+
+    /** The asc/desc arrow button — same control in every viewer. */
+    protected renderOrderDirection(): void {
+        const $dir = this.$el.find('[data-role="order-dir"]');
+        $dir.find('.fa').attr(
+            'class',
+            'fa ' + (this.sortDir === 'desc' ? 'fa-sort-amount-desc' : 'fa-sort-amount-asc')
+        );
+        $dir.attr('title', this.sortDir === 'desc' ? this.t('order_desc') : this.t('order_asc'));
+    }
+
+    /** Spinner placeholder in the sidebar list while it loads. */
+    protected renderSidebarLoading(): void {
+        this.$el.find('[data-role="' + this.sidebarListRole() + '"]').empty().append(
+            $('<li/>', {'class': this.cls('loading')}).append(
+                $('<span/>', {'class': 'fa fa-spinner fa-spin', 'aria-hidden': 'true'}),
+                $('<span/>', {text: this.t('loading')})
+            )
+        );
+    }
+
+    /**
+     * Literal protection for the formatQuery() implementations. stash() swaps a matched string,
+     * quoted identifier or comment for a placeholder built from U+0001 — a character no query text
+     * can contain — so the reformatting passes cannot see inside it; restore() puts them back.
+     */
+    protected createLiteralStore(): {stash: (m: string) => string; restore: (s: string) => string} {
+        const store: string[] = [];
+
+        return {
+            stash: (m: string): string => {
+                store.push(m);
+
+                return '\u0001' + (store.length - 1) + '\u0001';
+            },
+            restore: (s: string): string => s.replace(/\u0001(\d+)\u0001/g, (_m, i) => store[Number(i)])
+        };
     }
 
     // --- Naming helpers ------------------------------------------------------

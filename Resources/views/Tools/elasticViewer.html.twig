@@ -40,8 +40,9 @@
                     </div>
                     <div class="aaxis-es-viewer__filter">
                         <div class="aaxis-es-viewer__filter-input">
-                            <input type="text" class="form-control" data-role="filter"
-                                   placeholder="{{ 'aaxis.devtools.elastic_viewer.filter_placeholder'|trans }}">
+                            <input type="text" id="aaxis-es-filter" class="form-control" data-role="filter"
+                                   placeholder="{{ 'aaxis.devtools.elastic_viewer.filter_placeholder'|trans }}"
+                                   aria-label="{{ 'aaxis.devtools.elastic_viewer.filter_label'|trans }}">
                             <button type="button" class="aaxis-es-viewer__filter-clear" data-role="filter-clear"
                                     title="{{ 'aaxis.devtools.elastic_viewer.filter_clear'|trans }}"
                                     aria-label="{{ 'aaxis.devtools.elastic_viewer.filter_clear'|trans }}"
@@ -76,7 +77,8 @@
                             </button>
                         </div>
                         <div class="aaxis-es-viewer__editor-host">
-                            <textarea data-role="editor">FROM oro_search_*
+                            <textarea id="aaxis-es-editor" data-role="editor"
+                                          aria-label="{{ 'aaxis.devtools.elastic_viewer.editor_label'|trans }}">FROM oro_search_*
 | LIMIT 100</textarea>
                         </div>
                         <div class="aaxis-es-viewer__toolbar">

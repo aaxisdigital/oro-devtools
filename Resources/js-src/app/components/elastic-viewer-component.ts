@@ -33,7 +33,6 @@ class ElasticViewerComponent extends AbstractQueryViewerComponent {
     private indicesUrl!: string;
     private indices!: EsIndex[];
     private sortKey!: 'name' | 'count';
-    private sortDir!: 'asc' | 'desc';
 
     // --- Naming / config hooks -----------------------------------------------
 
@@ -92,13 +91,8 @@ class ElasticViewerComponent extends AbstractQueryViewerComponent {
             });
     }
 
-    protected renderSidebarLoading(): void {
-        this.$el.find('[data-role="indices"]').empty().append(
-            $('<li/>', {'class': this.cls('loading')}).append(
-                $('<span/>', {'class': 'fa fa-spinner fa-spin', 'aria-hidden': 'true'}),
-                $('<span/>', {text: this.t('loading')})
-            )
-        );
+    protected sidebarListRole(): string {
+        return 'indices';
     }
 
     protected renderSidebar(): void {
@@ -165,14 +159,7 @@ class ElasticViewerComponent extends AbstractQueryViewerComponent {
         this.renderSidebar();
     }
 
-    private onOrderDir(event: any): void {
-        event.preventDefault();
-        this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-        this.updateOrderButtons();
-        this.renderSidebar();
-    }
-
-    private updateOrderButtons(): void {
+    protected updateOrderButtons(): void {
         const $key = this.$el.find('[data-role="order-key"]').empty();
         // A = alphabetic (no badge), 1 = document count (matches the Database Viewer standard).
         if (this.sortKey === 'count') {
@@ -183,9 +170,7 @@ class ElasticViewerComponent extends AbstractQueryViewerComponent {
             $key.attr('title', this.t('order_by_name'));
         }
 
-        const $dir = this.$el.find('[data-role="order-dir"]');
-        $dir.find('.fa').attr('class', 'fa ' + (this.sortDir === 'desc' ? 'fa-sort-amount-desc' : 'fa-sort-amount-asc'));
-        $dir.attr('title', this.sortDir === 'desc' ? this.t('order_desc') : this.t('order_asc'));
+        this.renderOrderDirection();
     }
 
     // --- ES|QL beautify ------------------------------------------------------
@@ -195,11 +180,7 @@ class ElasticViewerComponent extends AbstractQueryViewerComponent {
      * few secondary keywords uppercased. Strings/comments are protected so they are never altered.
      */
     protected formatQuery(raw: string): string {
-        const store: string[] = [];
-        const stash = (m: string): string => {
-            store.push(m);
-            return '\u0001' + (store.length - 1) + '\u0001';
-        };
+        const {stash, restore} = this.createLiteralStore();
 
         let s = raw
             .replace(/\/\/[^\n]*/g, stash)
@@ -244,7 +225,7 @@ class ElasticViewerComponent extends AbstractQueryViewerComponent {
 
         s = lines.join('\n');
 
-        return s.replace(/\u0001(\d+)\u0001/g, (_m, i) => store[Number(i)]);
+        return restore(s);
     }
 }
 

@@ -60,7 +60,6 @@ class DatabaseViewerComponent extends AbstractQueryViewerComponent {
     private showViews!: boolean;
     private showFunctions!: boolean;
     private orderMode!: OrderMode;
-    private sortDir!: 'asc' | 'desc';
 
     // --- Naming / config hooks -----------------------------------------------
 
@@ -130,13 +129,8 @@ class DatabaseViewerComponent extends AbstractQueryViewerComponent {
             });
     }
 
-    protected renderSidebarLoading(): void {
-        this.$el.find('[data-role="objects"]').empty().append(
-            $('<li/>', {'class': this.cls('loading')}).append(
-                $('<span/>', {'class': 'fa fa-spinner fa-spin', 'aria-hidden': 'true'}),
-                $('<span/>', {text: this.t('loading')})
-            )
-        );
+    protected sidebarListRole(): string {
+        return 'objects';
     }
 
     protected renderSidebar(): void {
@@ -333,14 +327,7 @@ class DatabaseViewerComponent extends AbstractQueryViewerComponent {
         }
     }
 
-    private onOrderDir(event: any): void {
-        event.preventDefault();
-        this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
-        this.updateOrderButtons();
-        this.renderSidebar();
-    }
-
-    private updateOrderButtons(): void {
+    protected updateOrderButtons(): void {
         const $key = this.$el.find('[data-role="order-key"]').empty();
         // A = alphabetic (no badge), 1 = item count, # = size (bytes).
         if (this.orderMode === 'count') {
@@ -354,9 +341,7 @@ class DatabaseViewerComponent extends AbstractQueryViewerComponent {
             $key.attr('title', this.t('order_by_name'));
         }
 
-        const $dir = this.$el.find('[data-role="order-dir"]');
-        $dir.find('.fa').attr('class', 'fa ' + (this.sortDir === 'desc' ? 'fa-sort-amount-desc' : 'fa-sort-amount-asc'));
-        $dir.attr('title', this.sortDir === 'desc' ? this.t('order_desc') : this.t('order_asc'));
+        this.renderOrderDirection();
     }
 
     // --- SQL beautify --------------------------------------------------------
@@ -366,11 +351,7 @@ class DatabaseViewerComponent extends AbstractQueryViewerComponent {
      * String literals, quoted identifiers and comments are protected so they are never altered.
      */
     protected formatQuery(raw: string): string {
-        const store: string[] = [];
-        const stash = (m: string): string => {
-            store.push(m);
-            return '\u0001' + (store.length - 1) + '\u0001';
-        };
+        const {stash, restore} = this.createLiteralStore();
 
         let s = raw
             .replace(/--[^\n]*/g, stash)
@@ -419,8 +400,11 @@ class DatabaseViewerComponent extends AbstractQueryViewerComponent {
         const clauseRe = new RegExp('\\s*\\b(' + alternation + ')\\b\\s*', 'gi');
         s = s.replace(clauseRe, (_m: string, kw: string) => '\n' + kw.replace(/\s+/g, ' ').toUpperCase() + ' ');
 
-        // Sub-clause keywords get their own indented line.
-        s = s.replace(/\s*\b(AND|OR|ON)\b\s*/gi, (_m: string, kw: string) => '\n' + kw.toUpperCase() + ' ');
+        // Sub-clause keywords get their own indented line. No leading \s* : "\s*\b" is an
+        // ambiguous prefix the engine can backtrack over quadratically, and it is unnecessary here
+        // because whitespace left before the inserted newline becomes trailing whitespace on the
+        // previous line, which the per-line trim() below removes anyway.
+        s = s.replace(/\b(AND|OR|ON)\b\s*/gi, (_m: string, kw: string) => '\n' + kw.toUpperCase() + ' ');
 
         // Restore the protected BETWEEN ... AND.
         s = s.replace(/\u0002/g, 'AND');
@@ -459,7 +443,7 @@ class DatabaseViewerComponent extends AbstractQueryViewerComponent {
         });
         s = lines.join('\n');
 
-        return s.replace(/\u0001(\d+)\u0001/g, (_m, i) => store[Number(i)]);
+        return restore(s);
     }
 }
 

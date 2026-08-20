@@ -26,7 +26,8 @@
 
             <div class="aaxis-net-tools">
                 <div class="aaxis-net-tools__bar">
-                    <select class="form-control no-uniform aaxis-net-tools__tool" data-role="tool">
+                    <select id="aaxis-net-tool" class="form-control no-uniform aaxis-net-tools__tool" data-role="tool"
+                            aria-label="{{ 'aaxis.devtools.network_tools.tool_label'|trans }}">
                         {% if enabledTools.dns %}<option value="dns">{{ 'aaxis.devtools.network_tools.tool.dns'|trans }}</option>{% endif %}
                         {% if enabledTools.ping %}<option value="ping">{{ 'aaxis.devtools.network_tools.tool.ping'|trans }}</option>{% endif %}
                         {% if enabledTools.traceroute %}<option value="traceroute">{{ 'aaxis.devtools.network_tools.tool.traceroute'|trans }}</option>{% endif %}
@@ -35,20 +36,25 @@
                         {% if enabledTools.ssl_cert %}<option value="ssl-cert">{{ 'aaxis.devtools.network_tools.tool.ssl_cert'|trans }}</option>{% endif %}
                         {% if enabledTools.ciphers %}<option value="ciphers">{{ 'aaxis.devtools.network_tools.tool.ciphers'|trans }}</option>{% endif %}
                     </select>
-                    <input type="text" class="form-control aaxis-net-tools__host" data-role="host"
-                           placeholder="{{ 'aaxis.devtools.network_tools.host_placeholder'|trans }}">
+                    <input type="text" id="aaxis-net-host" class="form-control aaxis-net-tools__host" data-role="host"
+                           placeholder="{{ 'aaxis.devtools.network_tools.host_placeholder'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.network_tools.host_label'|trans }}">
                     <span class="aaxis-net-tools__dnsmode-wrap" data-role="dns-mode-wrap">
-                        <select class="form-control no-uniform aaxis-net-tools__dnsmode" data-role="dns-mode">
+                        <select id="aaxis-net-dnsmode" class="form-control no-uniform aaxis-net-tools__dnsmode" data-role="dns-mode"
+                                aria-label="{{ 'aaxis.devtools.network_tools.dns_mode_label'|trans }}">
                             <option value="a">{{ 'aaxis.devtools.network_tools.dns_mode_a'|trans }}</option>
                             <option value="full">{{ 'aaxis.devtools.network_tools.dns_mode_full'|trans }}</option>
                         </select>
                     </span>
-                    <input type="text" class="form-control aaxis-net-tools__port" data-role="port"
-                           placeholder="{{ 'aaxis.devtools.network_tools.port_placeholder'|trans }}">
-                    <input type="text" class="form-control aaxis-net-tools__path" data-role="path"
-                           placeholder="{{ 'aaxis.devtools.network_tools.path_placeholder'|trans }}">
-                    <input type="text" class="form-control aaxis-net-tools__timeout" data-role="timeout"
-                           placeholder="{{ 'aaxis.devtools.network_tools.timeout_placeholder'|trans }}">
+                    <input type="text" id="aaxis-net-port" class="form-control aaxis-net-tools__port" data-role="port"
+                           placeholder="{{ 'aaxis.devtools.network_tools.port_placeholder'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.network_tools.port_label'|trans }}">
+                    <input type="text" id="aaxis-net-path" class="form-control aaxis-net-tools__path" data-role="path"
+                           placeholder="{{ 'aaxis.devtools.network_tools.path_placeholder'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.network_tools.path_label'|trans }}">
+                    <input type="text" id="aaxis-net-timeout" class="form-control aaxis-net-tools__timeout" data-role="timeout"
+                           placeholder="{{ 'aaxis.devtools.network_tools.timeout_placeholder'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.network_tools.timeout_label'|trans }}">
                     <span class="aaxis-net-tools__running" data-role="running" hidden>
                         <span class="fa fa-spinner fa-spin" aria-hidden="true"></span>
                         {{ 'aaxis.devtools.network_tools.running'|trans }}

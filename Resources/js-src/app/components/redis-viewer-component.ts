@@ -1,11 +1,11 @@
 import $ from 'jquery';
 import __ from 'orotranslation/js/translator';
 import messenger from 'oroui/js/messenger';
-import Modal from 'oroui/js/modal';
 import BaseComponent from 'oroui/js/app/components/base/component';
 import CodeMirror from 'codemirror';
 import 'codemirror/addon/runmode/runmode';
 import 'codemirror/mode/javascript/javascript';
+import {flashRequestError, openHelpModal} from './viewer-helpers';
 
 interface RedisViewerOptions {
     _sourceElement: any;
@@ -295,20 +295,12 @@ class RedisViewerComponent extends BaseComponent {
     }
 
     private flashError(jqXhr: any, fallbackKey: string): void {
-        const message = (jqXhr.responseJSON && jqXhr.responseJSON.message) || __(fallbackKey);
-        messenger.notificationFlashMessage('error', message);
+        flashRequestError(jqXhr, fallbackKey);
     }
 
     private onHelp(event: any): void {
         event.preventDefault();
-        const html = this.$el.find('[data-role="help-content"]').html();
-        const modal = new Modal({
-            title: __('aaxis.devtools.redis_viewer.help'),
-            content: html,
-            allowOk: false,
-            cancelText: __('Close')
-        });
-        modal.open();
+        openHelpModal(this.$el, 'aaxis.devtools.redis_viewer.help');
     }
 
     dispose(): void {

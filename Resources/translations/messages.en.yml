@@ -168,6 +168,7 @@ aaxis:
             title: Coming soon
             note: This tool is under construction and will be available in a future release.
         runtime_config:
+            filter_label: 'Filter configuration entries'
             col_key: Key
             col_value: Value
             filter_placeholder: 'Filter by key or value...'
@@ -232,6 +233,7 @@ aaxis:
                     item1: 'X-Forwarded-For, X-Real-IP, CF-Connecting-IP and similar headers are client-set and trivially spoofed; trust them only via a proxy you control.'
                     item2: 'This page exposes infrastructure details — keep it behind the Dev Tools ACL and the per-tool feature toggle.'
         mongodb_viewer:
+            filter_label: 'Document filter (JSON)'
             hint: 'Read-only browsing of MongoDB databases, collections and documents.'
             help: 'MongoDB Viewer help'
             help_dialog:
@@ -245,6 +247,7 @@ aaxis:
                     item1: 'Enter an optional JSON filter (e.g. {"status":"active"}) and press Find; use "Load more" to page through results.'
                     item2: 'Click a document to see it pretty-printed. Each page returns up to 100 documents.'
         redis_viewer:
+            pattern_label: 'Key match pattern'
             hint: 'Read-only inspection of Redis databases, keys and values. Uses SCAN (non-blocking).'
             help: 'Redis Viewer help'
             databases_title: 'Databases'
@@ -265,6 +268,8 @@ aaxis:
                     item2: 'Each key shows its type and TTL. Click a key to see its value, shaped by type (string, list, set, sorted set, hash).'
                     item3: 'Large values are truncated (first 500 elements / 64 KB); JSON string values are pretty-printed.'
         elastic_viewer:
+            filter_label: 'Filter indices'
+            editor_label: 'ES|QL query'
             hint: 'ES|QL runs read-only and the result is limited to the first 1000 rows.'
             indices: Indices
             filter_placeholder: 'Filter indices...'
@@ -297,6 +302,10 @@ aaxis:
                     item3: 'Right-click a selection to copy it as JSON or CSV, or to hide the selected columns or rows.'
                     item4: 'Export the current result as CSV, JSON or XLSX.'
         bucket_viewer:
+            path_label: 'Bucket prefix'
+            filter_label: 'Filter object names'
+            upload_label: 'File to upload'
+            content_label: 'Bucket contents'
             hint: 'Read-only browser of an S3-compatible bucket. Configure the endpoint and bucket in System Configuration.'
             hint_rw: 'Browse an S3-compatible bucket — upload, create folders and delete objects. Configure the endpoint and bucket in System Configuration.'
             help: 'Bucket Viewer help'
@@ -317,6 +326,9 @@ aaxis:
                     item1: 'Folders (prefixes) and objects use distinct icons; sort by clicking a column header.'
                     item2: 'Use the preview button to open a text/image/PDF object in a new tab, or the download button to fetch it. Binary files are downloaded rather than previewed.'
         filesystem_viewer:
+            path_label: 'Filesystem path'
+            filter_label: 'Filter file names'
+            content_label: 'Directory contents'
             hint: 'Read-only browser of the server filesystem. Navigation may be restricted to a base path.'
             help: 'Filesystem Viewer help'
             path_placeholder: 'Type a path and press Enter...'
@@ -335,6 +347,8 @@ aaxis:
                     item2: 'Click a folder (or "..") to navigate into it.'
                     item3: 'Use the preview button on a file to open its contents in a new, closable tab.'
         database_viewer:
+            filter_label: 'Filter database objects'
+            editor_label: 'SQL query'
             hint: 'Queries run inside a read-only transaction, are limited to 60 seconds, and return at most 1000 rows.'
             tables: Tables
             views: Views
@@ -380,6 +394,12 @@ aaxis:
                     item3: 'The Queries menu lists your recent private queries and recent public queries, and a view all option opens the full list.'
                     item4: 'When a saved query is open, the Update button saves edits to its text.'
         network_tools:
+            tool_label: 'Network tool'
+            host_label: 'Host or IP address'
+            dns_mode_label: 'DNS record scope'
+            port_label: 'Port'
+            path_label: 'Request path'
+            timeout_label: 'Timeout in seconds'
             intro: Network Tools page.
             hint: 'Pick a tool, set a host (and port/path where applicable) and hit Run.'
             run: Run

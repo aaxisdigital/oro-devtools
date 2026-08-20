@@ -46,7 +46,8 @@
 
                 <div class="aaxis-mongo__main">
                     <div class="aaxis-mongo__keybar">
-                        <input type="text" class="form-control aaxis-mongo__filter" data-role="filter"
+                        <input type="text" id="aaxis-mongo-filter" class="form-control aaxis-mongo__filter" data-role="filter"
+                               aria-label="{{ 'aaxis.devtools.mongodb_viewer.filter_label'|trans }}"
                                placeholder="{{ 'aaxis.devtools.mongodb_viewer.filter_placeholder'|trans({}, 'jsmessages') }}"
                                autocomplete="off" spellcheck="false">
                         <button type="button" class="btn btn-primary" data-role="find">

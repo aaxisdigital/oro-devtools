@@ -41,16 +41,18 @@
 
             <div class="aaxis-fs">
                 <div class="aaxis-fs__pathbar">
-                    <input type="text" class="form-control aaxis-fs__path" data-role="path"
+                    <input type="text" id="aaxis-bucket-path" class="form-control aaxis-fs__path" data-role="path"
                            placeholder="{{ 'aaxis.devtools.bucket_viewer.path_placeholder'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.bucket_viewer.path_label'|trans }}"
                            autocomplete="off" spellcheck="false">
                     <button type="button" class="aaxis-fs__search-toggle" data-role="filter-toggle"
                             title="{{ 'aaxis.devtools.bucket_viewer.search'|trans }}"
                             aria-label="{{ 'aaxis.devtools.bucket_viewer.search'|trans }}">
                         <span class="fa fa-search" aria-hidden="true"></span>
                     </button>
-                    <input type="text" class="form-control aaxis-fs__filter" data-role="filter"
+                    <input type="text" id="aaxis-bucket-filter" class="form-control aaxis-fs__filter" data-role="filter"
                            placeholder="{{ 'aaxis.devtools.bucket_viewer.filter_placeholder'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.bucket_viewer.filter_label'|trans }}"
                            autocomplete="off" spellcheck="false" hidden>
                     {% if not options.readOnly %}
                         <button type="button" class="aaxis-fs__pathbar-btn" data-role="create-folder"
@@ -64,12 +66,14 @@
                                 aria-label="{{ 'aaxis.devtools.bucket_viewer.upload_file'|trans }}">
                             <span class="fa fa-upload" aria-hidden="true"></span>
                         </button>
-                        <input type="file" data-role="upload-input" hidden>
+                        <input type="file" id="aaxis-bucket-upload" data-role="upload-input"
+                                   aria-label="{{ 'aaxis.devtools.bucket_viewer.upload_label'|trans }}" hidden>
                     {% endif %}
                 </div>
 
                 <div class="aaxis-fs__tabs" data-role="tabs"></div>
-                <div class="aaxis-fs__content" data-role="content" tabindex="0"></div>
+                <div class="aaxis-fs__content" data-role="content" tabindex="0"
+                     role="region" aria-label="{{ 'aaxis.devtools.bucket_viewer.content_label'|trans }}"></div>
             </div>
 
             <div data-role="help-content" hidden>

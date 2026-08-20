@@ -58,8 +58,9 @@
                     </div>
                     <div class="aaxis-db-viewer__filter">
                         <div class="aaxis-db-viewer__filter-input">
-                            <input type="text" class="form-control" data-role="filter"
-                                   placeholder="{{ 'aaxis.devtools.database_viewer.filter_placeholder'|trans }}">
+                            <input type="text" id="aaxis-db-filter" class="form-control" data-role="filter"
+                                   placeholder="{{ 'aaxis.devtools.database_viewer.filter_placeholder'|trans }}"
+                                   aria-label="{{ 'aaxis.devtools.database_viewer.filter_label'|trans }}">
                             <button type="button" class="aaxis-db-viewer__filter-clear" data-role="filter-clear"
                                     title="{{ 'aaxis.devtools.database_viewer.filter_clear'|trans }}"
                                     aria-label="{{ 'aaxis.devtools.database_viewer.filter_clear'|trans }}"
@@ -94,7 +95,8 @@
                             </button>
                         </div>
                         <div class="aaxis-db-viewer__editor-host">
-                            <textarea data-role="editor">SELECT *
+                            <textarea id="aaxis-db-editor" data-role="editor"
+                                          aria-label="{{ 'aaxis.devtools.database_viewer.editor_label'|trans }}">SELECT *
 FROM oro_user
 LIMIT 10;</textarea>
                         </div>

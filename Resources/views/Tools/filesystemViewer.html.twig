@@ -35,21 +35,24 @@
 
             <div class="aaxis-fs">
                 <div class="aaxis-fs__pathbar">
-                    <input type="text" class="form-control aaxis-fs__path" data-role="path"
+                    <input type="text" id="aaxis-fs-path" class="form-control aaxis-fs__path" data-role="path"
                            placeholder="{{ 'aaxis.devtools.filesystem_viewer.path_placeholder'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.filesystem_viewer.path_label'|trans }}"
                            autocomplete="off" spellcheck="false">
                     <button type="button" class="aaxis-fs__search-toggle" data-role="filter-toggle"
                             title="{{ 'aaxis.devtools.filesystem_viewer.search'|trans }}"
                             aria-label="{{ 'aaxis.devtools.filesystem_viewer.search'|trans }}">
                         <span class="fa fa-search" aria-hidden="true"></span>
                     </button>
-                    <input type="text" class="form-control aaxis-fs__filter" data-role="filter"
+                    <input type="text" id="aaxis-fs-filter" class="form-control aaxis-fs__filter" data-role="filter"
                            placeholder="{{ 'aaxis.devtools.filesystem_viewer.filter_placeholder'|trans }}"
+                           aria-label="{{ 'aaxis.devtools.filesystem_viewer.filter_label'|trans }}"
                            autocomplete="off" spellcheck="false" hidden>
                 </div>
 
                 <div class="aaxis-fs__tabs" data-role="tabs"></div>
-                <div class="aaxis-fs__content" data-role="content" tabindex="0"></div>
+                <div class="aaxis-fs__content" data-role="content" tabindex="0"
+                     role="region" aria-label="{{ 'aaxis.devtools.filesystem_viewer.content_label'|trans }}"></div>
             </div>
 
             <div data-role="help-content" hidden>

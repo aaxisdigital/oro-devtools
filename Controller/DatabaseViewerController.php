@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Aaxis\Bundle\DevToolsBundle\Controller;
 
 use Aaxis\Bundle\DevToolsBundle\Database\DatabaseInspector;
-use Aaxis\Bundle\DevToolsBundle\Database\ResultExporter;
 use Aaxis\Bundle\DevToolsBundle\Entity\QueryHistory;
 use Aaxis\Bundle\DevToolsBundle\Entity\SavedQuery;
 use Aaxis\Bundle\DevToolsBundle\Manager\QueryHistoryManager;
@@ -26,6 +25,7 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 class DatabaseViewerController extends AbstractController
 {
+    use ResultExportEndpointTrait;
     use SavedQueryEndpointsTrait;
 
     #[Route(path: '/database-viewer/objects', name: 'aaxis_devtools_database_viewer_objects', methods: ['GET'])]
@@ -108,28 +108,7 @@ class DatabaseViewerController extends AbstractController
     #[CsrfProtection]
     public function exportAction(Request $request): Response
     {
-        $payload = json_decode($request->getContent(), true);
-        if (!\is_array($payload)) {
-            return new JsonResponse(['success' => false, 'message' => 'Invalid payload.'], 400);
-        }
-
-        $format = (string) ($payload['format'] ?? '');
-        $columns = array_values(array_map('strval', (array) ($payload['columns'] ?? [])));
-        $rows = array_values((array) ($payload['rows'] ?? []));
-
-        if (!$this->container->get(ConfigManager::class)->get('aaxis_devtools.database_viewer_allow_export')) {
-            return new JsonResponse(['success' => false, 'message' => 'Export is disabled.'], 403);
-        }
-
-        if ($columns === []) {
-            return new JsonResponse(['success' => false, 'message' => 'Nothing to export.'], 400);
-        }
-
-        try {
-            return $this->container->get(ResultExporter::class)->export($format, $columns, $rows);
-        } catch (\InvalidArgumentException $e) {
-            return new JsonResponse(['success' => false, 'message' => $e->getMessage()], 400);
-        }
+        return $this->exportResponse($request);
     }
 
     #[Route(path: '/database-viewer/saved-queries', name: 'aaxis_devtools_database_viewer_saved_queries', methods: ['GET'])]
@@ -172,6 +151,12 @@ class DatabaseViewerController extends AbstractController
     }
 
     #[\Override]
+    protected function exportEnabledConfigKey(): string
+    {
+        return 'aaxis_devtools.database_viewer_allow_export';
+    }
+
+    #[\Override]
     protected function savedQueryTool(): string
     {
         return SavedQuery::TOOL_DATABASE;
@@ -185,12 +170,16 @@ class DatabaseViewerController extends AbstractController
     #[\Override]
     public static function getSubscribedServices(): array
     {
-        return array_merge(parent::getSubscribedServices(), self::savedQuerySubscribedServices(), [
-            DatabaseInspector::class,
-            ResultExporter::class,
-            QueryHistoryManager::class,
-            ConfigManager::class,
-            LoggerInterface::class,
-        ]);
+        return array_merge(
+            parent::getSubscribedServices(),
+            self::savedQuerySubscribedServices(),
+            self::resultExportSubscribedServices(),
+            [
+                DatabaseInspector::class,
+                QueryHistoryManager::class,
+                ConfigManager::class,
+                LoggerInterface::class,
+            ]
+        );
     }
 }

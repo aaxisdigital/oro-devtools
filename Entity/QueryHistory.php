@@ -17,6 +17,8 @@ use Oro\Bundle\UserBundle\Entity\User;
 #[ORM\Index(columns: ['run_at'], name: 'aaxis_dbviewer_history_run_at_idx')]
 class QueryHistory
 {
+    use RunHistoryFieldsTrait;
+
     public const string RESULT_SUCCESS = 'success';
     public const string RESULT_ERROR = 'error';
     public const string RESULT_BLOCKED = 'blocked';
@@ -32,15 +34,6 @@ class QueryHistory
 
     #[ORM\Column(name: 'query', type: Types::TEXT)]
     private ?string $query = null;
-
-    #[ORM\Column(name: 'run_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTimeInterface $runAt = null;
-
-    #[ORM\Column(name: 'result', type: Types::STRING, length: 16, nullable: true)]
-    private ?string $result = null;
-
-    #[ORM\Column(name: 'time_ms', type: Types::INTEGER, nullable: true)]
-    private ?int $timeMs = null;
 
     #[ORM\Column(name: 'record_count', type: Types::INTEGER, nullable: true)]
     private ?int $recordCount = null;
@@ -70,42 +63,6 @@ class QueryHistory
     public function setQuery(string $query): self
     {
         $this->query = $query;
-
-        return $this;
-    }
-
-    public function getRunAt(): ?\DateTimeInterface
-    {
-        return $this->runAt;
-    }
-
-    public function setRunAt(\DateTimeInterface $runAt): self
-    {
-        $this->runAt = $runAt;
-
-        return $this;
-    }
-
-    public function getResult(): ?string
-    {
-        return $this->result;
-    }
-
-    public function setResult(?string $result): self
-    {
-        $this->result = $result;
-
-        return $this;
-    }
-
-    public function getTimeMs(): ?int
-    {
-        return $this->timeMs;
-    }
-
-    public function setTimeMs(?int $timeMs): self
-    {
-        $this->timeMs = $timeMs;
 
         return $this;
     }

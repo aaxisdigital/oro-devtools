@@ -47,7 +47,8 @@
 
                 <div class="aaxis-redis__main">
                     <div class="aaxis-redis__keybar">
-                        <input type="text" class="form-control aaxis-redis__pattern" data-role="pattern"
+                        <input type="text" id="aaxis-redis-pattern" class="form-control aaxis-redis__pattern" data-role="pattern"
+                               aria-label="{{ 'aaxis.devtools.redis_viewer.pattern_label'|trans }}"
                                value="*" placeholder="{{ 'aaxis.devtools.redis_viewer.pattern_placeholder'|trans({}, 'jsmessages') }}"
                                autocomplete="off" spellcheck="false">
                         <button type="button" class="btn btn-primary" data-role="scan">
