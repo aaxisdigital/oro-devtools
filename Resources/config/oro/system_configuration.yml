@@ -3,24 +3,51 @@ system_configuration:
         aaxis_devtools:
             title: aaxis.devtools.config.group.title
             icon: fa-user-secret
-        aaxis_devtools_database_viewer:
-            title: aaxis.devtools.config.database_viewer.title
-        aaxis_devtools_network_tools:
-            title: aaxis.devtools.config.network_tools.title
-        aaxis_devtools_elastic_viewer:
-            title: aaxis.devtools.config.elastic_viewer.title
-        aaxis_devtools_redis_viewer:
-            title: aaxis.devtools.config.redis_viewer.title
-        aaxis_devtools_mongodb_viewer:
-            title: aaxis.devtools.config.mongodb_viewer.title
-        aaxis_devtools_filesystem_viewer:
-            title: aaxis.devtools.config.filesystem_viewer.title
-        aaxis_devtools_bucket_viewer:
-            title: aaxis.devtools.config.bucket_viewer.title
         aaxis_devtools_runtime_config:
+            title: aaxis.devtools.config.runtime_config.title
+            icon: fa-sliders
+        aaxis_devtools_runtime_config_section:
             title: aaxis.devtools.config.runtime_config.title
         aaxis_devtools_connection_info:
             title: aaxis.devtools.config.connection_info.title
+            icon: fa-info-circle
+        aaxis_devtools_connection_info_section:
+            title: aaxis.devtools.config.connection_info.title
+        aaxis_devtools_filesystem_viewer:
+            title: aaxis.devtools.config.filesystem_viewer.title
+            icon: fa-folder-open
+        aaxis_devtools_filesystem_viewer_section:
+            title: aaxis.devtools.config.filesystem_viewer.title
+        aaxis_devtools_bucket_viewer:
+            title: aaxis.devtools.config.bucket_viewer.title
+            icon: fa-archive
+        aaxis_devtools_bucket_viewer_section:
+            title: aaxis.devtools.config.bucket_viewer.title
+        aaxis_devtools_database_viewer:
+            title: aaxis.devtools.config.database_viewer.title
+            icon: fa-database
+        aaxis_devtools_database_viewer_section:
+            title: aaxis.devtools.config.database_viewer.title
+        aaxis_devtools_elastic_viewer:
+            title: aaxis.devtools.config.elastic_viewer.title
+            icon: fa-search
+        aaxis_devtools_elastic_viewer_section:
+            title: aaxis.devtools.config.elastic_viewer.title
+        aaxis_devtools_redis_viewer:
+            title: aaxis.devtools.config.redis_viewer.title
+            icon: fa-bolt
+        aaxis_devtools_redis_viewer_section:
+            title: aaxis.devtools.config.redis_viewer.title
+        aaxis_devtools_mongodb_viewer:
+            title: aaxis.devtools.config.mongodb_viewer.title
+            icon: fa-leaf
+        aaxis_devtools_mongodb_viewer_section:
+            title: aaxis.devtools.config.mongodb_viewer.title
+        aaxis_devtools_network_tools:
+            title: aaxis.devtools.config.network_tools.title
+            icon: fa-globe
+        aaxis_devtools_network_tools_section:
+            title: aaxis.devtools.config.network_tools.title
 
     fields:
         # --- Database Viewer ---
@@ -382,21 +409,25 @@ system_configuration:
         system_configuration:
             aaxis:
                 children:
-                    aaxis_general:
+                    aaxis_devtools:
+                        priority: 95
                         children:
-                            aaxis_devtools:
-                                priority: 95
+                            aaxis_devtools_runtime_config:
+                                priority: 110
                                 children:
-                                    aaxis_devtools_runtime_config:
-                                        priority: 110
+                                    aaxis_devtools_runtime_config_section:
                                         children:
                                             - aaxis_devtools.runtime_config_enabled
-                                    aaxis_devtools_connection_info:
-                                        priority: 108
+                            aaxis_devtools_connection_info:
+                                priority: 108
+                                children:
+                                    aaxis_devtools_connection_info_section:
                                         children:
                                             - aaxis_devtools.connection_info_enabled
-                                    aaxis_devtools_filesystem_viewer:
-                                        priority: 100
+                            aaxis_devtools_filesystem_viewer:
+                                priority: 100
+                                children:
+                                    aaxis_devtools_filesystem_viewer_section:
                                         children:
                                             - aaxis_devtools.filesystem_viewer_enabled
                                             - aaxis_devtools.filesystem_viewer_base_path
@@ -409,8 +440,10 @@ system_configuration:
                                             - aaxis_devtools.filesystem_viewer_col_owner_user
                                             - aaxis_devtools.filesystem_viewer_col_owner_group
                                             - aaxis_devtools.filesystem_viewer_col_preview
-                                    aaxis_devtools_bucket_viewer:
-                                        priority: 90
+                            aaxis_devtools_bucket_viewer:
+                                priority: 90
+                                children:
+                                    aaxis_devtools_bucket_viewer_section:
                                         children:
                                             - aaxis_devtools.bucket_viewer_enabled
                                             - aaxis_devtools.bucket_viewer_test
@@ -419,8 +452,10 @@ system_configuration:
                                             - aaxis_devtools.bucket_viewer_pass
                                             - aaxis_devtools.bucket_viewer_name
                                             - aaxis_devtools.bucket_viewer_read_only
-                                    aaxis_devtools_database_viewer:
-                                        priority: 80
+                            aaxis_devtools_database_viewer:
+                                priority: 80
+                                children:
+                                    aaxis_devtools_database_viewer_section:
                                         children:
                                             - aaxis_devtools.database_viewer_enabled
                                             - aaxis_devtools.database_viewer_test
@@ -429,21 +464,27 @@ system_configuration:
                                             - aaxis_devtools.database_viewer_show_row_numbers
                                             - aaxis_devtools.database_viewer_allow_export
                                             - aaxis_devtools.database_viewer_history_retention_days
-                                    aaxis_devtools_elastic_viewer:
-                                        priority: 70
+                            aaxis_devtools_elastic_viewer:
+                                priority: 70
+                                children:
+                                    aaxis_devtools_elastic_viewer_section:
                                         children:
                                             - aaxis_devtools.elastic_viewer_enabled
                                             - aaxis_devtools.elastic_viewer_test
                                             - aaxis_devtools.elastic_viewer_allow_export
-                                    aaxis_devtools_redis_viewer:
-                                        priority: 65
+                            aaxis_devtools_redis_viewer:
+                                priority: 65
+                                children:
+                                    aaxis_devtools_redis_viewer_section:
                                         children:
                                             - aaxis_devtools.redis_viewer_enabled
                                             - aaxis_devtools.redis_viewer_test
                                             - aaxis_devtools.redis_viewer_dsn
                                             - aaxis_devtools.redis_viewer_password
-                                    aaxis_devtools_mongodb_viewer:
-                                        priority: 63
+                            aaxis_devtools_mongodb_viewer:
+                                priority: 63
+                                children:
+                                    aaxis_devtools_mongodb_viewer_section:
                                         children:
                                             - aaxis_devtools.mongodb_viewer_enabled
                                             - aaxis_devtools.mongodb_viewer_test
@@ -451,8 +492,10 @@ system_configuration:
                                             - aaxis_devtools.mongodb_viewer_public_password
                                             - aaxis_devtools.mongodb_viewer_private_dsn
                                             - aaxis_devtools.mongodb_viewer_private_password
-                                    aaxis_devtools_network_tools:
-                                        priority: 50
+                            aaxis_devtools_network_tools:
+                                priority: 50
+                                children:
+                                    aaxis_devtools_network_tools_section:
                                         children:
                                             - aaxis_devtools.network_tools_enabled
                                             - aaxis_devtools.network_tools_dns

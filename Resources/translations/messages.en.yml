@@ -62,7 +62,7 @@ aaxis:
                 label: 'Aaxis Dev Tools - Connection Info'
         config:
             group:
-                title: 'Aaxis Dev Tools'
+                title: 'DevTools'
             test:
                 label: 'Connection'
             settings_block:

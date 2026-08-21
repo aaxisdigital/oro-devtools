@@ -132,9 +132,11 @@ entity needs a `runAt` field. Add a `purge(...)` line per history entity.
 2. **Service(s)**: define in `services.yml` with id `aaxis_devtools.<tool>_*`; wire the controller's
    subscribed services in `controllers.yml` (`container.service_subscriber`).
 3. **Config**: add settings to `DependencyInjection/Configuration.php` AND fields/group/tree to
-   `system_configuration.yml` (keys `aaxis_devtools.<tool>_*`). The tree hangs under the shared
-   `aaxis > aaxis_general` tab (defined in CommonBundle); config deep links use
-   `activeGroup: 'aaxis'`, `activeSubGroup: 'aaxis_devtools'`.
+   `system_configuration.yml` (keys `aaxis_devtools.<tool>_*`). The bundle owns the
+   `aaxis_devtools` "DevTools" level-2 menu group under CommonBundle's `aaxis` tab; each tool is
+   its own level-3 PAGE whose fields sit in a `<page>_section` fieldset (fields must land at
+   nesting level 5); config deep links use `activeGroup: 'aaxis'`,
+   `activeSubGroup: '<the tool's page group>'` (e.g. `aaxis_devtools_bucket_viewer`).
 4. **Menu**: `navigation.yml` item + title under `aaxis_devtools_group`.
 5. **Feature toggle**: `features.yml` entry (`toggle: aaxis_devtools.<tool>_enabled`,
    `dependencies: [aaxis_devtools]`, list its routes + navigation item). The dependency wires the tool
