@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Aaxis\Bundle\DevToolsBundle\Filesystem;
 
+use Aaxis\Bundle\DevToolsBundle\Exception\StorageException;
+use Aaxis\Bundle\DevToolsBundle\Storage\SizeFormatter;
+
 /**
  * Read-only filesystem browsing for the back-office "Filesystem Viewer" tool.
  *
@@ -32,8 +35,12 @@ class FilesystemBrowser
             $path = $this->projectDir;
         }
         $real = realpath($path);
+        if ($real !== false) {
+            return $real;
+        }
+        $projectReal = realpath($this->projectDir);
 
-        return $real !== false ? $real : (realpath($this->projectDir) ?: $this->projectDir);
+        return $projectReal !== false ? $projectReal : $this->projectDir;
     }
 
     /**
@@ -49,19 +56,36 @@ class FilesystemBrowser
     {
         $real = $this->resolveSafe($requested, $basePath, $restricted, true);
 
-        $parent = null;
+        return [
+            'path' => $real,
+            'parent' => $this->parentOf($real, $basePath, $restricted),
+            'entries' => $this->readEntries($real),
+        ];
+    }
+
+    /**
+     * The ".." target to offer for a directory: none at the filesystem root, and none when going up
+     * would leave the base path while restricted.
+     */
+    private function parentOf(string $real, string $basePath, bool $restricted): ?string
+    {
         $up = \dirname($real);
-        if ($up !== $real) {
-            // Show ".." unless going up would leave the base path while restricted.
-            if (!$restricted || $this->isWithin($up, $basePath)) {
-                $parent = $up;
-            }
+        if ($up !== $real && (!$restricted || $this->isWithin($up, $basePath))) {
+            return $up;
         }
 
+        return null;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>> directories first, then files, each group by name
+     */
+    private function readEntries(string $real): array
+    {
         $entries = [];
         $handle = @opendir($real);
         if ($handle === false) {
-            throw new \RuntimeException('The directory is not readable.');
+            throw new StorageException('The directory is not readable.');
         }
         while (($name = readdir($handle)) !== false) {
             if ($name === '.' || $name === '..') {
@@ -72,14 +96,22 @@ class FilesystemBrowser
         }
         closedir($handle);
 
-        usort($entries, static function (array $a, array $b) {
-            if ($a['type'] !== $b['type']) {
-                return $a['type'] === 'dir' ? -1 : 1;
-            }
-            return strcasecmp((string) $a['name'], (string) $b['name']);
-        });
+        usort($entries, static fn (array $a, array $b): int => self::compareEntries($a, $b));
 
-        return ['path' => $real, 'parent' => $parent, 'entries' => $entries];
+        return $entries;
+    }
+
+    /**
+     * @param array<string, mixed> $a
+     * @param array<string, mixed> $b
+     */
+    private static function compareEntries(array $a, array $b): int
+    {
+        if ($a['type'] !== $b['type']) {
+            return $a['type'] === 'dir' ? -1 : 1;
+        }
+
+        return strcasecmp((string) $a['name'], (string) $b['name']);
     }
 
     /**
@@ -92,7 +124,7 @@ class FilesystemBrowser
             throw new \InvalidArgumentException('The path is not a file.');
         }
         if (!is_readable($real)) {
-            throw new \RuntimeException('The file is not readable.');
+            throw new StorageException('The file is not readable.');
         }
 
         return $real;
@@ -110,7 +142,7 @@ class FilesystemBrowser
             throw new \InvalidArgumentException('The path is not a file.');
         }
         if (!is_readable($real)) {
-            throw new \RuntimeException('The file is not readable.');
+            throw new StorageException('The file is not readable.');
         }
 
         $size = (int) filesize($real);
@@ -139,7 +171,7 @@ class FilesystemBrowser
             'type' => $type,
             'path' => $full,
             'size' => $size,
-            'sizeFormatted' => $type === 'file' ? $this->formatSize($size) : '',
+            'sizeFormatted' => $type === 'file' ? SizeFormatter::format($size) : '',
             'created' => (int) @filectime($full),
             'modified' => (int) @filemtime($full),
             'ownerUser' => $this->ownerUser($full),
@@ -219,18 +251,5 @@ class FilesystemBrowser
         }
 
         return (string) $gid;
-    }
-
-    private function formatSize(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $value = (float) $bytes;
-        $i = 0;
-        while ($value >= 1024 && $i < \count($units) - 1) {
-            $value /= 1024;
-            $i++;
-        }
-
-        return ($i === 0 ? (string) $bytes : number_format($value, 1)) . ' ' . $units[$i];
     }
 }

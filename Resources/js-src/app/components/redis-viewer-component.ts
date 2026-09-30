@@ -258,7 +258,7 @@ class RedisViewerComponent extends BaseComponent {
                 text = JSON.stringify(JSON.parse(value), null, 2);
                 (CodeMirror as any).runMode(text, {name: 'javascript', json: true}, pre);
                 highlighted = true;
-            } catch (e) {
+            } catch {
                 text = value;
             }
         }

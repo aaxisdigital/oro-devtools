@@ -146,7 +146,7 @@ class DatabaseViewerComponent extends AbstractQueryViewerComponent {
             if (object.type === 'function' && !this.showFunctions) {
                 return false;
             }
-            return this.filterText === '' || object.name.toLowerCase().indexOf(this.filterText) !== -1;
+            return this.filterText === '' || object.name.toLowerCase().includes(this.filterText);
         });
 
         this.sortObjects(visible);
@@ -396,8 +396,8 @@ class DatabaseViewerComponent extends AbstractQueryViewerComponent {
         ];
         // One combined pass (longest alternative first): a per-keyword loop would let a later
         // single-word keyword re-split a multi-word clause already placed (LEFT JOIN -> LEFT\nJOIN).
-        const alternation = clauses.map(kw => kw.replace(/ /g, '\\s+')).join('|');
-        const clauseRe = new RegExp('\\s*\\b(' + alternation + ')\\b\\s*', 'gi');
+        const alternation = clauses.map(kw => kw.replace(/ /g, String.raw`\s+`)).join('|');
+        const clauseRe = new RegExp(String.raw`\s*\b(${alternation})\b\s*`, 'gi');
         s = s.replace(clauseRe, (_m: string, kw: string) => '\n' + kw.replace(/\s+/g, ' ').toUpperCase() + ' ');
 
         // Sub-clause keywords get their own indented line. No leading \s* : "\s*\b" is an
@@ -417,7 +417,7 @@ class DatabaseViewerComponent extends AbstractQueryViewerComponent {
 
         // Indent one level per open paren (subqueries), plus an extra step for lines that
         // don't start a clause (column continuations, AND/OR/ON).
-        const clauseStart = new RegExp('^(' + alternation + ')\\b', 'i');
+        const clauseStart = new RegExp(String.raw`^(${alternation})\b`, 'i');
         let depth = 0;
         const lines: string[] = [];
         s.split('\n').forEach(rawLine => {

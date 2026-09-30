@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Aaxis\Bundle\DevToolsBundle\Storage;
 
+use Aaxis\Bundle\DevToolsBundle\Exception\StorageException;
 use Aaxis\Bundle\DevToolsBundle\Filesystem\FilesystemBrowser;
 use Oro\Bundle\ConfigBundle\Config\ConfigManager;
 use Symfony\Component\Mime\MimeTypes;
@@ -46,7 +47,7 @@ class FilesystemStorageBrowser implements StorageBrowserInterface
 
         $stream = @fopen($file, 'rb');
         if ($stream === false) {
-            throw new \RuntimeException('The file is not readable.');
+            throw new StorageException('The file is not readable.');
         }
 
         return [

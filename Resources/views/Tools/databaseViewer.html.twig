@@ -81,8 +81,8 @@
                     <ul data-role="objects" class="aaxis-db-viewer__objects"></ul>
                 </aside>
 
-                <div class="aaxis-db-viewer__v-splitter" data-role="v-splitter"
-                     role="separator" aria-orientation="vertical"></div>
+                <hr class="aaxis-db-viewer__v-splitter" data-role="v-splitter"
+                    aria-orientation="vertical">
 
                 <div class="aaxis-db-viewer__main" data-role="main">
                     <div class="aaxis-db-viewer__editor-pane" data-role="editor-pane">
@@ -95,8 +95,9 @@
                             </button>
                         </div>
                         <div class="aaxis-db-viewer__editor-host">
+                            <span id="aaxis-db-editor-label" hidden>{{ 'aaxis.devtools.database_viewer.editor_label'|trans }}</span>
                             <textarea id="aaxis-db-editor" data-role="editor"
-                                          aria-label="{{ 'aaxis.devtools.database_viewer.editor_label'|trans }}">SELECT *
+                                          aria-labelledby="aaxis-db-editor-label">SELECT *
 FROM oro_user
 LIMIT 10;</textarea>
                         </div>
@@ -148,8 +149,8 @@ LIMIT 10;</textarea>
                         </div>
                     </div>
 
-                    <div class="aaxis-db-viewer__h-splitter" data-role="h-splitter"
-                         role="separator" aria-orientation="horizontal"></div>
+                    <hr class="aaxis-db-viewer__h-splitter" data-role="h-splitter"
+                        aria-orientation="horizontal">
 
                     <div class="aaxis-db-viewer__result-pane" data-role="result-pane">
                         <div data-role="result" class="aaxis-db-viewer__result"></div>

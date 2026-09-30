@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Aaxis\Bundle\DevToolsBundle\Database;
 
+use Aaxis\Bundle\DevToolsBundle\Exception\ResultExportException;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer as XlsxWriter;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -44,9 +45,9 @@ class ResultExporter
     {
         $path = $this->createTempFile();
         $handle = fopen($path, 'wb');
-        fputcsv($handle, $columns);
+        fputcsv($handle, $columns, ',', '"', '\\');
         foreach ($rows as $row) {
-            fputcsv($handle, array_map($this->neutralizeFormula(...), $this->orderValues($columns, $row)));
+            fputcsv($handle, array_map($this->neutralizeFormula(...), $this->orderValues($columns, $row)), ',', '"', '\\');
         }
         fclose($handle);
 
@@ -142,7 +143,7 @@ class ResultExporter
     {
         $path = tempnam(sys_get_temp_dir(), 'aaxis_export_');
         if ($path === false) {
-            throw new \RuntimeException('Unable to create a temporary file for the export.');
+            throw new ResultExportException('Unable to create a temporary file for the export.');
         }
 
         return $path;

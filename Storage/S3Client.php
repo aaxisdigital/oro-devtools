@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Aaxis\Bundle\DevToolsBundle\Storage;
 
+use Aaxis\Bundle\DevToolsBundle\Exception\StorageException;
+
 /**
  * Minimal, dependency-free S3 client (AWS Signature V4, path-style addressing) built on curl.
  *
@@ -46,7 +48,7 @@ class S3Client
 
         $response = $this->request('GET', '/' . $this->encodePath($bucket), $query);
         if ($response['status'] >= 400) {
-            throw new \RuntimeException($this->describeError($response));
+            throw new StorageException($this->describeError($response));
         }
 
         $xml = $this->parseXml($response['body']);
@@ -84,7 +86,7 @@ class S3Client
         }
         $response = $this->request('GET', '/' . $this->encodePath($bucket) . '/' . $this->encodePath($key), [], $headers);
         if ($response['status'] >= 400) {
-            throw new \RuntimeException($this->describeError($response));
+            throw new StorageException($this->describeError($response));
         }
 
         $length = isset($response['responseHeaders']['content-length'])
@@ -141,7 +143,7 @@ class S3Client
             $body
         );
         if ($response['status'] >= 400) {
-            throw new \RuntimeException($this->describeError($response));
+            throw new StorageException($this->describeError($response));
         }
     }
 
@@ -152,7 +154,7 @@ class S3Client
     {
         $response = $this->request('DELETE', '/' . $this->encodePath($bucket) . '/' . $this->encodePath($key));
         if ($response['status'] >= 400 && $response['status'] !== 404) {
-            throw new \RuntimeException($this->describeError($response));
+            throw new StorageException($this->describeError($response));
         }
     }
 
@@ -176,7 +178,7 @@ class S3Client
 
             $response = $this->request('GET', '/' . $this->encodePath($bucket), $query);
             if ($response['status'] >= 400) {
-                throw new \RuntimeException($this->describeError($response));
+                throw new StorageException($this->describeError($response));
             }
             $xml = $this->parseXml($response['body']);
             foreach ($xml->Contents ?? [] as $object) {
@@ -224,34 +226,67 @@ class S3Client
         }
         $curlHeaders[] = 'Authorization: ' . $authorization;
 
-        $responseHeaders = [];
+        return $this->sendRequest($method, $url, $curlHeaders, $body);
+    }
+
+    /**
+     * Performs the signed HTTP exchange. Isolated (and overridable) so everything around it — signing,
+     * request building, response interpretation — can be exercised without a network.
+     *
+     * @param string[] $curlHeaders "Name: value" request header lines
+     *
+     * @return array{status: int, body: string, error: string, responseHeaders: array<string, string>}
+     */
+    protected function sendRequest(string $method, string $url, array $curlHeaders, ?string $body): array
+    {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
+        // The response headers come back in front of the body (split below by their size).
+        curl_setopt($ch, CURLOPT_HEADER, true);
         if ($body !== null) {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         }
-        curl_setopt($ch, CURLOPT_HEADERFUNCTION, static function ($curl, string $header) use (&$responseHeaders): int {
-            $pos = strpos($header, ':');
-            if ($pos !== false) {
-                $responseHeaders[strtolower(trim(substr($header, 0, $pos)))] = trim(substr($header, $pos + 1));
-            }
-            return \strlen($header);
-        });
 
-        $body = curl_exec($ch);
+        $raw = curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         $error = curl_error($ch);
+        $headerSize = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+
+        $responseHeaders = [];
+        $payload = '';
+        if (\is_string($raw)) {
+            $responseHeaders = self::parseResponseHeaders(substr($raw, 0, $headerSize));
+            $payload = substr($raw, $headerSize);
+        }
 
         return [
             'status' => $status,
-            'body' => $body === false ? '' : (string) $body,
+            'body' => $payload,
             'error' => $error,
             'responseHeaders' => $responseHeaders,
         ];
+    }
+
+    /**
+     * Lower-cased header name => value, from a raw header block (later duplicates win).
+     *
+     * @return array<string, string>
+     */
+    protected static function parseResponseHeaders(string $block): array
+    {
+        $headers = [];
+        foreach (preg_split('/\r\n|\n/', $block) ?: [] as $line) {
+            $pos = strpos($line, ':');
+            if ($pos !== false) {
+                $headers[strtolower(trim(substr($line, 0, $pos)))] = trim(substr($line, $pos + 1));
+            }
+        }
+
+        return $headers;
     }
 
     /**
@@ -356,7 +391,7 @@ class S3Client
         }
         foreach ($ips as $ip) {
             if (self::isLinkLocalAddress($ip)) {
-                throw new \RuntimeException('The configured storage endpoint is not permitted.');
+                throw new StorageException('The configured storage endpoint is not permitted.');
             }
         }
 
@@ -373,11 +408,8 @@ class S3Client
             return false;
         }
         $bytes = unpack('C*', $packed);
-        if ($bytes[1] === 0xfe && ($bytes[2] & 0xc0) === 0x80) {
-            return true;
-        }
 
-        return strtolower($ip) === 'fd00:ec2::254';
+        return ($bytes[1] === 0xfe && ($bytes[2] & 0xc0) === 0x80) || strtolower($ip) === 'fd00:ec2::254';
     }
 
     private function hostHeader(): string
@@ -393,7 +425,7 @@ class S3Client
         $xml = simplexml_load_string($body);
         libxml_use_internal_errors($previous);
         if ($xml === false) {
-            throw new \RuntimeException('Unexpected (non-XML) response from the storage endpoint.');
+            throw new StorageException('Unexpected (non-XML) response from the storage endpoint.');
         }
 
         return $xml;

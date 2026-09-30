@@ -26,8 +26,9 @@
 
             <div class="aaxis-net-tools">
                 <div class="aaxis-net-tools__bar">
+                    <span id="aaxis-net-tool-label" hidden>{{ 'aaxis.devtools.network_tools.tool_label'|trans }}</span>
                     <select id="aaxis-net-tool" class="form-control no-uniform aaxis-net-tools__tool" data-role="tool"
-                            aria-label="{{ 'aaxis.devtools.network_tools.tool_label'|trans }}">
+                            aria-labelledby="aaxis-net-tool-label">
                         {% if enabledTools.dns %}<option value="dns">{{ 'aaxis.devtools.network_tools.tool.dns'|trans }}</option>{% endif %}
                         {% if enabledTools.ping %}<option value="ping">{{ 'aaxis.devtools.network_tools.tool.ping'|trans }}</option>{% endif %}
                         {% if enabledTools.traceroute %}<option value="traceroute">{{ 'aaxis.devtools.network_tools.tool.traceroute'|trans }}</option>{% endif %}

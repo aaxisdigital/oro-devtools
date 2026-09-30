@@ -180,8 +180,8 @@ $aaxis-redis-border: #d9d9d9;
         text-transform: uppercase;
 
         &.is-string { background: #e7f6ec; color: #1e7e45; }
-        &.is-list { background: #e1f0ff; color: #1f6fd6; }
-        &.is-set { background: #fff4e0; color: #b8860b; }
+        &.is-list { background: #e1f0ff; color: #1e6acd; }
+        &.is-set { background: #fff4e0; color: #916909; }
         &.is-zset { background: #f0e9fb; color: #8e44ad; }
         &.is-hash { background: #fdecea; color: #c0392b; }
     }
@@ -219,7 +219,7 @@ $aaxis-redis-border: #d9d9d9;
         font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
         font-size: 12px;
         white-space: pre-wrap;
-        word-break: break-word;
+        overflow-wrap: anywhere;
     }
 
     &__items { width: 100%; margin: 0; }

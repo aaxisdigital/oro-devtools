@@ -25,14 +25,12 @@ class NetworkToolsController extends AbstractController
     public function runAction(Request $request): JsonResponse
     {
         $payload = json_decode($request->getContent(), true);
-        if (!\is_array($payload)) {
-            return new JsonResponse(['success' => false, 'output' => 'Invalid payload.'], 400);
+        $rejection = $this->rejectPayload($payload);
+        if ($rejection !== null) {
+            return $rejection;
         }
 
         $tool = (string) ($payload['tool'] ?? '');
-        if (!\in_array($tool, NetworkToolExecutor::TOOLS, true)) {
-            return new JsonResponse(['success' => false, 'output' => 'Unknown tool.'], 400);
-        }
 
         // Respect the per-test System Configuration toggle (e.g. "ssl-cert" -> network_tools_ssl_cert).
         $toggleKey = 'aaxis_devtools.network_tools_' . str_replace('-', '_', $tool);
@@ -62,12 +60,12 @@ class NetworkToolsController extends AbstractController
 
             $historyManager->finish($record, NetworkTestHistory::RESULT_SUCCESS, $elapsedMs, $output);
 
-            return new JsonResponse(['success' => true, 'output' => $output]);
+            $response = new JsonResponse(['success' => true, 'output' => $output]);
         } catch (\InvalidArgumentException $e) {
             $elapsedMs = (int) round((microtime(true) - $startedAt) * 1000);
             $historyManager->finish($record, NetworkTestHistory::RESULT_ERROR, $elapsedMs, $e->getMessage());
 
-            return new JsonResponse(['success' => false, 'output' => $e->getMessage()], 400);
+            $response = new JsonResponse(['success' => false, 'output' => $e->getMessage()], 400);
         } catch (\Throwable $e) {
             $elapsedMs = (int) round((microtime(true) - $startedAt) * 1000);
             $historyManager->finish($record, NetworkTestHistory::RESULT_ERROR, $elapsedMs, 'Error: ' . $e->getMessage());
@@ -75,8 +73,26 @@ class NetworkToolsController extends AbstractController
             $this->container->get(LoggerInterface::class)
                 ->warning('Aaxis Tools network tool failed.', ['exception' => $e, 'tool' => $tool]);
 
-            return new JsonResponse(['success' => false, 'output' => 'Error: ' . $e->getMessage()], 500);
+            $response = new JsonResponse(['success' => false, 'output' => 'Error: ' . $e->getMessage()], 500);
         }
+
+        return $response;
+    }
+
+    /**
+     * The 400 response for a malformed body or a tool that does not exist; null when the request is fine.
+     */
+    private function rejectPayload(mixed $payload): ?JsonResponse
+    {
+        if (!\is_array($payload)) {
+            return new JsonResponse(['success' => false, 'output' => 'Invalid payload.'], 400);
+        }
+
+        $tool = (string) ($payload['tool'] ?? '');
+
+        return \in_array($tool, NetworkToolExecutor::TOOLS, true)
+            ? null
+            : new JsonResponse(['success' => false, 'output' => 'Unknown tool.'], 400);
     }
 
     #[\Override]

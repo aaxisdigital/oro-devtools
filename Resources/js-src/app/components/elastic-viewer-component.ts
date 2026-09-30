@@ -98,7 +98,7 @@ class ElasticViewerComponent extends AbstractQueryViewerComponent {
     protected renderSidebar(): void {
         const $list = this.$el.find('[data-role="indices"]').empty();
         const visible = this.indices.filter(index =>
-            this.filterText === '' || index.name.toLowerCase().indexOf(this.filterText) !== -1
+            this.filterText === '' || index.name.toLowerCase().includes(this.filterText)
         );
 
         const dir = this.sortDir === 'desc' ? -1 : 1;
@@ -212,8 +212,8 @@ class ElasticViewerComponent extends AbstractQueryViewerComponent {
             segments.push(current.trim());
         }
 
-        const commandRe = new RegExp('^(' + ESQL_COMMANDS.join('|') + ')\\b', 'i');
-        const secondaryRe = new RegExp('\\b(' + ESQL_SECONDARY.join('|') + ')\\b', 'gi');
+        const commandRe = new RegExp(String.raw`^(${ESQL_COMMANDS.join('|')})\b`, 'i');
+        const secondaryRe = new RegExp(String.raw`\b(${ESQL_SECONDARY.join('|')})\b`, 'gi');
 
         const lines = segments
             .filter(seg => seg !== '')

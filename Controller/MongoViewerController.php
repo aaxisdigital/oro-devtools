@@ -61,13 +61,17 @@ class MongoViewerController extends AbstractController
                 (int) $request->query->get('skip', 0),
                 (int) $request->query->get('limit', MongoInspector::DEFAULT_LIMIT)
             );
-
-            return new JsonResponse(['success' => true] + $data);
+            $response = new JsonResponse(['success' => true] + $data);
         } catch (\InvalidArgumentException $e) {
-            return new JsonResponse(['success' => false, 'message' => $e->getMessage()], 400);
+            $response = new JsonResponse(['success' => false, 'message' => $e->getMessage()], 400);
         } catch (\Throwable $e) {
-            return new JsonResponse(['success' => false, 'message' => $this->inspector()->redactDsnCredentials($e->getMessage())], 502);
+            $response = new JsonResponse(
+                ['success' => false, 'message' => $this->inspector()->redactDsnCredentials($e->getMessage())],
+                502
+            );
         }
+
+        return $response;
     }
 
     private function inspector(): MongoInspector

@@ -241,17 +241,22 @@ class DatabaseInspector
         $udt = (string) ($row['udt_name'] ?? '');
         $udt = ltrim($udt, '_'); // array types are reported as e.g. "_int4"
 
-        if ($row['char_len'] !== null) {
-            return sprintf('%s(%d)', $udt, (int) $row['char_len']);
-        }
-        if ($row['numeric_precision'] !== null) {
-            return sprintf('%s(%d,%d)', $udt, (int) $row['numeric_precision'], (int) ($row['numeric_scale'] ?? 0));
-        }
-        if ($row['datetime_precision'] !== null && \in_array($udt, ['timestamp', 'timestamptz', 'time', 'timetz', 'interval'], true)) {
-            return sprintf('%s(%d)', $udt, (int) $row['datetime_precision']);
-        }
+        $modifier = match (true) {
+            $row['char_len'] !== null => sprintf('(%d)', (int) $row['char_len']),
+            $row['numeric_precision'] !== null => sprintf(
+                '(%d,%d)',
+                (int) $row['numeric_precision'],
+                (int) ($row['numeric_scale'] ?? 0)
+            ),
+            $row['datetime_precision'] !== null
+                && \in_array($udt, ['timestamp', 'timestamptz', 'time', 'timetz', 'interval'], true) => sprintf(
+                    '(%d)',
+                    (int) $row['datetime_precision']
+                ),
+            default => '',
+        };
 
-        return $udt;
+        return $udt . $modifier;
     }
 
     /**

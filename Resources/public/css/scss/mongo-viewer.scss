@@ -136,7 +136,7 @@ $aaxis-mongo-border: #d9d9d9;
 
     &__conn-label { font-weight: font-weight('bold'); color: #2b3a4a; }
     &__conn-version { color: #5c6b7a; }
-    &__conn-error { color: #b94a48; word-break: break-word; }
+    &__conn-error { color: #b94a48; overflow-wrap: anywhere; }
 
     // --- Main --------------------------------------------------------------
     &__main {
@@ -214,6 +214,6 @@ $aaxis-mongo-border: #d9d9d9;
         font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
         font-size: 12px;
         white-space: pre-wrap;
-        word-break: break-word;
+        overflow-wrap: anywhere;
     }
 }

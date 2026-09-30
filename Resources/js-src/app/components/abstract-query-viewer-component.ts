@@ -616,7 +616,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
                 }
                 modal.close();
             }).fail((jqXhr: any) => {
-                const message = (jqXhr.responseJSON && jqXhr.responseJSON.message) || this.t('sq_error');
+                const message = jqXhr.responseJSON?.message || this.t('sq_error');
                 messenger.notificationFlashMessage('error', message);
             });
         });
@@ -791,7 +791,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
     private onUpdateQuery(event: any): void {
         event.preventDefault();
         const tab = this.activeTab();
-        if (!tab || tab.savedId === null || !this.editor) {
+        if (!tab || !this.editor || tab.savedId === null) {
             return;
         }
         const text = String(this.editor.getValue());
@@ -1060,7 +1060,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
         const $result = this.$el.find('[data-role="result"]').empty();
         const stored = tab ? this.loadResult(tab.id) : null;
 
-        if (stored && stored.error) {
+        if (stored?.error) {
             this.setExportEnabled(false);
             this.setStatus('');
             $result.append($('<div/>', {'class': 'alert alert-error', role: 'alert'}).text(stored.error));
@@ -1081,7 +1081,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
             this.setStatus('');
         }
 
-        if (tab && tab.running) {
+        if (tab?.running) {
             this.setStatus(this.t('running'));
         }
         this.updateRunButton();
@@ -1097,11 +1097,11 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
         try {
             window.sessionStorage.setItem(this.resultKey(tabId), JSON.stringify(data));
             delete this.resultFallback[tabId];
-        } catch (e) {
+        } catch {
             // Quota exceeded or serialization failure: keep it in memory for this session instead.
             try {
                 window.sessionStorage.removeItem(this.resultKey(tabId));
-            } catch (ignore) {
+            } catch {
                 // sessionStorage unavailable; the in-memory fallback below still works.
             }
             this.resultFallback[tabId] = data;
@@ -1115,7 +1115,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
         try {
             const raw = window.sessionStorage.getItem(this.resultKey(tabId));
             return raw ? JSON.parse(raw) as StoredResult : null;
-        } catch (e) {
+        } catch {
             return null;
         }
     }
@@ -1124,7 +1124,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
         delete this.resultFallback[tabId];
         try {
             window.sessionStorage.removeItem(this.resultKey(tabId));
-        } catch (e) {
+        } catch {
             // ignore
         }
     }
@@ -1136,12 +1136,12 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
             const keys: string[] = [];
             for (let i = 0; i < window.sessionStorage.length; i++) {
                 const key = window.sessionStorage.key(i);
-                if (key && key.indexOf(prefix) === 0) {
+                if (key?.startsWith(prefix)) {
                     keys.push(key);
                 }
             }
             keys.forEach(key => window.sessionStorage.removeItem(key));
-        } catch (e) {
+        } catch {
             // ignore
         }
     }
@@ -1152,7 +1152,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
         if (!this.lastResult) {
             return [];
         }
-        return this.lastResult.columns.filter(column => this.hiddenColumns.indexOf(column) === -1);
+        return this.lastResult.columns.filter(column => !this.hiddenColumns.includes(column));
     }
 
     /** @return array of [originalIndex, row] for non-hidden rows */
@@ -1162,7 +1162,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
         }
         const result: Array<[number, Record<string, unknown>]> = [];
         this.lastResult.rows.forEach((row, index) => {
-            if (this.hiddenRows.indexOf(index) === -1) {
+            if (!this.hiddenRows.includes(index)) {
                 result.push([index, row]);
             }
         });
@@ -1236,11 +1236,14 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
     protected renderDataCell($td: any, value: unknown): void {
         if (value === null || value === undefined) {
             $td.addClass(this.cls('null-cell')).text('(null)');
-        } else if (typeof value === 'object') {
-            $td.text(JSON.stringify(value));
         } else {
-            $td.text(String(value));
+            $td.text(this.cellText(value));
         }
+    }
+
+    /** Text of a non-null cell value: objects (Elastic nested values) as JSON, JSON scalars as-is. */
+    private cellText(value: unknown): string {
+        return typeof value === 'object' ? JSON.stringify(value) : String(value as string | number | boolean);
     }
 
     // --- Selection -----------------------------------------------------------
@@ -1335,7 +1338,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
     }
 
     private escapeAttr(value: string): string {
-        return value.replace(/"/g, '\\"');
+        return value.replace(/"/g, String.raw`\"`);
     }
 
     protected escapeHtml(value: string): string {
@@ -1426,13 +1429,13 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
     private hideSelection(): void {
         if (this.selectionMode === 'columns') {
             this.selectedColumns.forEach(column => {
-                if (this.hiddenColumns.indexOf(column) === -1) {
+                if (!this.hiddenColumns.includes(column)) {
                     this.hiddenColumns.push(column);
                 }
             });
         } else if (this.selectionMode === 'rows') {
             this.selectedRows.forEach(index => {
-                if (this.hiddenRows.indexOf(index) === -1) {
+                if (!this.hiddenRows.includes(index)) {
                     this.hiddenRows.push(index);
                 }
             });
@@ -1448,14 +1451,14 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
         const visibleColumns = this.visibleColumns();
 
         if (this.selectionMode === 'columns') {
-            const columns = visibleColumns.filter(column => this.selectedColumns.indexOf(column) !== -1);
+            const columns = visibleColumns.filter(column => this.selectedColumns.includes(column));
             const rows = this.visibleRows().map(([, row]) => this.pick(row, columns));
             return {columns, rows};
         }
 
         if (this.selectionMode === 'rows') {
             const rows = this.selectedRows
-                .filter(index => this.hiddenRows.indexOf(index) === -1)
+                .filter(index => !this.hiddenRows.includes(index))
                 .map(index => this.pick(this.lastResult!.rows[index], visibleColumns));
             return {columns: visibleColumns, rows};
         }
@@ -1484,9 +1487,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
     }
 
     private csvCell(value: unknown): string {
-        const text = value === null || value === undefined
-            ? ''
-            : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+        const text = value === null || value === undefined ? '' : this.cellText(value);
         return /[",\r\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
     }
 
@@ -1494,11 +1495,14 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
         const onSuccess = () => messenger.notificationFlashMessage('success', this.t('copied'));
         const onError = () => messenger.notificationFlashMessage('error', this.t('copy_error'));
 
-        if (window.navigator.clipboard && window.navigator.clipboard.writeText) {
+        if (window.navigator.clipboard?.writeText) {
             window.navigator.clipboard.writeText(text).then(onSuccess).catch(onError);
             return;
         }
 
+        // Non-secure pages (plain http) have no async clipboard: fall back to a hidden textarea.
+        // execCommand is flagged deprecated in lib.dom but is still the only synchronous copy path there.
+        const legacy = document as unknown as {execCommand(command: string): boolean};
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
@@ -1506,12 +1510,12 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
         document.body.appendChild(textarea);
         textarea.select();
         try {
-            document.execCommand('copy');
+            legacy.execCommand('copy');
             onSuccess();
-        } catch (e) {
+        } catch {
             onError();
         }
-        document.body.removeChild(textarea);
+        textarea.remove();
     }
 
     // --- Export --------------------------------------------------------------
@@ -1557,13 +1561,13 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
         link.download = filename;
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        link.remove();
         window.URL.revokeObjectURL(url);
     }
 
     private getCsrfToken(): string {
         const name = window.location.protocol === 'https:' ? 'https-_csrf' : '_csrf';
-        const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+        const match = new RegExp('(?:^|; )' + name + '=([^;]*)').exec(document.cookie);
         return match ? decodeURIComponent(match[1]) : '';
     }
 
@@ -1580,7 +1584,7 @@ abstract class AbstractQueryViewerComponent extends BaseComponent {
     /** Run button reflects the ACTIVE tab's run state (each tab runs independently). */
     private updateRunButton(): void {
         const tab = this.activeTab();
-        const running = !!(tab && tab.running);
+        const running = !!tab?.running;
         this.$el.find('[data-role="run"]').prop('disabled', running);
         // .toggle() (inline display) rather than [hidden]: the fa display rules would win over it.
         this.$el.find('[data-role="run-spinner"]').toggle(running);

@@ -63,8 +63,8 @@
                     <ul data-role="indices" class="aaxis-es-viewer__indices"></ul>
                 </aside>
 
-                <div class="aaxis-es-viewer__v-splitter" data-role="v-splitter"
-                     role="separator" aria-orientation="vertical"></div>
+                <hr class="aaxis-es-viewer__v-splitter" data-role="v-splitter"
+                    aria-orientation="vertical">
 
                 <div class="aaxis-es-viewer__main" data-role="main">
                     <div class="aaxis-es-viewer__editor-pane" data-role="editor-pane">
@@ -77,8 +77,9 @@
                             </button>
                         </div>
                         <div class="aaxis-es-viewer__editor-host">
+                            <span id="aaxis-es-editor-label" hidden>{{ 'aaxis.devtools.elastic_viewer.editor_label'|trans }}</span>
                             <textarea id="aaxis-es-editor" data-role="editor"
-                                          aria-label="{{ 'aaxis.devtools.elastic_viewer.editor_label'|trans }}">FROM oro_search_*
+                                          aria-labelledby="aaxis-es-editor-label">FROM oro_search_*
 | LIMIT 100</textarea>
                         </div>
                         <div class="aaxis-es-viewer__toolbar">
@@ -130,8 +131,8 @@
                         </div>
                     </div>
 
-                    <div class="aaxis-es-viewer__h-splitter" data-role="h-splitter"
-                         role="separator" aria-orientation="horizontal"></div>
+                    <hr class="aaxis-es-viewer__h-splitter" data-role="h-splitter"
+                        aria-orientation="horizontal">
 
                     <div class="aaxis-es-viewer__result-pane" data-role="result-pane">
                         <div data-role="result" class="aaxis-es-viewer__result"></div>

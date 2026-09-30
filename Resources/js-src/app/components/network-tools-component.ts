@@ -77,7 +77,7 @@ class NetworkToolsComponent extends BaseComponent {
     }
 
     private onRun(event?: any): void {
-        if (event && event.preventDefault) {
+        if (event?.preventDefault) {
             event.preventDefault();
         }
         if (this.running) {

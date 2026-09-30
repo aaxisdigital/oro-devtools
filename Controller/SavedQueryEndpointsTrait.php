@@ -65,14 +65,15 @@ trait SavedQueryEndpointsTrait
         $manager = $this->container->get(SavedQueryManager::class);
         try {
             $entity = $manager->create($name, $text, $public, $this->savedQueryTool());
+            $response = new JsonResponse([
+                'success' => true,
+                'query' => $this->serializeSavedQuery($entity, (int) $manager->getCurrentUserId()),
+            ]);
         } catch (DuplicateQueryNameException $e) {
-            return new JsonResponse(['success' => false, 'message' => $e->getMessage()], 409);
+            $response = new JsonResponse(['success' => false, 'message' => $e->getMessage()], 409);
         }
 
-        return new JsonResponse([
-            'success' => true,
-            'query' => $this->serializeSavedQuery($entity, (int) $manager->getCurrentUserId()),
-        ]);
+        return $response;
     }
 
     protected function updateSavedQueryResponse(Request $request, int $id): JsonResponse
@@ -82,6 +83,36 @@ trait SavedQueryEndpointsTrait
 
         /** @var SavedQuery|null $entity */
         $entity = $manager->getRepository()->find($id);
+        $denied = $this->denyUpdate($entity, $userId);
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $rejection = $this->rejectUpdatePayload($payload);
+        if ($rejection !== null) {
+            return $rejection;
+        }
+
+        $name = \array_key_exists('name', $payload) ? trim((string) $payload['name']) : null;
+        $public = \array_key_exists('public', $payload) ? (bool) $payload['public'] : null;
+        $text = \array_key_exists('text', $payload) ? (string) $payload['text'] : null;
+
+        try {
+            $manager->update($entity, $name, $public, $text);
+            $response = new JsonResponse(['success' => true, 'query' => $this->serializeSavedQuery($entity, $userId)]);
+        } catch (DuplicateQueryNameException $e) {
+            $response = new JsonResponse(['success' => false, 'message' => $e->getMessage()], 409);
+        }
+
+        return $response;
+    }
+
+    /**
+     * The 404/403 response when the query cannot be updated by this user; null when it can.
+     */
+    private function denyUpdate(?SavedQuery $entity, int $userId): ?JsonResponse
+    {
         // Scope by tool too, so one viewer cannot read/modify the other's saved queries by id.
         if (null === $entity || $entity->getTool() !== $this->savedQueryTool()) {
             return new JsonResponse(['success' => false, 'message' => 'Saved query not found.'], 404);
@@ -90,29 +121,25 @@ trait SavedQueryEndpointsTrait
             return new JsonResponse(['success' => false, 'message' => 'You can only update your own queries.'], 403);
         }
 
-        $payload = json_decode($request->getContent(), true);
+        return null;
+    }
+
+    /**
+     * The 400 response for a malformed body or a blank name/text; null when the payload is acceptable.
+     */
+    private function rejectUpdatePayload(mixed $payload): ?JsonResponse
+    {
         if (!\is_array($payload)) {
             return new JsonResponse(['success' => false, 'message' => 'Invalid payload.'], 400);
         }
 
-        $name = \array_key_exists('name', $payload) ? trim((string) $payload['name']) : null;
-        $public = \array_key_exists('public', $payload) ? (bool) $payload['public'] : null;
-        $text = \array_key_exists('text', $payload) ? (string) $payload['text'] : null;
-
-        if (null !== $name && $name === '') {
-            return new JsonResponse(['success' => false, 'message' => 'Query name is required.'], 400);
-        }
-        if (null !== $text && trim($text) === '') {
-            return new JsonResponse(['success' => false, 'message' => 'Query text is required.'], 400);
-        }
-
-        try {
-            $manager->update($entity, $name, $public, $text);
-        } catch (DuplicateQueryNameException $e) {
-            return new JsonResponse(['success' => false, 'message' => $e->getMessage()], 409);
-        }
-
-        return new JsonResponse(['success' => true, 'query' => $this->serializeSavedQuery($entity, $userId)]);
+        return match (true) {
+            \array_key_exists('name', $payload) && trim((string) $payload['name']) === ''
+                => new JsonResponse(['success' => false, 'message' => 'Query name is required.'], 400),
+            \array_key_exists('text', $payload) && trim((string) $payload['text']) === ''
+                => new JsonResponse(['success' => false, 'message' => 'Query text is required.'], 400),
+            default => null,
+        };
     }
 
     /**

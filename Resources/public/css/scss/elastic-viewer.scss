@@ -229,8 +229,13 @@ $aaxis-es-splitter-hover: #b7b7b7;
     }
 
     // --- Splitters ---------------------------------------------------------
+    // The splitters are <hr> elements (an interactive separator role is not what they are): reset the
+    // browser/Oro hr box (margins, top border, zero height) so they keep the plain 6px bar they were as <div>s.
     &__v-splitter {
         flex: 0 0 6px;
+        height: auto;
+        margin: 0;
+        border: 0;
         cursor: col-resize;
         background: $aaxis-es-splitter;
 
@@ -241,6 +246,9 @@ $aaxis-es-splitter-hover: #b7b7b7;
 
     &__h-splitter {
         flex: 0 0 6px;
+        height: auto;
+        margin: 0;
+        border: 0;
         cursor: row-resize;
         background: $aaxis-es-splitter;
 
@@ -499,7 +507,7 @@ $aaxis-es-splitter-hover: #b7b7b7;
     &__rownum-cell {
         width: 1%;
         text-align: right;
-        color: #999;
+        color: #737373;
         background: #fafafa;
         cursor: pointer;
         user-select: none;

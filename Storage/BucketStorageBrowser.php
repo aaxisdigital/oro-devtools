@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Aaxis\Bundle\DevToolsBundle\Storage;
 
+use Aaxis\Bundle\DevToolsBundle\Exception\StorageException;
 use Oro\Bundle\ConfigBundle\Config\ConfigManager;
 use Oro\Bundle\SecurityBundle\Encoder\SymmetricCrypterInterface;
 
@@ -32,7 +33,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
 
     public function listDirectory(string $path): array
     {
-        $prefix = $this->normalizePrefix($path);
+        $prefix = ObjectKey::normalizePrefix($path);
         $result = $this->client()->listObjects($this->bucket(), $prefix);
 
         $entries = [];
@@ -50,7 +51,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
             return strcasecmp((string) $a['name'], (string) $b['name']);
         });
 
-        return ['path' => $prefix, 'parent' => $this->parentPrefix($prefix), 'entries' => $entries];
+        return ['path' => $prefix, 'parent' => ObjectKey::parentPrefix($prefix), 'entries' => $entries];
     }
 
     public function readFileContent(string $path): array
@@ -66,7 +67,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
         $binary = $content !== '' && (str_contains($content, "\0") || !mb_check_encoding($content, 'UTF-8'));
 
         return [
-            'name' => $this->basename($key),
+            'name' => ObjectKey::basename($key),
             'path' => $key,
             'size' => $size,
             'truncated' => $size > self::MAX_PREVIEW_BYTES,
@@ -85,13 +86,13 @@ class BucketStorageBrowser implements StorageBrowserInterface
         $object = $this->client()->getObject($this->bucket(), $key);
         $stream = fopen('php://temp', 'r+b');
         if ($stream === false) {
-            throw new \RuntimeException('Unable to buffer the object.');
+            throw new StorageException('Unable to buffer the object.');
         }
         fwrite($stream, $object['body']);
         rewind($stream);
 
         return [
-            'name' => $this->basename($key),
+            'name' => ObjectKey::basename($key),
             'mime' => $object['contentType'],
             'size' => $object['contentLength'],
             'stream' => $stream,
@@ -115,7 +116,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
             ];
         }
 
-        $client = new S3Client($url, $this->setting('user', $overrides), $this->settingSecret($overrides));
+        $client = $this->createS3Client($url, $this->setting('user', $overrides), $this->settingSecret($overrides));
 
         return $client->testConnection($bucket);
     }
@@ -132,7 +133,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
         if ($folder === '') {
             throw new \InvalidArgumentException('A folder name is required.');
         }
-        $key = $this->normalizePrefix($path) . $folder . '/';
+        $key = ObjectKey::normalizePrefix($path) . $folder . '/';
         $this->client()->putObject($this->bucket(), $key, '', 'application/x-directory');
     }
 
@@ -144,7 +145,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
             throw new \InvalidArgumentException('A file name is required.');
         }
         $body = (string) file_get_contents($tmpFile);
-        $key = $this->normalizePrefix($path) . $name;
+        $key = ObjectKey::normalizePrefix($path) . $name;
         $this->client()->putObject($this->bucket(), $key, $body, $contentType);
     }
 
@@ -155,7 +156,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
         $bucket = $this->bucket();
 
         if ($isDir) {
-            $prefix = $this->normalizePrefix($path);
+            $prefix = ObjectKey::normalizePrefix($path);
             $keys = $client->listAllKeys($bucket, $prefix);
             // Ensure the folder marker object itself is removed too.
             if (!\in_array($prefix, $keys, true)) {
@@ -172,7 +173,7 @@ class BucketStorageBrowser implements StorageBrowserInterface
     private function assertWritable(): void
     {
         if ($this->isReadOnly()) {
-            throw new \RuntimeException('The bucket is configured as read-only.');
+            throw new StorageException('The bucket is configured as read-only.');
         }
     }
 
@@ -180,10 +181,18 @@ class BucketStorageBrowser implements StorageBrowserInterface
     {
         $url = $this->config('url');
         if ($url === '') {
-            throw new \RuntimeException('The bucket endpoint URL is not configured.');
+            throw new StorageException('The bucket endpoint URL is not configured.');
         }
 
-        return new S3Client($url, $this->config('user'), $this->savedSecret());
+        return $this->createS3Client($url, $this->config('user'), $this->savedSecret());
+    }
+
+    /**
+     * Factory for the S3 client; overridable so the browser can be exercised without a storage endpoint.
+     */
+    protected function createS3Client(string $url, string $accessKey, string $secretKey): S3Client
+    {
+        return new S3Client($url, $accessKey, $secretKey);
     }
 
     private function bucket(): string
@@ -246,39 +255,13 @@ class BucketStorageBrowser implements StorageBrowserInterface
         return $this->savedSecret();
     }
 
-    private function normalizePrefix(string $path): string
-    {
-        $prefix = ltrim(trim($path), '/');
-
-        return $prefix === '' || str_ends_with($prefix, '/') ? $prefix : $prefix . '/';
-    }
-
-    private function parentPrefix(string $prefix): ?string
-    {
-        if ($prefix === '') {
-            return null;
-        }
-        $trimmed = rtrim($prefix, '/');
-        $pos = strrpos($trimmed, '/');
-
-        return $pos === false ? '' : substr($trimmed, 0, $pos + 1);
-    }
-
-    private function basename(string $key): string
-    {
-        $trimmed = rtrim($key, '/');
-        $pos = strrpos($trimmed, '/');
-
-        return $pos === false ? $trimmed : substr($trimmed, $pos + 1);
-    }
-
     /**
      * @return array<string, mixed>
      */
     private function describeDir(string $commonPrefix): array
     {
         return [
-            'name' => $this->basename($commonPrefix),
+            'name' => ObjectKey::basename($commonPrefix),
             'type' => 'dir',
             'path' => $commonPrefix,
             'size' => 0,
@@ -297,29 +280,16 @@ class BucketStorageBrowser implements StorageBrowserInterface
     private function describeFile(string $key, int $size, int $lastModified): array
     {
         return [
-            'name' => $this->basename($key),
+            'name' => ObjectKey::basename($key),
             'type' => 'file',
             'path' => $key,
             'size' => $size,
-            'sizeFormatted' => $this->formatSize($size),
+            'sizeFormatted' => SizeFormatter::format($size),
             'created' => 0,
             'modified' => $lastModified,
             'ownerUser' => '',
             'ownerGroup' => '',
             'readable' => true,
         ];
-    }
-
-    private function formatSize(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $value = (float) $bytes;
-        $i = 0;
-        while ($value >= 1024 && $i < \count($units) - 1) {
-            $value /= 1024;
-            $i++;
-        }
-
-        return ($i === 0 ? (string) $bytes : number_format($value, 1)) . ' ' . $units[$i];
     }
 }

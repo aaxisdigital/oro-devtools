@@ -117,7 +117,7 @@
 
     .is-disabled {
         background: #f2f2f2;
-        color: #aaa;
+        color: #6e6e6e;
     }
 
     &__hint {
@@ -139,6 +139,6 @@
         font-size: 12px;
         line-height: 1.5;
         white-space: pre-wrap;
-        word-break: break-word;
+        overflow-wrap: anywhere;
     }
 }

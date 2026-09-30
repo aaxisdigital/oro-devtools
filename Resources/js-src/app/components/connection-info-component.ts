@@ -47,7 +47,7 @@ class ConnectionInfoComponent extends BaseComponent {
     }
 
     private onApply(event?: any): void {
-        if (event && event.preventDefault) {
+        if (event?.preventDefault) {
             event.preventDefault();
         }
         if (this.applying) {
@@ -63,7 +63,7 @@ class ConnectionInfoComponent extends BaseComponent {
             contentType: 'application/json',
             data: JSON.stringify({trustedProxies})
         }).done((response: {success: boolean; client?: ResolvedClient}) => {
-            if (response && response.client) {
+            if (response?.client) {
                 this.render(response.client);
             }
         }).fail(() => {

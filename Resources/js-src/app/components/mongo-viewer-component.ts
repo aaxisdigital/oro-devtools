@@ -280,7 +280,7 @@ class MongoViewerComponent extends BaseComponent {
     }
 
     private idOf(doc: any): string {
-        const id = doc && doc._id;
+        const id = doc?._id;
         if (id === undefined || id === null) {
             return '(no _id)';
         }

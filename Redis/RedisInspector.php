@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Aaxis\Bundle\DevToolsBundle\Redis;
 
+use Aaxis\Bundle\DevToolsBundle\Exception\RedisConnectionException;
 use Oro\Bundle\ConfigBundle\Config\ConfigManager;
 use Oro\Bundle\SecurityBundle\Encoder\SymmetricCrypterInterface;
 
@@ -110,51 +111,96 @@ class RedisInspector
 
         $result = ['key' => $key, 'type' => $type, 'ttl' => $ttl, 'total' => 0, 'truncated' => false];
 
-        switch ($type) {
-            case 'string':
-                $value = (string) $redis->get($key);
-                $length = \strlen($value);
-                $result['total'] = $length;
-                $result['truncated'] = $length > self::MAX_STRING_BYTES;
-                $result['value'] = substr($value, 0, self::MAX_STRING_BYTES);
-                break;
-            case 'list':
-                $result['total'] = (int) $redis->lLen($key);
-                $result['items'] = array_map('strval', $redis->lRange($key, 0, self::MAX_ELEMENTS - 1) ?: []);
-                $result['truncated'] = $result['total'] > self::MAX_ELEMENTS;
-                break;
-            case 'set':
-                $result['total'] = (int) $redis->sCard($key);
-                $result['items'] = array_map('strval', \array_slice($redis->sMembers($key) ?: [], 0, self::MAX_ELEMENTS));
-                $result['truncated'] = $result['total'] > self::MAX_ELEMENTS;
-                break;
-            case 'zset':
-                $result['total'] = (int) $redis->zCard($key);
-                $items = [];
-                foreach ($redis->zRange($key, 0, self::MAX_ELEMENTS - 1, true) ?: [] as $member => $score) {
-                    $items[] = ['member' => (string) $member, 'score' => (float) $score];
-                }
-                $result['items'] = $items;
-                $result['truncated'] = $result['total'] > self::MAX_ELEMENTS;
-                break;
-            case 'hash':
-                $result['total'] = (int) $redis->hLen($key);
-                $items = [];
-                foreach ($redis->hGetAll($key) ?: [] as $field => $value) {
-                    if (\count($items) >= self::MAX_ELEMENTS) {
-                        break;
-                    }
-                    $items[] = ['field' => (string) $field, 'value' => (string) $value];
-                }
-                $result['items'] = $items;
-                $result['truncated'] = $result['total'] > self::MAX_ELEMENTS;
-                break;
-            case 'none':
-                $result['missing'] = true;
-                break;
-            default:
-                $result['value'] = '(unsupported type: ' . $type . ')';
+        return match ($type) {
+            'string' => $this->stringValue($redis, $key, $result),
+            'list' => $this->listValue($redis, $key, $result),
+            'set' => $this->setValue($redis, $key, $result),
+            'zset' => $this->sortedSetValue($redis, $key, $result),
+            'hash' => $this->hashValue($redis, $key, $result),
+            'none' => $result + ['missing' => true],
+            default => $result + ['value' => '(unsupported type: ' . $type . ')'],
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     *
+     * @return array<string, mixed>
+     */
+    private function stringValue(\Redis $redis, string $key, array $result): array
+    {
+        $value = (string) $redis->get($key);
+        $length = \strlen($value);
+        $result['total'] = $length;
+        $result['truncated'] = $length > self::MAX_STRING_BYTES;
+        $result['value'] = substr($value, 0, self::MAX_STRING_BYTES);
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     *
+     * @return array<string, mixed>
+     */
+    private function listValue(\Redis $redis, string $key, array $result): array
+    {
+        $result['total'] = (int) $redis->lLen($key);
+        $result['items'] = array_map('strval', $redis->lRange($key, 0, self::MAX_ELEMENTS - 1) ?: []);
+        $result['truncated'] = $result['total'] > self::MAX_ELEMENTS;
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     *
+     * @return array<string, mixed>
+     */
+    private function setValue(\Redis $redis, string $key, array $result): array
+    {
+        $result['total'] = (int) $redis->sCard($key);
+        $result['items'] = array_map('strval', \array_slice($redis->sMembers($key) ?: [], 0, self::MAX_ELEMENTS));
+        $result['truncated'] = $result['total'] > self::MAX_ELEMENTS;
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     *
+     * @return array<string, mixed>
+     */
+    private function sortedSetValue(\Redis $redis, string $key, array $result): array
+    {
+        $result['total'] = (int) $redis->zCard($key);
+        $items = [];
+        foreach ($redis->zRange($key, 0, self::MAX_ELEMENTS - 1, true) ?: [] as $member => $score) {
+            $items[] = ['member' => (string) $member, 'score' => (float) $score];
         }
+        $result['items'] = $items;
+        $result['truncated'] = $result['total'] > self::MAX_ELEMENTS;
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     *
+     * @return array<string, mixed>
+     */
+    private function hashValue(\Redis $redis, string $key, array $result): array
+    {
+        $result['total'] = (int) $redis->hLen($key);
+        $items = [];
+        foreach ($redis->hGetAll($key) ?: [] as $field => $value) {
+            if (\count($items) >= self::MAX_ELEMENTS) {
+                break;
+            }
+            $items[] = ['field' => (string) $field, 'value' => (string) $value];
+        }
+        $result['items'] = $items;
+        $result['truncated'] = $result['total'] > self::MAX_ELEMENTS;
 
         return $result;
     }
@@ -201,9 +247,9 @@ class RedisInspector
         $host = (string) ($parts['host'] ?? '127.0.0.1');
         $port = (int) ($parts['port'] ?? 6379);
 
-        $redis = new \Redis();
+        $redis = $this->createRedis();
         if (!@$redis->connect($host, $port, 2.0)) {
-            throw new \RuntimeException(sprintf('Unable to connect to Redis at %s:%d.', $host, $port));
+            throw new RedisConnectionException(sprintf('Unable to connect to Redis at %s:%d.', $host, $port));
         }
         [$user, $password] = $this->credentials($parts, $overrides);
         if ($password !== '') {
@@ -213,6 +259,15 @@ class RedisInspector
         $redis->select($db);
 
         return $redis;
+    }
+
+    /**
+     * Factory for the phpredis client; overridable so the connection logic can be exercised without
+     * a Redis server.
+     */
+    protected function createRedis(): \Redis
+    {
+        return new \Redis();
     }
 
     /**

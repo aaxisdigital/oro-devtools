@@ -64,7 +64,7 @@ class RuntimeConfigComponent extends BaseComponent {
             let visible = 0;
 
             $rows.each((j: any, row: any) => {
-                const match = term === '' || (row.getAttribute('data-search') || '').indexOf(term) !== -1;
+                const match = term === '' || (row.dataset.search || '').includes(term);
                 row.hidden = !match;
                 if (match) {
                     visible++;

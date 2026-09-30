@@ -74,8 +74,16 @@ interface BrowserTab {
 
 type SortKey = 'type' | 'name' | 'size' | 'modified' | 'created' | 'ownerUser' | 'ownerGroup';
 
+const ENTRY_ICONS: Record<FsEntry['type'], string> = {dir: 'fa-folder', parent: 'fa-level-up', file: 'fa-file-o'};
+const TAB_ICONS: Record<BrowserTab['kind'], string> = {
+    files: 'fa-list',
+    image: 'fa-picture-o',
+    pdf: 'fa-file-pdf-o',
+    code: 'fa-file-text-o'
+};
+
 const FILES_TAB_ID = 'files';
-const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'avif'];
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'avif']);
 const TEXT_MODES: Record<string, any> = {
     sql: 'text/x-sql',
     json: {name: 'javascript', json: true},
@@ -192,7 +200,7 @@ class StorageBrowserComponent extends BaseComponent {
     }
 
     private hasDotDot(path: string): boolean {
-        return path.split(/[/\\]+/).indexOf('..') !== -1;
+        return path.split(/[/\\]+/).includes('..');
     }
 
     private ext(name: string): string {
@@ -252,7 +260,7 @@ class StorageBrowserComponent extends BaseComponent {
                 this.renderActiveContent();
             })
             .fail((jqXhr: any) => {
-                const message = (jqXhr.responseJSON && jqXhr.responseJSON.message)
+                const message = jqXhr.responseJSON?.message
                     || __('aaxis.devtools.storage_browser.list_error');
                 if (this.handleLoadFailure(message)) {
                     return;
@@ -311,7 +319,7 @@ class StorageBrowserComponent extends BaseComponent {
         }
         let entries = this.lastListing.entries.slice();
         if (this.filterText !== '') {
-            entries = entries.filter(e => e.name.toLowerCase().indexOf(this.filterText) !== -1);
+            entries = entries.filter(e => e.name.toLowerCase().includes(this.filterText));
         }
 
         const dir = this.sortDir === 'desc' ? -1 : 1;
@@ -415,24 +423,34 @@ class StorageBrowserComponent extends BaseComponent {
             'data-name': entry.name
         });
 
-        const iconClass = entry.type === 'dir' ? 'fa-folder'
-            : (entry.type === 'parent' ? 'fa-level-up' : 'fa-file-o');
-
         if (this.columns.type) {
-            const typeLabel = entry.type === 'dir' || entry.type === 'parent'
-                ? __('aaxis.devtools.storage_browser.type.folder')
-                : __('aaxis.devtools.storage_browser.type.file');
-            $tr.append($('<td/>', {text: entry.type === 'parent' ? '' : typeLabel}));
+            $tr.append(this.typeCell(entry));
         }
+        $tr.append(this.nameCell(entry));
+        this.appendDetailCells($tr, entry);
+        $tr.append(this.actionsCell(entry));
 
+        $body.append($tr);
+    }
+
+    private typeCell(entry: FsEntry): any {
+        const typeLabel = entry.type === 'dir' || entry.type === 'parent'
+            ? __('aaxis.devtools.storage_browser.type.folder')
+            : __('aaxis.devtools.storage_browser.type.file');
+        return $('<td/>', {text: entry.type === 'parent' ? '' : typeLabel});
+    }
+
+    private nameCell(entry: FsEntry): any {
         const $name = $('<td/>', {'class': 'aaxis-fs__name-cell'}).append(
-            $('<span/>', {'class': 'fa ' + iconClass + ' aaxis-fs__entry-icon', 'aria-hidden': 'true'})
+            $('<span/>', {'class': 'fa ' + ENTRY_ICONS[entry.type] + ' aaxis-fs__entry-icon', 'aria-hidden': 'true'})
         );
         if (this.columns.filename || entry.type === 'parent') {
             $name.append($('<span/>', {'class': 'aaxis-fs__entry-name', text: entry.name}));
         }
-        $tr.append($name);
+        return $name;
+    }
 
+    private appendDetailCells($tr: any, entry: FsEntry): void {
         if (this.columns.filesize) {
             $tr.append($('<td/>', {'class': 'aaxis-fs__num', text: entry.type === 'file' ? entry.sizeFormatted : ''}));
         }
@@ -448,44 +466,40 @@ class StorageBrowserComponent extends BaseComponent {
         if (this.columns.ownerGroup) {
             $tr.append($('<td/>', {text: entry.ownerGroup}));
         }
+    }
 
+    private actionsCell(entry: FsEntry): any {
         const $actions = $('<td/>', {'class': 'aaxis-fs__col-actions'});
         if (entry.type === 'file') {
             if (this.columns.preview) {
-                $actions.append($('<button/>', {
-                    type: 'button',
-                    'class': 'aaxis-fs__icon-btn',
-                    'data-role': 'preview-btn',
+                $actions.append(this.iconButton('preview-btn', 'fa-eye', 'preview', {
                     'data-path': entry.path,
-                    'data-name': entry.name,
-                    title: __('aaxis.devtools.storage_browser.preview'),
-                    'aria-label': __('aaxis.devtools.storage_browser.preview')
-                }).append($('<span/>', {'class': 'fa fa-eye', 'aria-hidden': 'true'})));
+                    'data-name': entry.name
+                }));
             }
-            $actions.append($('<button/>', {
-                type: 'button',
-                'class': 'aaxis-fs__icon-btn',
-                'data-role': 'download-btn',
-                'data-path': entry.path,
-                title: __('aaxis.devtools.storage_browser.download'),
-                'aria-label': __('aaxis.devtools.storage_browser.download')
-            }).append($('<span/>', {'class': 'fa fa-download', 'aria-hidden': 'true'})));
+            $actions.append(this.iconButton('download-btn', 'fa-download', 'download', {'data-path': entry.path}));
         }
         if (this.writable && entry.type !== 'parent') {
-            $actions.append($('<button/>', {
-                type: 'button',
-                'class': 'aaxis-fs__icon-btn aaxis-fs__icon-btn--danger',
-                'data-role': 'delete-btn',
+            $actions.append(this.iconButton('delete-btn', 'fa-trash-o', 'delete', {
                 'data-path': entry.path,
                 'data-type': entry.type,
-                'data-name': entry.name,
-                title: __('aaxis.devtools.storage_browser.delete'),
-                'aria-label': __('aaxis.devtools.storage_browser.delete')
-            }).append($('<span/>', {'class': 'fa fa-trash-o', 'aria-hidden': 'true'})));
+                'data-name': entry.name
+            }, ' aaxis-fs__icon-btn--danger'));
         }
-        $tr.append($actions);
+        return $actions;
+    }
 
-        $body.append($tr);
+    /** A row action button; `data` carries whatever its click handler reads back from the DOM. */
+    private iconButton(role: string, icon: string, labelKey: string, data: Record<string, string>, modifier = ''): any {
+        const label = __('aaxis.devtools.storage_browser.' + labelKey);
+        return $('<button/>', {
+            type: 'button',
+            'class': 'aaxis-fs__icon-btn' + modifier,
+            'data-role': role,
+            ...data,
+            title: label,
+            'aria-label': label
+        }).append($('<span/>', {'class': 'fa ' + icon, 'aria-hidden': 'true'}));
     }
 
     private applySelection(): void {
@@ -494,7 +508,7 @@ class StorageBrowserComponent extends BaseComponent {
         const $selected = $rows.filter('[data-index="' + this.selectedIndex + '"]');
         $selected.addClass('is-selected');
         const el = $selected.get(0);
-        if (el && el.scrollIntoView) {
+        if (el?.scrollIntoView) {
             el.scrollIntoView({block: 'nearest'});
         }
     }
@@ -571,7 +585,7 @@ class StorageBrowserComponent extends BaseComponent {
 
     private csrf(): string {
         const name = window.location.protocol === 'https:' ? 'https-_csrf' : '_csrf';
-        const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+        const match = new RegExp('(?:^|; )' + name + '=([^;]*)').exec(document.cookie);
         return match ? decodeURIComponent(match[1]) : '';
     }
 
@@ -616,7 +630,7 @@ class StorageBrowserComponent extends BaseComponent {
 
     private onUploadChange(event: any): void {
         const input = event.currentTarget;
-        const file = input.files && input.files[0];
+        const file = input.files?.[0];
         if (!file) {
             return;
         }
@@ -679,7 +693,7 @@ class StorageBrowserComponent extends BaseComponent {
     }
 
     private flashAjaxError(jqXhr: any): void {
-        const message = (jqXhr.responseJSON && jqXhr.responseJSON.message)
+        const message = jqXhr.responseJSON?.message
             || __('aaxis.devtools.storage_browser.action_error');
         messenger.notificationFlashMessage('error', message);
     }
@@ -696,7 +710,7 @@ class StorageBrowserComponent extends BaseComponent {
 
         const ext = this.ext(name);
 
-        if (IMAGE_EXTS.indexOf(ext) !== -1) {
+        if (IMAGE_EXTS.has(ext)) {
             this.openMediaTab(name, path, 'image');
             return;
         }
@@ -750,7 +764,7 @@ class StorageBrowserComponent extends BaseComponent {
             })
             .fail((jqXhr: any) => {
                 this.closeTabById(id);
-                const message = (jqXhr.responseJSON && jqXhr.responseJSON.message)
+                const message = jqXhr.responseJSON?.message
                     || __('aaxis.devtools.storage_browser.preview_error');
                 messenger.notificationFlashMessage('error', message);
             });
@@ -774,7 +788,7 @@ class StorageBrowserComponent extends BaseComponent {
         link.href = this.downloadUrl + '?path=' + encodeURIComponent(path);
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        link.remove();
     }
 
     private openMediaTab(name: string, path: string, kind: 'image' | 'pdf'): void {
@@ -797,9 +811,7 @@ class StorageBrowserComponent extends BaseComponent {
                 'data-role': 'tab',
                 'data-id': tab.id
             });
-            const icon = tab.kind === 'files' ? 'fa-list'
-                : (tab.kind === 'image' ? 'fa-picture-o' : (tab.kind === 'pdf' ? 'fa-file-pdf-o' : 'fa-file-text-o'));
-            $tab.append($('<span/>', {'class': 'fa ' + icon + ' aaxis-fs__tab-icon', 'aria-hidden': 'true'}));
+            $tab.append($('<span/>', {'class': 'fa ' + TAB_ICONS[tab.kind] + ' aaxis-fs__tab-icon', 'aria-hidden': 'true'}));
             $tab.append($('<span/>', {'class': 'aaxis-fs__tab-title', text: tab.title}));
             if (tab.kind !== 'files') {
                 $tab.append($('<button/>', {

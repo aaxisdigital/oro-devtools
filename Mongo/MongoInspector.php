@@ -59,10 +59,7 @@ class MongoInspector
                 $client = $this->client($key);
 
                 try {
-                    $build = $client->getManager()->executeCommand(
-                        'admin',
-                        new \MongoDB\Driver\Command(['buildInfo' => 1])
-                    )->toArray()[0] ?? null;
+                    $build = $this->adminCommand($client, ['buildInfo' => 1])[0] ?? null;
                     if ($build !== null) {
                         $entry['server']['Version'] = (string) ($build->version ?? '');
                     }
@@ -167,19 +164,13 @@ class MongoInspector
             $masked = $this->maskDsn($this->effectiveDsn($key, $overrides));
             try {
                 $client = $this->client($key, $overrides);
-                $result = $client->getManager()->executeCommand(
-                    'admin',
-                    new \MongoDB\Driver\Command(['ping' => 1])
-                )->toArray();
+                $result = $this->adminCommand($client, ['ping' => 1]);
                 if (($result[0]->ok ?? 0) != 1) {
                     $failures[] = $label . ': MongoDB did not acknowledge the ping.';
                     $details[$label] = $masked . ' — not acknowledged';
                     continue;
                 }
-                $build = $client->getManager()->executeCommand(
-                    'admin',
-                    new \MongoDB\Driver\Command(['buildInfo' => 1])
-                )->toArray()[0] ?? null;
+                $build = $this->adminCommand($client, ['buildInfo' => 1])[0] ?? null;
                 $version = $build !== null ? (string) ($build->version ?? '') : '';
                 $details[$label] = $masked . ($version !== '' ? ' (v' . $version . ')' : '');
             } catch (\Throwable $e) {
@@ -239,7 +230,31 @@ class MongoInspector
             $uriOptions['password'] = $password;
         }
 
+        return $this->createClient($dsn, $uriOptions);
+    }
+
+    /**
+     * Factory for the MongoDB client; overridable so the inspection logic can be exercised without
+     * a MongoDB server.
+     *
+     * @param array<string, mixed> $uriOptions
+     */
+    protected function createClient(string $dsn, array $uriOptions): Client
+    {
         return new Client($dsn, $uriOptions);
+    }
+
+    /**
+     * Runs a command against the "admin" database and returns its result documents. Isolated so the
+     * (final) driver Manager is the only thing tests need to replace.
+     *
+     * @param array<string, mixed> $command
+     *
+     * @return array<int, object|array<string, mixed>>
+     */
+    protected function adminCommand(Client $client, array $command): array
+    {
+        return $client->getManager()->executeCommand('admin', new \MongoDB\Driver\Command($command))->toArray();
     }
 
     /**

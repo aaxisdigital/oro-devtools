@@ -33,19 +33,23 @@ trait ResultExportEndpointTrait
         $columns = array_values(array_map('strval', (array) ($payload['columns'] ?? [])));
         $rows = array_values((array) ($payload['rows'] ?? []));
 
-        if (!$this->container->get(ConfigManager::class)->get($this->exportEnabledConfigKey())) {
-            return new JsonResponse(['success' => false, 'message' => 'Export is disabled.'], 403);
-        }
-
-        if ($columns === []) {
-            return new JsonResponse(['success' => false, 'message' => 'Nothing to export.'], 400);
+        $rejection = match (true) {
+            !$this->container->get(ConfigManager::class)->get($this->exportEnabledConfigKey())
+                => new JsonResponse(['success' => false, 'message' => 'Export is disabled.'], 403),
+            $columns === [] => new JsonResponse(['success' => false, 'message' => 'Nothing to export.'], 400),
+            default => null,
+        };
+        if ($rejection !== null) {
+            return $rejection;
         }
 
         try {
-            return $this->container->get(ResultExporter::class)->export($format, $columns, $rows);
+            $response = $this->container->get(ResultExporter::class)->export($format, $columns, $rows);
         } catch (\InvalidArgumentException $e) {
-            return new JsonResponse(['success' => false, 'message' => $e->getMessage()], 400);
+            $response = new JsonResponse(['success' => false, 'message' => $e->getMessage()], 400);
         }
+
+        return $response;
     }
 
     /**
