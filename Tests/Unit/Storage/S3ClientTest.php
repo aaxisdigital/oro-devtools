@@ -218,6 +218,48 @@ class S3ClientTest extends TestCase
         self::assertSame('http://127.0.0.1:9000/b?delimiter=%2F&list-type=2&max-keys=1000', $client->requests[0]['url']);
     }
 
+    /**
+     * OCI's S3 compatibility API cuts a delimited page short: the bucket root came back truncated after
+     * one folder, and the rest of the root (incl. the files) only arrived on page 2.
+     */
+    public function testFollowsPaginationUntilTheFolderListingIsComplete(): void
+    {
+        $client = $this->client()
+            ->respond(200, self::xml(
+                '<KeyCount>1</KeyCount><IsTruncated>true</IsTruncated><NextContinuationToken>tok/1+2</NextContinuationToken>'
+                . '<CommonPrefixes><Prefix>in/aaxis-ontology/</Prefix></CommonPrefixes>'
+            ))
+            ->respond(200, self::xml(
+                '<KeyCount>3</KeyCount><IsTruncated>false</IsTruncated>'
+                . '<CommonPrefixes><Prefix>in/test/</Prefix></CommonPrefixes>'
+                . '<Contents><Key>in/</Key><Size>0</Size><LastModified>2026-01-01T00:00:00.000Z</LastModified></Contents>'
+                . '<Contents><Key>in/payload.json</Key><Size>68</Size><LastModified>2026-11-03T10:00:00.000Z</LastModified></Contents>'
+            ));
+
+        $result = $client->listObjects('b', 'in/');
+
+        self::assertSame(['in/aaxis-ontology/', 'in/test/'], $result['prefixes']);
+        self::assertSame(
+            [['key' => 'in/payload.json', 'size' => 68, 'lastModified' => strtotime('2026-11-03T10:00:00Z')]],
+            $result['objects']
+        );
+        self::assertCount(2, $client->requests);
+        self::assertSame(
+            'http://127.0.0.1:9000/b?continuation-token=tok%2F1%2B2&delimiter=%2F&list-type=2&max-keys=1000&prefix=in%2F',
+            $client->requests[1]['url']
+        );
+    }
+
+    public function testAFolderPageClaimingTruncationWithoutATokenEndsTheListing(): void
+    {
+        $client = $this->client()->respond(200, self::xml(
+            '<IsTruncated>true</IsTruncated><CommonPrefixes><Prefix>a/</Prefix></CommonPrefixes>'
+        ));
+
+        self::assertSame(['prefixes' => ['a/'], 'objects' => []], $client->listObjects('b', ''));
+        self::assertCount(1, $client->requests);
+    }
+
     public function testAListingErrorCarriesTheStorageErrorCodeAndMessage(): void
     {
         $client = $this->client()->respond(403, self::errorXml('AccessDenied', 'Access Denied'));

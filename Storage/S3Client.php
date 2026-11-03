@@ -35,40 +35,37 @@ class S3Client
     }
 
     /**
-     * Lists the immediate children (common prefixes + objects) of $prefix in $bucket.
+     * Lists the immediate children (common prefixes + objects) of $prefix in $bucket, following
+     * pagination. Every page must be read even for small folders: OCI's S3 compatibility API ends a
+     * delimited page early (after a folder holding many objects) and reports it truncated with a
+     * single entry, although max-keys allows 1000.
      *
      * @return array{prefixes: array<int, string>, objects: array<int, array{key: string, size: int, lastModified: int}>}
      */
     public function listObjects(string $bucket, string $prefix): array
     {
-        $query = ['list-type' => '2', 'delimiter' => '/', 'max-keys' => '1000'];
-        if ($prefix !== '') {
-            $query['prefix'] = $prefix;
-        }
-
-        $response = $this->request('GET', '/' . $this->encodePath($bucket), $query);
-        if ($response['status'] >= 400) {
-            throw new StorageException($this->describeError($response));
-        }
-
-        $xml = $this->parseXml($response['body']);
         $prefixes = [];
-        foreach ($xml->CommonPrefixes ?? [] as $cp) {
-            $prefixes[] = (string) $cp->Prefix;
-        }
         $objects = [];
-        foreach ($xml->Contents ?? [] as $object) {
-            $key = (string) $object->Key;
-            // Skip the "folder marker" object that equals the prefix itself.
-            if ($key === $prefix) {
-                continue;
+        $token = '';
+        do {
+            $xml = $this->listPage($bucket, $prefix, ['list-type' => '2', 'delimiter' => '/', 'max-keys' => '1000'], $token);
+            foreach ($xml->CommonPrefixes ?? [] as $cp) {
+                $prefixes[] = (string) $cp->Prefix;
             }
-            $objects[] = [
-                'key' => $key,
-                'size' => (int) $object->Size,
-                'lastModified' => strtotime((string) $object->LastModified) ?: 0,
-            ];
-        }
+            foreach ($xml->Contents ?? [] as $object) {
+                $key = (string) $object->Key;
+                // Skip the "folder marker" object that equals the prefix itself.
+                if ($key === $prefix) {
+                    continue;
+                }
+                $objects[] = [
+                    'key' => $key,
+                    'size' => (int) $object->Size,
+                    'lastModified' => strtotime((string) $object->LastModified) ?: 0,
+                ];
+            }
+            $token = self::nextToken($xml);
+        } while ($token !== '');
 
         return ['prefixes' => $prefixes, 'objects' => $objects];
     }
@@ -166,29 +163,51 @@ class S3Client
     public function listAllKeys(string $bucket, string $prefix): array
     {
         $keys = [];
-        $token = null;
+        $token = '';
         do {
-            $query = ['list-type' => '2', 'max-keys' => '1000'];
-            if ($prefix !== '') {
-                $query['prefix'] = $prefix;
-            }
-            if ($token !== null && $token !== '') {
-                $query['continuation-token'] = $token;
-            }
-
-            $response = $this->request('GET', '/' . $this->encodePath($bucket), $query);
-            if ($response['status'] >= 400) {
-                throw new StorageException($this->describeError($response));
-            }
-            $xml = $this->parseXml($response['body']);
+            $xml = $this->listPage($bucket, $prefix, ['list-type' => '2', 'max-keys' => '1000'], $token);
             foreach ($xml->Contents ?? [] as $object) {
                 $keys[] = (string) $object->Key;
             }
-            $token = (string) ($xml->NextContinuationToken ?? '');
-            $truncated = ((string) ($xml->IsTruncated ?? 'false')) === 'true';
-        } while ($truncated && $token !== '');
+            $token = self::nextToken($xml);
+        } while ($token !== '');
 
         return $keys;
+    }
+
+    /**
+     * Fetches one ListObjectsV2 page of $bucket below $prefix ("" = root), starting at $token ("" = first page).
+     *
+     * @param array<string, string> $query the listing parameters other than prefix and continuation token
+     */
+    private function listPage(string $bucket, string $prefix, array $query, string $token): \SimpleXMLElement
+    {
+        if ($prefix !== '') {
+            $query['prefix'] = $prefix;
+        }
+        if ($token !== '') {
+            $query['continuation-token'] = $token;
+        }
+
+        $response = $this->request('GET', '/' . $this->encodePath($bucket), $query);
+        if ($response['status'] >= 400) {
+            throw new StorageException($this->describeError($response));
+        }
+
+        return $this->parseXml($response['body']);
+    }
+
+    /**
+     * The continuation token of the next page; "" once the listing is complete (a page that claims
+     * truncation without a token also ends it).
+     */
+    private static function nextToken(\SimpleXMLElement $xml): string
+    {
+        if ((string) ($xml->IsTruncated ?? 'false') !== 'true') {
+            return '';
+        }
+
+        return (string) ($xml->NextContinuationToken ?? '');
     }
 
     /**
