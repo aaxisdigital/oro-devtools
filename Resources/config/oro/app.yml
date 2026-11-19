@@ -1,0 +1,11 @@
+# Merged into the application config by OroPlatform.
+#
+# The bundle's own Gaufrette filesystem on Oro's shared "private" adapter (var/data locally; whatever
+# the application configures for private files elsewhere, e.g. S3/GridFS on OroCloud). Files land in an
+# "aaxis_devtools" sub-directory. It holds Bucket Viewer folder scans: the snapshot of keys a "download
+# folder" ZIP is built from, which the web request writes and a message consumer may read.
+knp_gaufrette:
+    filesystems:
+        aaxis_devtools:
+            adapter: private
+            alias: aaxis_devtools_filesystem

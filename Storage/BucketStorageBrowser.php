@@ -177,7 +177,12 @@ class BucketStorageBrowser implements StorageBrowserInterface
         }
     }
 
-    private function client(): S3Client
+    /**
+     * An S3 client for the configured endpoint and credentials (built from the current settings on
+     * every call). It does not enforce the read-only setting: callers that write must check
+     * {@see isReadOnly()} first.
+     */
+    public function client(): S3Client
     {
         $url = $this->config('url');
         if ($url === '') {
@@ -195,7 +200,10 @@ class BucketStorageBrowser implements StorageBrowserInterface
         return new S3Client($url, $accessKey, $secretKey);
     }
 
-    private function bucket(): string
+    /**
+     * The configured bucket name.
+     */
+    public function bucket(): string
     {
         return $this->config('name');
     }

@@ -160,6 +160,12 @@ aaxis:
                     tooltip: 'The bucket to browse.'
                 read_only:
                     label: 'Read only'
+                direct_max_files:
+                    label: 'Direct folder download: max files'
+                    tooltip: '"Download folder" zips the folder in the browser request only when it has FEWER files than this AND is smaller than the size limit below. Larger folders are zipped in the background and saved into the folder itself (needs write access).'
+                direct_max_size_mb:
+                    label: 'Direct folder download: max size (MB)'
+                    tooltip: '"Download folder" zips the folder in the browser request only when its total size is SMALLER than this many megabytes AND it has fewer files than the limit above. Larger folders are zipped in the background and saved into the folder itself (needs write access).'
             runtime_config:
                 title: 'Runtime Config'
             connection_info:
@@ -314,6 +320,7 @@ aaxis:
             filter_placeholder: 'Filter by name...'
             create_folder: 'Create folder'
             upload_file: 'Upload file'
+            download_folder: 'Download this folder as a ZIP (sub-folders included)'
             help_dialog:
                 intro: 'Browse the configured S3-compatible bucket (read-only) and preview object contents. Folders are object key prefixes (split on "/").'
                 navigation:
@@ -325,6 +332,11 @@ aaxis:
                     title: 'Listing and preview'
                     item1: 'Folders (prefixes) and objects use distinct icons; sort by clicking a column header.'
                     item2: 'Use the preview button to open a text/image/PDF object in a new tab, or the download button to fetch it. Binary files are downloaded rather than previewed.'
+                download_folder:
+                    title: 'Downloading a folder'
+                    item1: 'The folder-with-arrow button next to the path zips the current folder and all its sub-folders. It first counts the files and their total size, and the ZIP contains exactly the files counted (files added later are not included).'
+                    item2: 'A small folder (below the limits set in System Configuration, 1000 files / 5 MB by default) downloads straight away.'
+                    item3: 'A larger folder is zipped in the background and saved into the folder itself under a name you choose; check back there later. This needs write access to the bucket. If it fails, a "<name>.error.txt" file explains why.'
         filesystem_viewer:
             path_label: 'Filesystem path'
             filter_label: 'Filter file names'

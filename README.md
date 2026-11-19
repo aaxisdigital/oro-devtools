@@ -42,6 +42,29 @@ configured from **System Configuration → Aaxis → General → Aaxis Dev Tools
   `FilesystemBrowserController` / `BucketBrowserController` only declare routes and pick the storage.
 - **`storage-browser-component.ts`** is a single front-end component used by both pages.
 
+### Bucket Browser: download a folder as a ZIP
+The folder-with-arrow button next to the path zips the **current folder and all its sub-folders**:
+
+1. A dialog counts the files and their total size live. The folder is listed one page (up to 1000
+   objects) per request, and every key is saved as it is counted, so the ZIP later contains exactly
+   that snapshot (files created afterwards — including the archive itself — are left out).
+2. **Small folder** — under *both* limits set on the Bucket Browser configuration page
+   (`bucket_viewer_direct_max_files`, default **1000** files; `bucket_viewer_direct_max_size_mb`,
+   default **5** MB): a *Download ZIP* button builds the archive in the request and downloads it.
+3. **Larger folder** — no direct download. The user names an archive and a message-queue job
+   (`aaxis_devtools.bucket_folder_archive`) builds it and uploads it **into that folder**; the dialog
+   says to check back there later. This writes to the bucket, so it needs the
+   `aaxis_devtools_write` capability and a bucket not configured as read-only. If the job fails, a
+   `<name>.error.txt` note with the reason is written next to where the archive would be.
+
+Pieces: `Storage/BucketFolderArchiver` (scan → direct ZIP / queued job), `Storage/FolderScanStore`
+(the snapshots, in the bundle's `aaxis_devtools` Gaufrette filesystem on Oro's shared **private**
+adapter, so web nodes and consumers see the same files; scans expire after 2 days),
+`Storage/FolderZipWriter` (streams each object to a temporary file and zips them with `ZipArchive`,
+so memory use does not depend on object sizes; disk use peaks at about twice the archive's content),
+`Async/BucketFolderArchiveProcessor`, and the front-end `folder-archive-dialog.ts`. The upload is a
+single streamed PUT, so one archive is limited to the endpoint's single-upload maximum (5 GB on AWS S3).
+
 ### Connection tests
 The Database / Elastic / Redis / MongoDB viewers and the Bucket Browser expose a **"Test it"** button
 on their System Configuration page. The per-tool checks live in `Connection/*ConnectionTester`
@@ -95,7 +118,8 @@ The bundle is gated at **two levels**, both via Oro **feature toggles**
   (read/browse). Granted to the Administrator role by
   `Migrations/Data/ORM/LoadAaxisDevToolsAdminPermissions`.
 - **Modify storage buckets** (`aaxis_devtools_write`) — gates the *destructive* Bucket Browser
-  operations (create folder, upload, delete). It is **not granted by default**, so bucket writes are
+  operations (create folder, upload, delete, and generating a folder ZIP into the bucket). It is
+  **not granted by default**, so bucket writes are
   disabled — including for admins — until you assign this capability to a role under
   **System → User Management → Roles → [role] → Capabilities**. Browsing, preview and download stay
   under the access capability above.

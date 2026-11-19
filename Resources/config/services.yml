@@ -97,6 +97,45 @@ services:
         alias: Aaxis\Bundle\DevToolsBundle\Storage\BucketStorageBrowser
         public: true
 
+    # --- Bucket Viewer "download folder" (ZIP) ---
+    # Folder scans (the snapshot of keys a ZIP is built from) live in the bundle's own Gaufrette
+    # filesystem on Oro's shared "private" adapter (see Resources/config/oro/app.yml), so web nodes and
+    # message consumers see the same files.
+    aaxis_devtools.file_manager:
+        parent: oro_gaufrette.file_manager
+        class: Oro\Bundle\GaufretteBundle\FileManager
+        arguments:
+            - 'aaxis_devtools'
+
+    Aaxis\Bundle\DevToolsBundle\Storage\FolderScanStore:
+        arguments:
+            - '@aaxis_devtools.file_manager'
+
+    Aaxis\Bundle\DevToolsBundle\Storage\FolderZipWriter: ~
+
+    Aaxis\Bundle\DevToolsBundle\Storage\BucketFolderArchiver:
+        arguments:
+            - '@Aaxis\Bundle\DevToolsBundle\Storage\BucketStorageBrowser'
+            - '@Aaxis\Bundle\DevToolsBundle\Storage\FolderScanStore'
+            - '@Aaxis\Bundle\DevToolsBundle\Storage\FolderZipWriter'
+            - '@oro_message_queue.client.message_producer'
+            - '@oro_config.global'
+
+    aaxis_devtools.bucket_folder_archiver:
+        alias: Aaxis\Bundle\DevToolsBundle\Storage\BucketFolderArchiver
+        public: true
+
+    Aaxis\Bundle\DevToolsBundle\Async\Topic\BucketFolderArchiveTopic:
+        tags:
+            - { name: oro_message_queue.topic }
+
+    Aaxis\Bundle\DevToolsBundle\Async\BucketFolderArchiveProcessor:
+        arguments:
+            - '@Aaxis\Bundle\DevToolsBundle\Storage\BucketFolderArchiver'
+            - '@logger'
+        tags:
+            - { name: oro_message_queue.client.message_processor }
+
     Aaxis\Bundle\DevToolsBundle\Network\NetworkToolExecutor: ~
 
     aaxis_devtools.network_tool_executor:

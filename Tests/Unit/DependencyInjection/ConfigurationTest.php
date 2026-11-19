@@ -29,6 +29,8 @@ class ConfigurationTest extends TestCase
         self::assertSame(30, $settings['network_tools_history_retention_days']['value']);
         self::assertSame('http://minio:9000', $settings['bucket_viewer_url']['value']);
         self::assertFalse($settings['bucket_viewer_read_only']['value']);
+        self::assertSame(1000, $settings['bucket_viewer_direct_max_files']['value']);
+        self::assertSame(5, $settings['bucket_viewer_direct_max_size_mb']['value']);
         self::assertTrue($settings['filesystem_viewer_restricted']['value']);
         self::assertSame('', $settings['redis_viewer_dsn']['value']);
         self::assertSame('', $settings['mongodb_viewer_private_dsn']['value']);

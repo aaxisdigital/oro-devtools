@@ -3,6 +3,7 @@ import __ from 'orotranslation/js/translator';
 import messenger from 'oroui/js/messenger';
 import Modal from 'oroui/js/modal';
 import BaseComponent from 'oroui/js/app/components/base/component';
+import FolderArchiveDialog from './folder-archive-dialog';
 import CodeMirror from 'codemirror';
 import 'codemirror/addon/runmode/runmode';
 import 'codemirror/mode/sql/sql';
@@ -39,6 +40,10 @@ interface StorageBrowserOptions {
     createFolderUrl?: string;
     uploadUrl?: string;
     deleteUrl?: string;
+    archiveScanUrl?: string;
+    archiveDownloadUrl?: string;
+    archiveGenerateUrl?: string;
+    canGenerateArchive?: boolean;
 }
 
 interface FsEntry {
@@ -124,6 +129,7 @@ class StorageBrowserComponent extends BaseComponent {
     private createFolderUrl!: string;
     private uploadUrl!: string;
     private deleteUrl!: string;
+    private archiveOptions!: StorageBrowserOptions;
 
     private lastListing!: Listing | null;
     private rows!: FsEntry[];
@@ -152,6 +158,7 @@ class StorageBrowserComponent extends BaseComponent {
         this.uploadUrl = options.uploadUrl || '';
         this.deleteUrl = options.deleteUrl || '';
         this.writable = options.readOnly !== true && this.deleteUrl !== '';
+        this.archiveOptions = options;
 
         this.lastListing = null;
         this.rows = [];
@@ -193,6 +200,7 @@ class StorageBrowserComponent extends BaseComponent {
         this.$el.on('click.aaxisFs', '[data-role="create-folder"]', this.onCreateFolder.bind(this));
         this.$el.on('click.aaxisFs', '[data-role="upload"]', this.onUploadClick.bind(this));
         this.$el.on('change.aaxisFs', '[data-role="upload-input"]', this.onUploadChange.bind(this));
+        this.$el.on('click.aaxisFs', '[data-role="download-folder"]', this.onDownloadFolder.bind(this));
         this.$el.on('keydown.aaxisFs', '[data-role="content"]', this.onContentKeydown.bind(this));
 
         this.$el.on('click.aaxisFs', '[data-role="tab"]', this.onTabClick.bind(this));
@@ -690,6 +698,22 @@ class StorageBrowserComponent extends BaseComponent {
                 this.navigate(this.currentPath());
             })
             .fail((jqXhr: any) => this.flashAjaxError(jqXhr));
+    }
+
+    /** "Download folder" (bucket only): ZIP of the current folder, recursively. */
+    private onDownloadFolder(event: any): void {
+        event.preventDefault();
+        const options = this.archiveOptions;
+        if (!options.archiveScanUrl || !options.archiveDownloadUrl || !options.archiveGenerateUrl) {
+            return;
+        }
+        new FolderArchiveDialog({
+            scanUrl: options.archiveScanUrl,
+            downloadUrl: options.archiveDownloadUrl,
+            generateUrl: options.archiveGenerateUrl,
+            canGenerate: options.canGenerateArchive === true,
+            csrfToken: () => this.csrf()
+        }, this.currentPath()).open();
     }
 
     private flashAjaxError(jqXhr: any): void {

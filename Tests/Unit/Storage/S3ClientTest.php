@@ -6,6 +6,8 @@ namespace Aaxis\Bundle\DevToolsBundle\Tests\Unit\Storage;
 
 use Aaxis\Bundle\DevToolsBundle\Exception\StorageException;
 use Aaxis\Bundle\DevToolsBundle\Storage\S3Client;
+use Aaxis\Bundle\DevToolsBundle\Storage\S3HttpTransport;
+use Aaxis\Bundle\DevToolsBundle\Storage\S3Signer;
 use Aaxis\Bundle\DevToolsBundle\Tests\Unit\Support\RecordingS3Client;
 use PHPUnit\Framework\TestCase;
 
@@ -35,11 +37,9 @@ class S3ClientTest extends TestCase
      */
     public function testSignsRequestsAccordingToSignatureVersion4(): void
     {
-        $client = new S3Client('http://examplebucket.s3.amazonaws.com', 'AKIAIOSFODNN7EXAMPLE', 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY');
-        $method = new \ReflectionMethod($client, 'buildAuthorization');
+        $signer = new S3Signer('AKIAIOSFODNN7EXAMPLE', 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY', 'us-east-1');
 
-        $authorization = $method->invoke(
-            $client,
+        $authorization = $signer->authorization(
             'GET',
             '/test.txt',
             [],
@@ -65,11 +65,9 @@ class S3ClientTest extends TestCase
     public function testSignsTheQueryStringInCanonicalOrderAsInTheAwsExample(): void
     {
         // "GET Bucket (List Objects)" example from the same AWS documentation page.
-        $client = new S3Client('http://examplebucket.s3.amazonaws.com', 'AKIAIOSFODNN7EXAMPLE', 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY');
-        $method = new \ReflectionMethod($client, 'buildAuthorization');
+        $signer = new S3Signer('AKIAIOSFODNN7EXAMPLE', 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY', 'us-east-1');
 
-        $authorization = $method->invoke(
-            $client,
+        $authorization = $signer->authorization(
             'GET',
             '/',
             ['prefix' => 'J', 'max-keys' => '2'],
@@ -588,7 +586,228 @@ class S3ClientTest extends TestCase
         $client->listAllKeys('b', '');
     }
 
+    // --- listObjectsPage ---------------------------------------------------------
+
+    public function testReadsOnePageOfEveryObjectWithSizesAndTheNextToken(): void
+    {
+        $client = $this->client()->respond(200, self::xml(
+            '<IsTruncated>true</IsTruncated><NextContinuationToken>t2</NextContinuationToken>'
+            . '<Contents><Key>a/</Key><Size>0</Size></Contents>'
+            . '<Contents><Key>a/x.csv</Key><Size>12</Size></Contents>'
+            . '<Contents><Key>a/sub/y.bin</Key><Size>5000</Size></Contents>'
+        ));
+
+        $page = $client->listObjectsPage('b', 'a/', 't1');
+
+        self::assertSame([
+            ['key' => 'a/', 'size' => 0],
+            ['key' => 'a/x.csv', 'size' => 12],
+            ['key' => 'a/sub/y.bin', 'size' => 5000],
+        ], $page['objects']);
+        self::assertSame('t2', $page['nextToken']);
+        self::assertSame(
+            'http://127.0.0.1:9000/b?continuation-token=t1&list-type=2&max-keys=1000&prefix=a%2F',
+            $client->requests[0]['url']
+        );
+    }
+
+    public function testTheLastPageHasNoNextToken(): void
+    {
+        $client = $this->client()->respond(200, self::xml('<IsTruncated>false</IsTruncated>'));
+
+        self::assertSame(['objects' => [], 'nextToken' => ''], $client->listObjectsPage('b', ''));
+        self::assertSame('http://127.0.0.1:9000/b?list-type=2&max-keys=1000', $client->requests[0]['url']);
+    }
+
+    // --- objectExists ------------------------------------------------------------
+
+    public function testAnExistingObjectIsFoundWithAHeadRequest(): void
+    {
+        $client = $this->client()->respond(200);
+
+        self::assertTrue($client->objectExists('b', 'a/r 1.zip'));
+        self::assertSame('HEAD', $client->requests[0]['method']);
+        self::assertSame('http://127.0.0.1:9000/b/a/r%201.zip', $client->requests[0]['url']);
+    }
+
+    public function testAMissingObjectDoesNotExist(): void
+    {
+        self::assertFalse($this->client()->respond(404)->objectExists('b', 'k'));
+    }
+
+    public function testAnExistenceCheckThatIsDeniedIsAnError(): void
+    {
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage('Storage error (HTTP 403).');
+
+        $this->client()->respond(403)->objectExists('b', 'k');
+    }
+
+    public function testAnUnreachableEndpointIsAnError(): void
+    {
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage('The storage endpoint is unreachable (Connection refused).');
+
+        $this->client()->respond(0, '', [], 'Connection refused')->objectExists('b', 'k');
+    }
+
+    // --- downloadObject ----------------------------------------------------------
+
+    public function testDownloadsAnObjectIntoALocalFile(): void
+    {
+        $target = (string) tempnam(sys_get_temp_dir(), 's3t');
+        $client = $this->client()->respond(200, 'object body');
+
+        try {
+            self::assertTrue($client->downloadObject('b', 'a/x.csv', $target));
+            self::assertSame('object body', file_get_contents($target));
+            self::assertSame('GET', $client->requests[0]['method']);
+            self::assertSame('http://127.0.0.1:9000/b/a/x.csv', $client->requests[0]['url']);
+            self::assertSame($target, $client->requests[0]['targetFile']);
+            self::assertSame(self::EMPTY_SHA256, RecordingS3Client::headerMap($client->requests[0]['headers'])['x-amz-content-sha256']);
+        } finally {
+            @unlink($target);
+        }
+    }
+
+    public function testDownloadingAMissingObjectLeavesAnEmptyFile(): void
+    {
+        $target = (string) tempnam(sys_get_temp_dir(), 's3t');
+        $client = $this->client()->respond(404, self::errorXml('NoSuchKey'));
+
+        try {
+            self::assertFalse($client->downloadObject('b', 'gone', $target));
+            self::assertSame('', file_get_contents($target));
+        } finally {
+            @unlink($target);
+        }
+    }
+
+    public function testAFailedDownloadReportsTheStorageError(): void
+    {
+        $target = (string) tempnam(sys_get_temp_dir(), 's3t');
+        $client = $this->client()->respond(403, self::errorXml('AccessDenied', 'Nope'));
+
+        try {
+            $this->expectExceptionMessage('Storage error (HTTP 403): AccessDenied: Nope');
+            $client->downloadObject('b', 'k', $target);
+        } finally {
+            @unlink($target);
+        }
+    }
+
+    // --- putObjectFromFile -------------------------------------------------------
+
+    public function testUploadsALocalFileWithItsPayloadHash(): void
+    {
+        $source = (string) tempnam(sys_get_temp_dir(), 's3t');
+        file_put_contents($source, 'zip bytes');
+        $client = $this->client()->respond(200);
+
+        try {
+            $client->putObjectFromFile('b', 'a/r.zip', $source, 'application/zip');
+        } finally {
+            @unlink($source);
+        }
+
+        $request = $client->requests[0];
+        $headers = RecordingS3Client::headerMap($request['headers']);
+        self::assertSame('PUT', $request['method']);
+        self::assertSame('http://127.0.0.1:9000/b/a/r.zip', $request['url']);
+        self::assertSame('zip bytes', $request['body']);
+        self::assertSame(hash('sha256', 'zip bytes'), $headers['x-amz-content-sha256']);
+        self::assertSame('application/zip', $headers['content-type']);
+        self::assertStringContainsString('SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date', $headers['authorization']);
+    }
+
+    public function testAFileUploadWithoutContentTypeIsAnOctetStream(): void
+    {
+        $source = (string) tempnam(sys_get_temp_dir(), 's3t');
+        $client = $this->client()->respond(200);
+
+        try {
+            $client->putObjectFromFile('b', 'k', $source, '');
+        } finally {
+            @unlink($source);
+        }
+
+        self::assertSame('application/octet-stream', RecordingS3Client::headerMap($client->requests[0]['headers'])['content-type']);
+    }
+
+    public function testAMissingLocalFileIsNotUploaded(): void
+    {
+        $client = $this->client();
+
+        try {
+            $client->putObjectFromFile('b', 'k', sys_get_temp_dir() . '/does-not-exist-' . uniqid(), 'text/plain');
+            self::fail('Expected an exception.');
+        } catch (StorageException $e) {
+            self::assertSame('Unable to read the file to upload.', $e->getMessage());
+        }
+        self::assertSame([], $client->requests);
+    }
+
+    public function testAFailedFileUploadIsAnError(): void
+    {
+        $source = (string) tempnam(sys_get_temp_dir(), 's3t');
+        $client = $this->client()->respond(400, self::errorXml('EntityTooLarge'));
+
+        try {
+            $this->expectExceptionMessage('Storage error (HTTP 400): EntityTooLarge');
+            $client->putObjectFromFile('b', 'k', $source, 'application/zip');
+        } finally {
+            @unlink($source);
+        }
+    }
+
     // --- real transport (nothing leaves the process) ---------------------------
+
+    public function testTheRealTransportReportsAFailedHeadRequest(): void
+    {
+        $this->expectException(StorageException::class);
+        $this->expectExceptionMessage('The storage endpoint is unreachable (');
+
+        (new S3Client('foo://127.0.0.1', 'AKIATEST', 'topsecret'))->objectExists('b', 'k');
+    }
+
+    public function testTheRealTransportReportsAFailedDownload(): void
+    {
+        $target = (string) tempnam(sys_get_temp_dir(), 's3t');
+        try {
+            $this->expectExceptionMessage('The storage endpoint is unreachable (');
+            (new S3Client('foo://127.0.0.1', 'AKIATEST', 'topsecret'))->downloadObject('b', 'k', $target);
+        } finally {
+            @unlink($target);
+        }
+    }
+
+    public function testTheRealTransportCannotDownloadIntoAnUnwritablePath(): void
+    {
+        $this->expectExceptionMessage('Unable to write the downloaded object to a local file.');
+
+        (new S3Client('foo://127.0.0.1', 'AKIATEST', 'topsecret'))->downloadObject('b', 'k', sys_get_temp_dir());
+    }
+
+    public function testTheRealTransportReportsAFailedUpload(): void
+    {
+        $source = (string) tempnam(sys_get_temp_dir(), 's3t');
+        file_put_contents($source, 'zip');
+        try {
+            $this->expectExceptionMessage('The storage endpoint is unreachable (');
+            (new S3Client('foo://127.0.0.1', 'AKIATEST', 'topsecret'))->putObjectFromFile('b', 'k', $source, 'application/zip');
+        } finally {
+            @unlink($source);
+        }
+    }
+
+    public function testTheRealTransportCannotUploadAFileThatVanished(): void
+    {
+        $this->expectExceptionMessage('Unable to read the file to upload.');
+
+        (new S3HttpTransport())->sendFromFile('PUT', 'foo://127.0.0.1/b/k', [], sys_get_temp_dir() . '/vanished-' . uniqid());
+    }
+
+    // --- real transport: connection test ----------------------------------------
 
     public function testTheRealTransportReportsAnUnusableProtocolAsAnUnreachableEndpoint(): void
     {

@@ -62,6 +62,9 @@ features:
             - aaxis_devtools_bucket_viewer_folder
             - aaxis_devtools_bucket_viewer_upload
             - aaxis_devtools_bucket_viewer_delete
+            - aaxis_devtools_bucket_viewer_archive_scan
+            - aaxis_devtools_bucket_viewer_archive_download
+            - aaxis_devtools_bucket_viewer_archive_generate
 
     aaxis_devtools_database_viewer:
         label: aaxis.devtools.feature.database_viewer.label

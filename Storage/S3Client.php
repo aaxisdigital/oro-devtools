@@ -9,29 +9,41 @@ use Aaxis\Bundle\DevToolsBundle\Exception\StorageException;
 /**
  * Minimal, dependency-free S3 client (AWS Signature V4, path-style addressing) built on curl.
  *
- * Only the read operations needed by the Bucket Viewer are implemented: list a bucket with a
- * prefix/delimiter, fetch an object (optionally a byte range) and a HEAD bucket check. It targets
+ * Implements just what the Bucket Viewer needs: list a bucket (one folder level, or recursively page by
+ * page), fetch an object (whole, a byte range, or streamed to a local file), check an object exists,
+ * and the write operations (put — from memory or streamed from a local file — and delete). It targets
  * S3-compatible endpoints such as MinIO. Credentials are never echoed back to the client.
+ *
+ * Signing lives in {@see S3Signer}, the HTTP exchange in {@see S3HttpTransport} and response
+ * interpretation in {@see S3Response}; this class builds the requests and refuses metadata endpoints.
  */
 class S3Client
 {
-    private const string EMPTY_PAYLOAD_HASH = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+    private const string DEFAULT_CONTENT_TYPE = 'application/octet-stream';
 
     private string $scheme;
     private string $host;
     private int $port;
+    private string $hostHeader;
     private ?bool $endpointAllowed = null;
+    private readonly S3Signer $signer;
+    private readonly S3HttpTransport $transport;
 
     public function __construct(
         string $endpoint,
         private readonly string $accessKey,
-        private readonly string $secretKey,
+        string $secretKey,
         private readonly string $region = 'us-east-1',
+        ?S3HttpTransport $transport = null,
     ) {
         $parts = parse_url($endpoint) ?: [];
         $this->scheme = (string) ($parts['scheme'] ?? 'http');
         $this->host = (string) ($parts['host'] ?? 'localhost');
         $this->port = (int) ($parts['port'] ?? ($this->scheme === 'https' ? 443 : 80));
+        $isDefaultPort = ($this->scheme === 'https' && $this->port === 443) || ($this->scheme === 'http' && $this->port === 80);
+        $this->hostHeader = $isDefaultPort ? $this->host : $this->host . ':' . $this->port;
+        $this->signer = new S3Signer($accessKey, $secretKey, $region);
+        $this->transport = $transport ?? new S3HttpTransport();
     }
 
     /**
@@ -64,7 +76,7 @@ class S3Client
                     'lastModified' => strtotime((string) $object->LastModified) ?: 0,
                 ];
             }
-            $token = self::nextToken($xml);
+            $token = S3Response::nextToken($xml);
         } while ($token !== '');
 
         return ['prefixes' => $prefixes, 'objects' => $objects];
@@ -81,9 +93,9 @@ class S3Client
         if ($maxBytes !== null && $maxBytes > 0) {
             $headers['range'] = 'bytes=0-' . ($maxBytes - 1);
         }
-        $response = $this->request('GET', '/' . $this->encodePath($bucket) . '/' . $this->encodePath($key), [], $headers);
+        $response = $this->request('GET', $this->objectPath($bucket, $key), [], $headers);
         if ($response['status'] >= 400) {
-            throw new StorageException($this->describeError($response));
+            throw new StorageException(S3Response::describeError($response));
         }
 
         $length = isset($response['responseHeaders']['content-length'])
@@ -92,7 +104,7 @@ class S3Client
 
         return [
             'status' => $response['status'],
-            'contentType' => $response['responseHeaders']['content-type'] ?? 'application/octet-stream',
+            'contentType' => $response['responseHeaders']['content-type'] ?? self::DEFAULT_CONTENT_TYPE,
             'contentLength' => $length,
             'body' => $response['body'],
         ];
@@ -122,7 +134,7 @@ class S3Client
             $response['status'] === 0 => ['success' => false, 'message' => 'Endpoint unreachable (' . $response['error'] . ').', 'details' => $details],
             $response['status'] === 403 => ['success' => false, 'message' => 'Access denied (HTTP 403). Check the access key / secret.', 'details' => $details],
             $response['status'] === 404 => ['success' => false, 'message' => sprintf('Bucket "%s" not found (HTTP 404).', $bucket), 'details' => $details],
-            $response['status'] >= 400 => ['success' => false, 'message' => $this->describeError($response), 'details' => $details],
+            $response['status'] >= 400 => ['success' => false, 'message' => S3Response::describeError($response), 'details' => $details],
             default => ['success' => true, 'message' => 'Connected to the bucket.', 'details' => $details],
         };
     }
@@ -134,13 +146,13 @@ class S3Client
     {
         $response = $this->request(
             'PUT',
-            '/' . $this->encodePath($bucket) . '/' . $this->encodePath($key),
+            $this->objectPath($bucket, $key),
             [],
-            ['content-type' => $contentType !== '' ? $contentType : 'application/octet-stream'],
+            ['content-type' => $contentType !== '' ? $contentType : self::DEFAULT_CONTENT_TYPE],
             $body
         );
         if ($response['status'] >= 400) {
-            throw new StorageException($this->describeError($response));
+            throw new StorageException(S3Response::describeError($response));
         }
     }
 
@@ -149,9 +161,9 @@ class S3Client
      */
     public function deleteObject(string $bucket, string $key): void
     {
-        $response = $this->request('DELETE', '/' . $this->encodePath($bucket) . '/' . $this->encodePath($key));
+        $response = $this->request('DELETE', $this->objectPath($bucket, $key));
         if ($response['status'] >= 400 && $response['status'] !== 404) {
-            throw new StorageException($this->describeError($response));
+            throw new StorageException(S3Response::describeError($response));
         }
     }
 
@@ -165,14 +177,85 @@ class S3Client
         $keys = [];
         $token = '';
         do {
-            $xml = $this->listPage($bucket, $prefix, ['list-type' => '2', 'max-keys' => '1000'], $token);
-            foreach ($xml->Contents ?? [] as $object) {
-                $keys[] = (string) $object->Key;
+            $page = $this->listObjectsPage($bucket, $prefix, $token);
+            foreach ($page['objects'] as $object) {
+                $keys[] = $object['key'];
             }
-            $token = self::nextToken($xml);
+            $token = $page['nextToken'];
         } while ($token !== '');
 
         return $keys;
+    }
+
+    /**
+     * One page (up to 1000 objects) of every object under $prefix (recursive, no delimiter), starting
+     * at $token ("" = first page). Pass the returned nextToken back to read the following page; ""
+     * means the listing is complete. A page may be empty while a token is still returned.
+     *
+     * @return array{objects: array<int, array{key: string, size: int}>, nextToken: string}
+     */
+    public function listObjectsPage(string $bucket, string $prefix, string $token = ''): array
+    {
+        $xml = $this->listPage($bucket, $prefix, ['list-type' => '2', 'max-keys' => '1000'], $token);
+        $objects = [];
+        foreach ($xml->Contents ?? [] as $object) {
+            $objects[] = ['key' => (string) $object->Key, 'size' => (int) $object->Size];
+        }
+
+        return ['objects' => $objects, 'nextToken' => S3Response::nextToken($xml)];
+    }
+
+    /**
+     * Whether an object exists (HEAD). Any answer other than found / not found is an error.
+     */
+    public function objectExists(string $bucket, string $key): bool
+    {
+        $response = $this->request('HEAD', $this->objectPath($bucket, $key));
+        if ($response['status'] === 404) {
+            return false;
+        }
+        S3Response::assertSuccessful($response);
+
+        return true;
+    }
+
+    /**
+     * Streams an object into a local file, so large objects never sit in memory.
+     *
+     * @return bool false when the object does not exist (the file is then left empty)
+     */
+    public function downloadObject(string $bucket, string $key, string $targetFile): bool
+    {
+        [$url, $headers] = $this->prepareRequest('GET', $this->objectPath($bucket, $key));
+        $response = $this->transport->sendToFile('GET', $url, $headers, $targetFile);
+        if ($response['status'] === 404) {
+            file_put_contents($targetFile, '');
+
+            return false;
+        }
+        S3Response::assertSuccessful($response);
+
+        return true;
+    }
+
+    /**
+     * Uploads (or overwrites) an object from a local file, streamed (single PUT, so at most the
+     * endpoint's single-upload limit — 5 GB on AWS S3).
+     */
+    public function putObjectFromFile(string $bucket, string $key, string $sourceFile, string $contentType): void
+    {
+        $payloadHash = is_file($sourceFile) ? hash_file('sha256', $sourceFile) : false;
+        if ($payloadHash === false) {
+            throw new StorageException('Unable to read the file to upload.');
+        }
+        [$url, $headers] = $this->prepareRequest(
+            'PUT',
+            $this->objectPath($bucket, $key),
+            [],
+            ['content-type' => $contentType !== '' ? $contentType : self::DEFAULT_CONTENT_TYPE],
+            $payloadHash
+        );
+        S3Response::assertSuccessful($this->transport->sendFromFile('PUT', $url, $headers, $sourceFile));
     }
 
     /**
@@ -191,23 +274,10 @@ class S3Client
 
         $response = $this->request('GET', '/' . $this->encodePath($bucket), $query);
         if ($response['status'] >= 400) {
-            throw new StorageException($this->describeError($response));
+            throw new StorageException(S3Response::describeError($response));
         }
 
-        return $this->parseXml($response['body']);
-    }
-
-    /**
-     * The continuation token of the next page; "" once the listing is complete (a page that claims
-     * truncation without a token also ends it).
-     */
-    private static function nextToken(\SimpleXMLElement $xml): string
-    {
-        if ((string) ($xml->IsTruncated ?? 'false') !== 'true') {
-            return '';
-        }
-
-        return (string) ($xml->NextContinuationToken ?? '');
+        return S3Response::xml($response['body']);
     }
 
     /**
@@ -218,168 +288,49 @@ class S3Client
      */
     private function request(string $method, string $path, array $query = [], array $extraHeaders = [], ?string $body = null): array
     {
-        $this->assertEndpointAllowed();
+        $payloadHash = $body === null ? S3Signer::EMPTY_PAYLOAD_HASH : hash('sha256', $body);
+        [$url, $headers] = $this->prepareRequest($method, $path, $query, $extraHeaders, $payloadHash);
 
-        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $amzDate = $now->format('Ymd\THis\Z');
-        $dateStamp = $now->format('Ymd');
-
-        $payloadHash = $body === null ? self::EMPTY_PAYLOAD_HASH : hash('sha256', $body);
-        $hostHeader = $this->hostHeader();
-        $headers = array_merge($extraHeaders, [
-            'host' => $hostHeader,
-            'x-amz-content-sha256' => $payloadHash,
-            'x-amz-date' => $amzDate,
-        ]);
-
-        $authorization = $this->buildAuthorization($method, $path, $query, $headers, $amzDate, $dateStamp, $payloadHash);
-
-        $url = $this->scheme . '://' . $hostHeader . $path;
-        if ($query !== []) {
-            $url .= '?' . $this->canonicalQuery($query);
-        }
-
-        $curlHeaders = [];
-        foreach ($headers as $name => $value) {
-            $curlHeaders[] = $name . ': ' . $value;
-        }
-        $curlHeaders[] = 'Authorization: ' . $authorization;
-
-        return $this->sendRequest($method, $url, $curlHeaders, $body);
+        return $this->transport->send($method, $url, $headers, $body);
     }
 
     /**
-     * Performs the signed HTTP exchange. Isolated (and overridable) so everything around it — signing,
-     * request building, response interpretation — can be exercised without a network.
+     * The URL and signed "Name: value" header lines of a request to this endpoint.
      *
-     * @param string[] $curlHeaders "Name: value" request header lines
-     *
-     * @return array{status: int, body: string, error: string, responseHeaders: array<string, string>}
-     */
-    protected function sendRequest(string $method, string $url, array $curlHeaders, ?string $body): array
-    {
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
-        // The response headers come back in front of the body (split below by their size).
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        if ($body !== null) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
-        }
-
-        $raw = curl_exec($ch);
-        $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        $error = curl_error($ch);
-        $headerSize = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-
-        $responseHeaders = [];
-        $payload = '';
-        if (\is_string($raw)) {
-            $responseHeaders = self::parseResponseHeaders(substr($raw, 0, $headerSize));
-            $payload = substr($raw, $headerSize);
-        }
-
-        return [
-            'status' => $status,
-            'body' => $payload,
-            'error' => $error,
-            'responseHeaders' => $responseHeaders,
-        ];
-    }
-
-    /**
-     * Lower-cased header name => value, from a raw header block (later duplicates win).
-     *
-     * @return array<string, string>
-     */
-    protected static function parseResponseHeaders(string $block): array
-    {
-        $headers = [];
-        foreach (preg_split('/\r\n|\n/', $block) ?: [] as $line) {
-            $pos = strpos($line, ':');
-            if ($pos !== false) {
-                $headers[strtolower(trim(substr($line, 0, $pos)))] = trim(substr($line, $pos + 1));
-            }
-        }
-
-        return $headers;
-    }
-
-    /**
      * @param array<string, string> $query
-     * @param array<string, string> $headers
+     * @param array<string, string> $extraHeaders
+     *
+     * @return array{0: string, 1: string[]}
      */
-    private function buildAuthorization(
+    private function prepareRequest(
         string $method,
         string $path,
-        array $query,
-        array $headers,
-        string $amzDate,
-        string $dateStamp,
-        string $payloadHash
-    ): string {
-        ksort($headers);
-        $canonicalHeaders = '';
-        $signedHeaderNames = [];
-        foreach ($headers as $name => $value) {
-            $canonicalHeaders .= strtolower($name) . ':' . trim($value) . "\n";
-            $signedHeaderNames[] = strtolower($name);
-        }
-        $signedHeaders = implode(';', $signedHeaderNames);
+        array $query = [],
+        array $extraHeaders = [],
+        string $payloadHash = S3Signer::EMPTY_PAYLOAD_HASH
+    ): array {
+        $this->assertEndpointAllowed();
 
-        $canonicalRequest = implode("\n", [
+        $headers = $this->signer->sign(
             $method,
+            $this->hostHeader,
             $path,
-            $this->canonicalQuery($query),
-            $canonicalHeaders,
-            $signedHeaders,
+            $query,
+            $extraHeaders,
             $payloadHash,
-        ]);
-
-        $scope = $dateStamp . '/' . $this->region . '/s3/aws4_request';
-        $stringToSign = implode("\n", [
-            'AWS4-HMAC-SHA256',
-            $amzDate,
-            $scope,
-            hash('sha256', $canonicalRequest),
-        ]);
-
-        $signingKey = $this->signingKey($dateStamp);
-        $signature = hash_hmac('sha256', $stringToSign, $signingKey);
-
-        return sprintf(
-            'AWS4-HMAC-SHA256 Credential=%s/%s, SignedHeaders=%s, Signature=%s',
-            $this->accessKey,
-            $scope,
-            $signedHeaders,
-            $signature
+            new \DateTimeImmutable('now', new \DateTimeZone('UTC'))
         );
-    }
-
-    private function signingKey(string $dateStamp): string
-    {
-        $kDate = hash_hmac('sha256', $dateStamp, 'AWS4' . $this->secretKey, true);
-        $kRegion = hash_hmac('sha256', $this->region, $kDate, true);
-        $kService = hash_hmac('sha256', 's3', $kRegion, true);
-
-        return hash_hmac('sha256', 'aws4_request', $kService, true);
-    }
-
-    /**
-     * @param array<string, string> $query
-     */
-    private function canonicalQuery(array $query): string
-    {
-        ksort($query);
-        $pairs = [];
-        foreach ($query as $key => $value) {
-            $pairs[] = rawurlencode((string) $key) . '=' . rawurlencode((string) $value);
+        $url = $this->scheme . '://' . $this->hostHeader . $path;
+        if ($query !== []) {
+            $url .= '?' . S3Signer::canonicalQuery($query);
         }
 
-        return implode('&', $pairs);
+        return [$url, $headers];
+    }
+
+    private function objectPath(string $bucket, string $key): string
+    {
+        return '/' . $this->encodePath($bucket) . '/' . $this->encodePath($key);
     }
 
     private function encodePath(string $segment): string
@@ -429,44 +380,5 @@ class S3Client
         $bytes = unpack('C*', $packed);
 
         return ($bytes[1] === 0xfe && ($bytes[2] & 0xc0) === 0x80) || strtolower($ip) === 'fd00:ec2::254';
-    }
-
-    private function hostHeader(): string
-    {
-        $isDefault = ($this->scheme === 'https' && $this->port === 443) || ($this->scheme === 'http' && $this->port === 80);
-
-        return $isDefault ? $this->host : $this->host . ':' . $this->port;
-    }
-
-    private function parseXml(string $body): \SimpleXMLElement
-    {
-        $previous = libxml_use_internal_errors(true);
-        $xml = simplexml_load_string($body);
-        libxml_use_internal_errors($previous);
-        if ($xml === false) {
-            throw new StorageException('Unexpected (non-XML) response from the storage endpoint.');
-        }
-
-        return $xml;
-    }
-
-    /**
-     * @param array{status: int, body: string, error: string} $response
-     */
-    private function describeError(array $response): string
-    {
-        $message = '';
-        try {
-            $xml = $this->parseXml($response['body']);
-            $code = (string) ($xml->Code ?? '');
-            $msg = (string) ($xml->Message ?? '');
-            $message = trim($code . ($msg !== '' ? ': ' . $msg : ''));
-        } catch (\Throwable) {
-            // ignore - fall back to the status code
-        }
-
-        return $message !== ''
-            ? sprintf('Storage error (HTTP %d): %s', $response['status'], $message)
-            : sprintf('Storage error (HTTP %d).', $response['status']);
     }
 }

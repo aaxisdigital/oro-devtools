@@ -82,6 +82,9 @@ class Configuration implements ConfigurationInterface
             'bucket_viewer_pass' => ['type' => 'string', 'value' => ''],
             'bucket_viewer_name' => ['type' => 'string', 'value' => ''],
             'bucket_viewer_read_only' => ['type' => 'boolean', 'value' => false],
+            // "Download folder": below BOTH limits the ZIP downloads directly, otherwise it is built in the background.
+            'bucket_viewer_direct_max_files' => ['type' => 'integer', 'value' => 1000],
+            'bucket_viewer_direct_max_size_mb' => ['type' => 'integer', 'value' => 5],
 
             // Runtime Config
             'runtime_config_enabled' => ['type' => 'boolean', 'value' => true],

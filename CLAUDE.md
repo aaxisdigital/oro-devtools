@@ -44,7 +44,15 @@ name lowercased with `Bundle` stripped — that one is fine as-is.
 - `Storage/` — shared filesystem+bucket engine (`StorageBrowserInterface`,
   `FilesystemStorageBrowser`, `BucketStorageBrowser`, `S3Client`); `Controller/AbstractStorageBrowserController`
   holds list/preview/raw/download; both browser controllers only declare routes + pick the storage.
-  Front end: single `storage-browser-component.ts` used by both pages.
+  Front end: single `storage-browser-component.ts` used by both pages. `S3Client` only builds requests
+  and guards the endpoint; SigV4 is `S3Signer`, curl is `S3HttpTransport` (tests swap in
+  `Tests/Unit/Support/RecordingS3Transport` via `RecordingS3Client`), response parsing is `S3Response`.
+- Bucket "download folder" (ZIP, recursive): `Storage/BucketFolderArchiver` (paged scan whose key
+  snapshot lives in `FolderScanStore` → direct ZIP below the `bucket_viewer_direct_max_*` limits, else
+  an MQ job `Async/BucketFolderArchiveProcessor` that uploads the ZIP into the folder, or
+  `<name>.error.txt` on failure), `FolderZipWriter`, front end `folder-archive-dialog.ts`. Scan
+  snapshots use the bundle's own Gaufrette filesystem `aaxis_devtools` on Oro's shared `private`
+  adapter (`Resources/config/oro/app.yml`) so web nodes and consumers share them.
 - `Database/`, `Elastic/`, `Redis/`, `Mongo/`, `Filesystem/`, `Config/`, `Network/` — the per-tool
   service logic (inspectors / executors).
 - `Connection/*ConnectionTester.php` — per-tool "Test it" checks (see below).
@@ -71,7 +79,8 @@ Access is gated by two **action** capabilities in `acls.yml`:
   endpoints (read/browse). Granted to Administrator by
   `Migrations/Data/ORM/LoadAaxisDevToolsAdminPermissions`.
 - **`aaxis_devtools_write`** — gates the *destructive* Bucket Viewer actions (create folder,
-  upload, delete) via method-level `#[AclAncestor('aaxis_devtools_write')]`. It is **not** bound to
+  upload, delete, generate a folder ZIP into the bucket) via method-level
+  `#[AclAncestor('aaxis_devtools_write')]`. It is **not** bound to
   a controller and **not** granted by any migration, so bucket writes are denied for everyone (incl.
   admins) until someone assigns it to a role (System → Roles → Capabilities). Re-enable from the UI,
   not code.

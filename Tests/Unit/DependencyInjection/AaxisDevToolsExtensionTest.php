@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Aaxis\Bundle\DevToolsBundle\Tests\Unit\DependencyInjection;
 
+use Aaxis\Bundle\DevToolsBundle\Async\BucketFolderArchiveProcessor;
+use Aaxis\Bundle\DevToolsBundle\Async\Topic\BucketFolderArchiveTopic;
 use Aaxis\Bundle\DevToolsBundle\Command\CleanupHistoryCommand;
 use Aaxis\Bundle\DevToolsBundle\Connection\BucketConnectionTester;
 use Aaxis\Bundle\DevToolsBundle\Controller\DevToolsPageController;
 use Aaxis\Bundle\DevToolsBundle\DependencyInjection\AaxisDevToolsExtension;
 use Aaxis\Bundle\DevToolsBundle\Manager\SavedQueryManager;
+use Aaxis\Bundle\DevToolsBundle\Storage\BucketFolderArchiver;
+use Aaxis\Bundle\DevToolsBundle\Storage\FolderScanStore;
+use Aaxis\Bundle\DevToolsBundle\Storage\FolderZipWriter;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -64,5 +69,11 @@ class AaxisDevToolsExtensionTest extends TestCase
         yield 'bucket tester' => [BucketConnectionTester::class];
         yield 'saved query manager' => [SavedQueryManager::class];
         yield 'page controller' => [DevToolsPageController::class];
+        yield 'folder archiver' => [BucketFolderArchiver::class];
+        yield 'folder scan store' => [FolderScanStore::class];
+        yield 'folder zip writer' => [FolderZipWriter::class];
+        yield 'archive topic' => [BucketFolderArchiveTopic::class];
+        yield 'archive processor' => [BucketFolderArchiveProcessor::class];
+        yield 'private file manager' => ['aaxis_devtools.file_manager'];
     }
 }

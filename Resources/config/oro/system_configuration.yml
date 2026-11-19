@@ -388,6 +388,30 @@ system_configuration:
             options:
                 label: aaxis.devtools.config.bucket_viewer.read_only.label
                 required: false
+        aaxis_devtools.bucket_viewer_direct_max_files:
+            data_type: integer
+            type: Symfony\Component\Form\Extension\Core\Type\IntegerType
+            options:
+                label: aaxis.devtools.config.bucket_viewer.direct_max_files.label
+                tooltip: aaxis.devtools.config.bucket_viewer.direct_max_files.tooltip
+                required: true
+                constraints:
+                    - NotBlank: ~
+                    - Type: integer
+                    - Range:
+                        min: 1
+        aaxis_devtools.bucket_viewer_direct_max_size_mb:
+            data_type: integer
+            type: Symfony\Component\Form\Extension\Core\Type\IntegerType
+            options:
+                label: aaxis.devtools.config.bucket_viewer.direct_max_size_mb.label
+                tooltip: aaxis.devtools.config.bucket_viewer.direct_max_size_mb.tooltip
+                required: true
+                constraints:
+                    - NotBlank: ~
+                    - Type: integer
+                    - Range:
+                        min: 1
 
         # --- Runtime Config ---
         aaxis_devtools.runtime_config_enabled:
@@ -452,6 +476,8 @@ system_configuration:
                                             - aaxis_devtools.bucket_viewer_pass
                                             - aaxis_devtools.bucket_viewer_name
                                             - aaxis_devtools.bucket_viewer_read_only
+                                            - aaxis_devtools.bucket_viewer_direct_max_files
+                                            - aaxis_devtools.bucket_viewer_direct_max_size_mb
                             aaxis_devtools_database_viewer:
                                 priority: 80
                                 children:

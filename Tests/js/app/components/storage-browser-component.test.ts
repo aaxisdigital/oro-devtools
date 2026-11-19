@@ -19,6 +19,7 @@ const FIXTURE = `
     <button data-role="create-folder">new folder</button>
     <button data-role="upload">upload</button>
     <input type="file" data-role="upload-input">
+    <button data-role="download-folder">download folder</button>
     <div data-role="help-content"><p>storage help</p></div>
 </div>`;
 
@@ -952,6 +953,48 @@ describe('StorageBrowserComponent', () => {
             expect(click.isDefaultPrevented()).toBe(true);
             expect(links).toEqual([{href: '/download?path=%2Fvar%2Fwww%2Findex.php', connected: true}]);
             expect(document.body.querySelector('a[href^="/download"]')).toBeNull();
+        });
+    });
+
+    describe('download folder', () => {
+        const archive = {archiveScanUrl: '/scan', archiveDownloadUrl: '/zip', archiveGenerateUrl: '/generate'};
+
+        afterEach(() => {
+            document.cookie = '_csrf=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        });
+
+        it('opens the folder download dialog and scans the current folder', () => {
+            document.cookie = '_csrf=csrf%20token';
+            boot(archive);
+            const click = $.Event('click');
+            $page.find('[data-role="download-folder"]').trigger(click);
+
+            expect(click.isDefaultPrevented()).toBe(true);
+            expect(Modal.instances).toHaveLength(1);
+            expect(Modal.instances[0].options.title).toBe('aaxis.devtools.storage_browser.archive.title');
+            const request = ajax.last('/scan');
+            expect(JSON.parse(request.options.data)).toEqual({path: '/var/www'});
+            expect(request.options.headers).toEqual({'X-CSRF-Header': 'csrf token'});
+        });
+
+        it('lets the dialog offer the background archive only when allowed', () => {
+            boot({...archive, canGenerateArchive: true});
+            $page.find('[data-role="download-folder"]').trigger('click');
+            ajax.last('/scan').resolve({
+                success: true, id: 's', path: '/var/www', files: 2000, bytes: 1, bytesFormatted: '1 B', complete: true,
+                mode: 'background', archiveName: 'www.zip', suggestedFilename: 'www.zip',
+                limits: {files: 1000, bytes: 5242880, bytesFormatted: '5.0 MB'}
+            });
+
+            expect(Modal.instances[0].$el.find('[data-role="archive-generate"]')).toHaveLength(1);
+        });
+
+        it('does nothing without the archive endpoints (filesystem viewer)', () => {
+            boot();
+            $page.find('[data-role="download-folder"]').trigger('click');
+
+            expect(Modal.instances).toHaveLength(0);
+            expect(ajax.to('/scan')).toHaveLength(0);
         });
     });
 

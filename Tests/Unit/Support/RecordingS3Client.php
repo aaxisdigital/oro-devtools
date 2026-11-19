@@ -5,37 +5,34 @@ declare(strict_types=1);
 namespace Aaxis\Bundle\DevToolsBundle\Tests\Unit\Support;
 
 use Aaxis\Bundle\DevToolsBundle\Storage\S3Client;
+use Aaxis\Bundle\DevToolsBundle\Storage\S3HttpTransport;
 
 /**
- * S3Client whose HTTP exchange is replaced by a queue of canned responses; every request that would
- * have hit the wire is recorded instead (signing and request building still run for real).
+ * S3Client on a {@see RecordingS3Transport}: canned responses instead of the network, and every request
+ * that would have hit the wire recorded in $requests (signing and request building still run for real).
  */
 final class RecordingS3Client extends S3Client
 {
-    /** @var array<int, array{method: string, url: string, headers: string[], body: string|null}> */
+    /** @var array<int, array{method: string, url: string, headers: string[], body: string|null, targetFile?: string}> */
     public array $requests = [];
 
-    /** @var array<int, array{status: int, body: string, error: string, responseHeaders: array<string, string>}> */
-    private array $queue = [];
+    private RecordingS3Transport $recorder;
+
+    public function __construct(string $endpoint, string $accessKey, string $secretKey, string $region = 'us-east-1')
+    {
+        $this->recorder = new RecordingS3Transport();
+        $this->requests = &$this->recorder->requests;
+        parent::__construct($endpoint, $accessKey, $secretKey, $region, $this->recorder);
+    }
 
     /**
      * @param array<string, string> $responseHeaders
      */
     public function respond(int $status, string $body = '', array $responseHeaders = [], string $error = ''): self
     {
-        $this->queue[] = ['status' => $status, 'body' => $body, 'error' => $error, 'responseHeaders' => $responseHeaders];
+        $this->recorder->respond($status, $body, $responseHeaders, $error);
 
         return $this;
-    }
-
-    protected function sendRequest(string $method, string $url, array $curlHeaders, ?string $body): array
-    {
-        $this->requests[] = ['method' => $method, 'url' => $url, 'headers' => $curlHeaders, 'body' => $body];
-        if ($this->queue === []) {
-            throw new \LogicException('No canned response left for ' . $method . ' ' . $url);
-        }
-
-        return array_shift($this->queue);
     }
 
     /**
@@ -43,7 +40,7 @@ final class RecordingS3Client extends S3Client
      */
     public static function parseHeaders(string $block): array
     {
-        return self::parseResponseHeaders($block);
+        return S3HttpTransport::parseResponseHeaders($block);
     }
 
     /**

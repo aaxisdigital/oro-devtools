@@ -23,6 +23,8 @@ services:
         tags:
             - { name: container.service_subscriber }
             - { name: container.service_subscriber, id: aaxis_devtools.bucket_storage_browser, key: Aaxis\Bundle\DevToolsBundle\Storage\BucketStorageBrowser }
+            - { name: container.service_subscriber, id: aaxis_devtools.bucket_folder_archiver, key: Aaxis\Bundle\DevToolsBundle\Storage\BucketFolderArchiver }
+            - { name: container.service_subscriber, id: oro_security.token_accessor, key: Oro\Bundle\SecurityBundle\Authentication\TokenAccessorInterface }
 
     Aaxis\Bundle\DevToolsBundle\Controller\DatabaseViewerController:
         calls:
