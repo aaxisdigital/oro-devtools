@@ -50,7 +50,8 @@ name lowercased with `Bundle` stripped — that one is fine as-is.
 - Bucket "download folder" (ZIP, recursive): `Storage/BucketFolderArchiver` (paged scan whose key
   snapshot lives in `FolderScanStore` → direct ZIP below the `bucket_viewer_direct_max_*` limits, else
   an MQ job `Async/BucketFolderArchiveProcessor` that uploads the ZIP into the folder, or
-  `<name>.error.txt` on failure), `FolderZipWriter`, front end `folder-archive-dialog.ts`. Scan
+  `<name>.error.txt` on failure), `FolderZipWriter`, front end `folder-archive-dialog.ts` opened by the
+  folder rows' `download-folder-btn` (rendered only when the archive URLs are passed). Scan
   snapshots use the bundle's own Gaufrette filesystem `aaxis_devtools` on Oro's shared `private`
   adapter (`Resources/config/oro/app.yml`) so web nodes and consumers share them.
 - `Database/`, `Elastic/`, `Redis/`, `Mongo/`, `Filesystem/`, `Config/`, `Network/` — the per-tool

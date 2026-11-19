@@ -88,6 +88,9 @@ const TAB_ICONS: Record<BrowserTab['kind'], string> = {
 };
 
 const FILES_TAB_ID = 'files';
+/** Row action buttons: clicking one must not also select or open the row. */
+const ROW_BUTTONS = '[data-role="preview-btn"], [data-role="download-btn"], [data-role="download-folder-btn"], '
+    + '[data-role="delete-btn"]';
 const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'avif']);
 const TEXT_MODES: Record<string, any> = {
     sql: 'text/x-sql',
@@ -200,7 +203,7 @@ class StorageBrowserComponent extends BaseComponent {
         this.$el.on('click.aaxisFs', '[data-role="create-folder"]', this.onCreateFolder.bind(this));
         this.$el.on('click.aaxisFs', '[data-role="upload"]', this.onUploadClick.bind(this));
         this.$el.on('change.aaxisFs', '[data-role="upload-input"]', this.onUploadChange.bind(this));
-        this.$el.on('click.aaxisFs', '[data-role="download-folder"]', this.onDownloadFolder.bind(this));
+        this.$el.on('click.aaxisFs', '[data-role="download-folder-btn"]', this.onDownloadFolder.bind(this));
         this.$el.on('keydown.aaxisFs', '[data-role="content"]', this.onContentKeydown.bind(this));
 
         this.$el.on('click.aaxisFs', '[data-role="tab"]', this.onTabClick.bind(this));
@@ -487,6 +490,11 @@ class StorageBrowserComponent extends BaseComponent {
             }
             $actions.append(this.iconButton('download-btn', 'fa-download', 'download', {'data-path': entry.path}));
         }
+        if (entry.type === 'dir' && this.canDownloadFolders()) {
+            $actions.append(this.iconButton('download-folder-btn', 'fa-download', 'download_folder', {
+                'data-path': entry.path
+            }));
+        }
         if (this.writable && entry.type !== 'parent') {
             $actions.append(this.iconButton('delete-btn', 'fa-trash-o', 'delete', {
                 'data-path': entry.path,
@@ -522,7 +530,7 @@ class StorageBrowserComponent extends BaseComponent {
     }
 
     private onRowClick(event: any): void {
-        if ($(event.target).closest('[data-role="preview-btn"], [data-role="download-btn"], [data-role="delete-btn"]').length) {
+        if ($(event.target).closest(ROW_BUTTONS).length) {
             return;
         }
         this.selectedIndex = Number($(event.currentTarget).data('index'));
@@ -531,7 +539,7 @@ class StorageBrowserComponent extends BaseComponent {
     }
 
     private onRowDblClick(event: any): void {
-        if ($(event.target).closest('[data-role="preview-btn"], [data-role="download-btn"], [data-role="delete-btn"]').length) {
+        if ($(event.target).closest(ROW_BUTTONS).length) {
             return;
         }
         this.openEntry(this.rows[Number($(event.currentTarget).data('index'))]);
@@ -700,20 +708,27 @@ class StorageBrowserComponent extends BaseComponent {
             .fail((jqXhr: any) => this.flashAjaxError(jqXhr));
     }
 
-    /** "Download folder" (bucket only): ZIP of the current folder, recursively. */
+    /** Folder ZIPs need the three archive endpoints, which only the bucket viewer passes. */
+    private canDownloadFolders(): boolean {
+        const options = this.archiveOptions;
+        return Boolean(options.archiveScanUrl && options.archiveDownloadUrl && options.archiveGenerateUrl);
+    }
+
+    /** A folder row's download button (bucket only): ZIP of that folder, recursively. */
     private onDownloadFolder(event: any): void {
         event.preventDefault();
-        const options = this.archiveOptions;
-        if (!options.archiveScanUrl || !options.archiveDownloadUrl || !options.archiveGenerateUrl) {
+        event.stopPropagation();
+        if (!this.canDownloadFolders()) {
             return;
         }
+        const options = this.archiveOptions;
         new FolderArchiveDialog({
-            scanUrl: options.archiveScanUrl,
-            downloadUrl: options.archiveDownloadUrl,
-            generateUrl: options.archiveGenerateUrl,
+            scanUrl: options.archiveScanUrl as string,
+            downloadUrl: options.archiveDownloadUrl as string,
+            generateUrl: options.archiveGenerateUrl as string,
             canGenerate: options.canGenerateArchive === true,
             csrfToken: () => this.csrf()
-        }, this.currentPath()).open();
+        }, String($(event.currentTarget).attr('data-path') || '')).open();
     }
 
     private flashAjaxError(jqXhr: any): void {

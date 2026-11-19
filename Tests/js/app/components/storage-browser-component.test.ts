@@ -19,7 +19,6 @@ const FIXTURE = `
     <button data-role="create-folder">new folder</button>
     <button data-role="upload">upload</button>
     <input type="file" data-role="upload-input">
-    <button data-role="download-folder">download folder</button>
     <div data-role="help-content"><p>storage help</p></div>
 </div>`;
 
@@ -963,23 +962,49 @@ describe('StorageBrowserComponent', () => {
             document.cookie = '_csrf=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         });
 
-        it('opens the folder download dialog and scans the current folder', () => {
+        const folderButton = (name: string) => row(name).find('[data-role="download-folder-btn"]');
+
+        it('puts a blue download button on folder rows only, before the delete button', () => {
+            boot({...archive, deleteUrl: '/delete'});
+
+            const $button = folderButton('src');
+            expect($button.attr('class')).toBe('aaxis-fs__icon-btn');
+            expect($button.attr('data-path')).toBe('/var/www/src');
+            expect($button.attr('title')).toBe('aaxis.devtools.storage_browser.download_folder');
+            expect($button.find('.fa-download')).toHaveLength(1);
+            expect(row('src').find('.aaxis-fs__col-actions button').toArray().map(b => b.getAttribute('data-role')))
+                .toEqual(['download-folder-btn', 'delete-btn']);
+            expect(folderButton('index.php')).toHaveLength(0);
+            expect(folderButton('..')).toHaveLength(0);
+        });
+
+        it('opens the folder download dialog and scans that folder', () => {
             document.cookie = '_csrf=csrf%20token';
             boot(archive);
             const click = $.Event('click');
-            $page.find('[data-role="download-folder"]').trigger(click);
+            folderButton('src').trigger(click);
 
             expect(click.isDefaultPrevented()).toBe(true);
             expect(Modal.instances).toHaveLength(1);
             expect(Modal.instances[0].options.title).toBe('aaxis.devtools.storage_browser.archive.title');
             const request = ajax.last('/scan');
-            expect(JSON.parse(request.options.data)).toEqual({path: '/var/www'});
+            expect(JSON.parse(request.options.data)).toEqual({path: '/var/www/src'});
             expect(request.options.headers).toEqual({'X-CSRF-Header': 'csrf token'});
+        });
+
+        it('does not open the folder when its download button is clicked', () => {
+            boot(archive);
+            const requests = ajax.to('/list').length;
+            folderButton('src').trigger('click');
+            folderButton('src').trigger('dblclick');
+
+            expect(ajax.to('/list')).toHaveLength(requests);
+            expect(Modal.instances).toHaveLength(1);
         });
 
         it('lets the dialog offer the background archive only when allowed', () => {
             boot({...archive, canGenerateArchive: true});
-            $page.find('[data-role="download-folder"]').trigger('click');
+            folderButton('src').trigger('click');
             ajax.last('/scan').resolve({
                 success: true, id: 's', path: '/var/www', files: 2000, bytes: 1, bytesFormatted: '1 B', complete: true,
                 mode: 'background', archiveName: 'www.zip', suggestedFilename: 'www.zip',
@@ -989,12 +1014,10 @@ describe('StorageBrowserComponent', () => {
             expect(Modal.instances[0].$el.find('[data-role="archive-generate"]')).toHaveLength(1);
         });
 
-        it('does nothing without the archive endpoints (filesystem viewer)', () => {
-            boot();
-            $page.find('[data-role="download-folder"]').trigger('click');
+        it('has no folder download button without the archive endpoints (filesystem viewer)', () => {
+            boot({archiveScanUrl: '/scan'});
 
-            expect(Modal.instances).toHaveLength(0);
-            expect(ajax.to('/scan')).toHaveLength(0);
+            expect($page.find('[data-role="download-folder-btn"]')).toHaveLength(0);
         });
     });
 

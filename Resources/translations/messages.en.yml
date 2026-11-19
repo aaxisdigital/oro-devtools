@@ -320,7 +320,6 @@ aaxis:
             filter_placeholder: 'Filter by name...'
             create_folder: 'Create folder'
             upload_file: 'Upload file'
-            download_folder: 'Download this folder as a ZIP (sub-folders included)'
             help_dialog:
                 intro: 'Browse the configured S3-compatible bucket (read-only) and preview object contents. Folders are object key prefixes (split on "/").'
                 navigation:
@@ -334,7 +333,7 @@ aaxis:
                     item2: 'Use the preview button to open a text/image/PDF object in a new tab, or the download button to fetch it. Binary files are downloaded rather than previewed.'
                 download_folder:
                     title: 'Downloading a folder'
-                    item1: 'The download button next to the path (the upload icon with the arrow pointing down) zips the current folder and all its sub-folders. It first counts the files and their total size, and the ZIP contains exactly the files counted (files added later are not included).'
+                    item1: 'The download button on a folder row (before the delete button) zips that folder and all its sub-folders. It first counts the files and their total size, and the ZIP contains exactly the files counted (files added later are not included).'
                     item2: 'A small folder (below the limits set in System Configuration, 1000 files / 5 MB by default) downloads straight away.'
                     item3: 'A larger folder is zipped in the background and saved into the folder itself under a name you choose; check back there later. This needs write access to the bucket. If it fails, a "<name>.error.txt" file explains why.'
         filesystem_viewer:

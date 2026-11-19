@@ -43,7 +43,8 @@ configured from **System Configuration → Aaxis → General → Aaxis Dev Tools
 - **`storage-browser-component.ts`** is a single front-end component used by both pages.
 
 ### Bucket Browser: download a folder as a ZIP
-The download button next to the path (`fa-download`, the upload icon with the arrow pointing down) zips the **current folder and all its sub-folders**:
+Each folder row has a download button (`fa-download`, blue like a file's download button, before
+the delete button) that zips **that folder and all its sub-folders**:
 
 1. A dialog counts the files and their total size live. The folder is listed one page (up to 1000
    objects) per request, and every key is saved as it is counted, so the ZIP later contains exactly

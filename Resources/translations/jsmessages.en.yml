@@ -216,6 +216,7 @@ aaxis:
             action_error: 'The operation failed.'
             preview: 'Preview'
             download: 'Download'
+            download_folder: 'Download folder as ZIP (sub-folders included)'
             preview_error: 'Unable to preview this item.'
             truncated: 'Preview truncated to the first 512 KB.'
             binary_download: 'Binary file - downloading instead of previewing.'
