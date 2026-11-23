@@ -14,7 +14,7 @@
         "php": ">=8.4",
         "oro/platform-enterprise": "7.0.*",
         "aaxisdigital/oro-common": "7.0.*",
-        "mongodb/mongodb": "^2.4.2",
+        "mongodb/mongodb": "^2.0",
         "openspout/openspout": "^4.0"
     },
     "autoload": {
