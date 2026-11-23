@@ -825,6 +825,10 @@ class StorageBrowserComponent extends BaseComponent {
     private triggerDownload(path: string): void {
         const link = document.createElement('a');
         link.href = this.downloadUrl + '?path=' + encodeURIComponent(path);
+        // Oro's page router turns in-app link clicks into AJAX page loads (the URL changes, nothing is
+        // saved); data-nohash makes it leave this one to the browser, and `download` marks it a download.
+        link.setAttribute('data-nohash', 'true');
+        link.setAttribute('download', '');
         document.body.appendChild(link);
         link.click();
         link.remove();

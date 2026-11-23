@@ -940,17 +940,25 @@ describe('StorageBrowserComponent', () => {
     });
 
     describe('downloads', () => {
-        it('downloads through an invisible link to the download endpoint', () => {
-            const links: Array<{href: string | null; connected: boolean}> = [];
+        it('downloads through an invisible link that Oro\'s page router leaves to the browser', () => {
+            const links: Array<Record<string, unknown>> = [];
             vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
-                links.push({href: this.getAttribute('href'), connected: this.isConnected});
+                links.push({
+                    href: this.getAttribute('href'),
+                    connected: this.isConnected,
+                    // Oro's PageLayoutView skips routing for '[data-nohash=true], .no-hash'.
+                    skipsRouting: this.matches('[data-nohash=true], .no-hash'),
+                    download: this.getAttribute('download')
+                });
             });
             boot();
             const click = $.Event('click');
             row('index.php').find('[data-role="download-btn"]').trigger(click);
 
             expect(click.isDefaultPrevented()).toBe(true);
-            expect(links).toEqual([{href: '/download?path=%2Fvar%2Fwww%2Findex.php', connected: true}]);
+            expect(links).toEqual([{
+                href: '/download?path=%2Fvar%2Fwww%2Findex.php', connected: true, skipsRouting: true, download: ''
+            }]);
             expect(document.body.querySelector('a[href^="/download"]')).toBeNull();
         });
     });
